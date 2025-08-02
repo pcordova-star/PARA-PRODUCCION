@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -53,15 +54,39 @@ export function PropertiesDataTable<TData, TValue>({
 
   return (
     <div>
-       <div className="flex items-center py-4">
+       <div className="flex items-center gap-4 py-4">
         <Input
+          placeholder="Filtrar por código..."
+          value={(table.getColumn("code")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("code")?.setFilterValue(event.target.value)
+          }
+          className="max-w-xs"
+        />
+         <Input
           placeholder="Filtrar por dirección..."
           value={(table.getColumn("address")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("address")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-xs"
         />
+        <Select
+            value={(table.getColumn("status")?.getFilterValue() as string) ?? "all"}
+            onValueChange={(value) =>
+                table.getColumn("status")?.setFilterValue(value === "all" ? null : value)
+            }
+        >
+            <SelectTrigger className="max-w-xs">
+                <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="Disponible">Disponible</SelectItem>
+                <SelectItem value="Arrendada">Arrendada</SelectItem>
+                <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
+            </SelectContent>
+        </Select>
       </div>
       <div className="rounded-md border">
         <Table>

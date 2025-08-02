@@ -53,12 +53,20 @@ export function ContractsDataTable<TData, TValue>({
 
   return (
     <div>
-       <div className="flex items-center py-4">
+       <div className="flex items-center gap-4 py-4">
         <Input
           placeholder="Filtrar por arrendatario..."
           value={(table.getColumn("tenantName")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("tenantName")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+        <Input
+          placeholder="Filtrar por propiedad..."
+          value={(table.getColumn("propertyAddress")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("propertyAddress")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
