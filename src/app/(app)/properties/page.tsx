@@ -2,20 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Download, PlusCircle, Upload } from 'lucide-react';
 import { PropertyFormDialog, type PropertyFormValues } from '@/components/properties/property-form-dialog';
 import type { Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { PropertiesDataTable } from '@/components/properties/properties-data-table';
+import { columns } from '@/components/properties/properties-columns';
 
 const initialProperties: Property[] = [
   {
@@ -47,6 +40,21 @@ const initialProperties: Property[] = [
     bedrooms: 4,
     bathrooms: 3,
     description: 'Amplia casa con jardín y piscina.'
+  },
+    {
+    id: '3',
+    code: 'PRO-003',
+    address: 'El Roble 456',
+    comuna: 'Ñuñoa',
+    region: 'Metropolitana de Santiago',
+    status: 'Mantenimiento',
+    price: 750000,
+    type: 'Departamento',
+    ownerRut: '11.222.333-4',
+    area: 80,
+    bedrooms: 3,
+    bathrooms: 2,
+    description: 'Departamento remodelado cerca de la plaza.'
   },
 ];
 
@@ -101,68 +109,55 @@ export default function PropertiesPage() {
     setProperties(prev => prev.filter(p => p.id !== propertyId));
     toast({ title: 'Propiedad eliminada', description: 'La propiedad ha sido eliminada con éxito.', variant: 'destructive' });
   };
-
+  
+  const handleDownloadTemplate = () => {
+    const header = "Codigo,RUTPropietario,Region,Comuna,Direccion,Tipo,PrecioCLP,AreaM2,Dormitorios,Banos,Descripcion\n";
+    const exampleRow = "PRO-004,11.222.333-K,Valparaíso,Viña del Mar,Av. Marina 57,Departamento,550000,75,2,2,Departamento con vista al mar";
+    const csvContent = "data:text/csv;charset=utf-8," + header + exampleRow;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "plantilla_propiedades.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Plantilla descargada', description: 'El archivo de plantilla CSV ha sido descargado.' });
+  }
+  
+  const handleBulkUpload = () => {
+      toast({ title: 'Función no implementada', description: 'La carga masiva de propiedades estará disponible próximamente.' });
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Mis Propiedades</h1>
           <p className="text-muted-foreground">
             Aquí puede ver y gestionar sus propiedades.
           </p>
         </div>
-        <Button onClick={handleAddNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Propiedad
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleBulkUpload}>
+                <Upload className="mr-2 h-4 w-4" />
+                Carga Masiva
+            </Button>
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+                <Download className="mr-2 h-4 w-4" />
+                Descargar Plantilla
+            </Button>
+            <Button onClick={handleAddNew}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Propiedad
+            </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {properties.map(property => (
-          <Card key={property.id} className="flex flex-col">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="mb-1">{property.address}</CardTitle>
-                    <CardDescription>{property.comuna}, {property.region}</CardDescription>
-                  </div>
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Abrir menú</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEdit(property)}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(property.id)}>Eliminar</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <Badge 
-                variant={property.status === 'Disponible' ? 'default' : (property.status === 'Arrendada' ? 'secondary' : 'destructive')}
-                className={property.status === 'Disponible' ? 'bg-green-500 hover:bg-green-600' : ''}
-              >
-                  {property.status}
-              </Badge>
-              <p className="font-semibold text-lg mt-2">
-                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(property.price || 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">{property.type}</p>
-              <div className="text-sm text-muted-foreground mt-4 pt-4 border-t">
-                 <p>{property.bedrooms} hab. &middot; {property.bathrooms} baños &middot; {property.area} m²</p>
-              </div>
-            </CardContent>
-            <CardFooter>
-                 <p className="text-xs text-muted-foreground">Código: {property.code}</p>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+       <PropertiesDataTable 
+        columns={columns({ onEdit: handleEdit, onDelete: handleDelete })} 
+        data={properties} 
+       />
+
        <PropertyFormDialog
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
