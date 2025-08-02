@@ -31,9 +31,14 @@ export function IncidentCard({ incident, currentUser, onRespond, onClose, isProc
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+    const date = new Date(dateString);
+    // Use UTC methods to avoid timezone discrepancies
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes} UTC`;
   };
 
   const creatorIsLandlord = incident.createdBy === incident.landlordId;
