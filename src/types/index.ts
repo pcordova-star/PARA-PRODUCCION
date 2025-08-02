@@ -56,6 +56,7 @@ export interface UserProfile {
   name: string;
   email: string;
   createdAt?: string;
+  mobilePhone?: string;
 }
 
 export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "otro";

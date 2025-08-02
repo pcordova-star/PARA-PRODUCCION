@@ -1,153 +1,223 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { UserRole } from '@/types';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import Link from "next/link";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase"; 
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { UserRole } from "@/types";
 
-export default function SignupPage() {
-  const router = useRouter();
+
+const formSchema = z.object({
+  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
+  email: z.string().email({ message: "Por favor ingresa un correo válido." }),
+  password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
+  confirmPassword: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
+  role: z.enum(["Arrendador", "Arrendatario"], { required_error: "Debes seleccionar un rol." }),
+  mobilePhone: z.string()
+    .regex(/^+?[1-9]\d{1,14}$/, { message: "Formato de número de teléfono inválido. Incluye código de país (ej: +569...)" })
+    .optional()
+    .or(z.literal('')), 
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "Debes aceptar los términos y condiciones para continuar.",
+  }),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden.",
+  path: ["confirmPassword"],
+});
+
+function RegisterForm() {
   const { toast } = useToast();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('Arrendatario');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { updateUserProfileInFirestore } = useAuth(); 
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: undefined,
+      mobilePhone: "",
+      acceptTerms: false,
+    },
+  });
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-
-      // Store user profile in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        name: fullName,
-        email: email,
-        role: role,
-        createdAt: new Date().toISOString(),
-      });
       
-      toast({ title: 'Cuenta creada exitosamente', description: 'Ahora puedes iniciar sesión.' });
-      router.push('/dashboard');
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        setError('Este correo electrónico ya está en uso.');
-      } else {
-        setError('Ocurrió un error al crear la cuenta. Inténtalo de nuevo.');
+      if(updateUserProfileInFirestore) {
+        await updateUserProfileInFirestore(
+          user.uid,
+          values.email,
+          values.role as UserRole,
+          values.name,
+          values.mobilePhone
+        );
       }
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
+
+      toast({
+        title: "Registro Exitoso",
+        description: "Tu cuenta ha sido creada. Serás redirigido al dashboard.",
+      });
+
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Error during registration:", error);
+      toast({
+        title: "Error de Registro",
+        description: error.code === 'auth/email-already-in-use' ? 'Este correo electrónico ya está en uso.' : (error.message || "Ocurrió un error durante el registro."),
+        variant: "destructive",
+      });
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="absolute top-6 left-6">
-        <Link href="/" className="flex items-center gap-2 text-primary" prefetch={false}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
-            <span className="text-xl font-bold">S.A.R.A</span>
-        </Link>
-      </div>
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Crear una Cuenta</CardTitle>
-          <CardDescription>Regístrese para empezar a usar S.A.R.A.</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSignup}>
-          <CardContent className="space-y-4">
-            {error && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nombre Completo</Label>
-              <Input 
-                id="fullName" 
-                type="text" 
-                placeholder="Su Nombre Apellido" 
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={isLoading} 
-              />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField control={form.control} name="name" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nombre Completo</FormLabel>
+            <FormControl>
+              <Input placeholder="Juan Pérez" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="email" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Correo Electrónico</FormLabel>
+            <FormControl>
+              <Input placeholder="tu@correo.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="password" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Contraseña</FormLabel>
+            <FormControl>
+              <Input type="password" placeholder="••••••••" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Confirmar Contraseña</FormLabel>
+            <FormControl>
+              <Input type="password" placeholder="••••••••" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="mobilePhone" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Número de Teléfono Móvil</FormLabel>
+            <FormControl>
+              <Input placeholder="+56912345678" {...field} />
+            </FormControl>
+            <FormDescription>
+              Incluye el código de país (ej: +569). Opcional.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="role" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Soy un...</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tu rol" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Arrendador">Arrendador (Propietario)</SelectItem>
+                <SelectItem value="Arrendatario">Arrendatario (Busco arriendo)</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Esto determinará cómo usas S.A.R.A.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="acceptTerms" render={({ field }) => (
+          <FormItem className="flex items-start space-x-3 rounded-md border p-4 shadow-sm">
+            <FormControl>
+              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>
+                Acepto los <Link href="/terminos-y-condiciones" className="text-primary hover:underline" target="_blank">términos y condiciones</Link>.
+              </FormLabel>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="usuario@ejemplo.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Soy un...</Label>
-              <RadioGroup 
-                defaultValue={role} 
-                className="flex gap-4 pt-1"
-                onValueChange={(value: UserRole) => setRole(value)}
-                disabled={isLoading}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Arrendador" id="landlord" />
-                  <Label htmlFor="landlord" className="font-normal">Arrendador</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Arrendatario" id="tenant" />
-                  <Label htmlFor="tenant" className="font-normal">Arrendatario</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Registrarse
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              ¿Ya tiene una cuenta?{' '}
-              <Link href="/login" className="font-medium text-primary hover:underline">
-                Iniciar Sesión
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+          </FormItem>
+        )} />
+         <FormMessage>{form.formState.errors.acceptTerms?.message}</FormMessage>
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Registrando..." : <><UserPlus className="mr-2 h-4 w-4" />Crear Cuenta</>}
+        </Button>
+      </form>
+    </Form>
   );
+}
+
+
+export default function SignupPage() {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+            <div className="absolute top-6 left-6">
+                <Link href="/" className="flex items-center gap-2 text-primary" prefetch={false}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+                    <span className="text-xl font-bold">S.A.R.A</span>
+                </Link>
+            </div>
+            <Card className="w-full max-w-md shadow-lg">
+                <CardHeader className="text-center">
+                    <CardTitle className="text-2xl">Crear una Cuenta</CardTitle>
+                    <CardDescription>Regístrese para empezar a usar S.A.R.A.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RegisterForm />
+                </CardContent>
+                 <CardFooter className="flex flex-col gap-4">
+                    <p className="text-sm text-muted-foreground">
+                    ¿Ya tiene una cuenta?{' '}
+                    <Link href="/login" className="font-medium text-primary hover:underline">
+                        Iniciar Sesión
+                    </Link>
+                    </p>
+                </CardFooter>
+            </Card>
+        </div>
+    )
 }

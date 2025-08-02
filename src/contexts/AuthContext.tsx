@@ -1,14 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import type { UserProfile } from '@/types';
+import type { UserProfile, UserRole } from '@/types';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
   loading: boolean;
+  updateUserProfileInFirestore?: (uid: string, email: string, role: UserRole, name: string, mobilePhone?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const updateUserProfileInFirestore = useCallback(async (uid: string, email: string, role: UserRole, name: string, mobilePhone?: string) => {
+    const userDocRef = doc(db, 'users', uid);
+    const userData: Omit<UserProfile, 'uid'> = {
+      name,
+      email,
+      role,
+      createdAt: new Date().toISOString(),
+    };
+    if (mobilePhone) {
+      userData.mobilePhone = mobilePhone;
+    }
+    await setDoc(userDocRef, userData);
+  }, []);
+
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       if (user) {
@@ -36,7 +52,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (doc.exists()) {
             setCurrentUser({ uid: user.uid, ...doc.data() } as UserProfile);
           } else {
-            // This case might happen if user is created in Auth but Firestore doc creation fails
             setCurrentUser(null);
           }
           setLoading(false);
@@ -54,6 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value = {
     currentUser,
     loading,
+    updateUserProfileInFirestore,
   };
 
   return (
