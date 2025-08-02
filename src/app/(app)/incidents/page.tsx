@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { IncidentCard } from '@/components/incidents/incident-card';
 import { IncidentFormDialog } from '@/components/incidents/incident-form-dialog';
 import { IncidentResponseDialog } from '@/components/incidents/incident-response-dialog';
@@ -10,6 +10,8 @@ import type { Incident, Contract, UserRole, UserProfile, IncidentResponse } from
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { IncidentsDataTable } from '@/components/incidents/incidents-data-table';
+import { columns as createColumns } from '@/components/incidents/incidents-columns';
 
 // --- MOCK DATA ---
 const mockUserLandlord: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos Arrendador', email: 'carlos@sara.com' };
@@ -84,6 +86,8 @@ export default function IncidentsPage() {
   const [incidentToRespond, setIncidentToRespond] = useState<Incident | null>(null);
   const [incidentToCloseId, setIncidentToCloseId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+
 
   // MOCK: Simulating current user. In a real app, this would come from an auth context.
   const [currentUser, setCurrentUser] = useState<UserProfile>(mockUserLandlord);
@@ -187,6 +191,8 @@ export default function IncidentsPage() {
     return mockContracts.filter(c => c.tenantId === currentUser.uid);
   }, [currentUser, isLandlordView]);
 
+  const columns = createColumns({ onRespond: openResponseDialog, onClose: openCloseDialog, currentUser });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -197,6 +203,14 @@ export default function IncidentsPage() {
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
+              <LayoutGrid className="h-4 w-4" />
+              <span className="sr-only">Vista de Tarjetas</span>
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
+              <List className="h-4 w-4" />
+              <span className="sr-only">Vista de Lista</span>
+            </Button>
             <Button onClick={() => setCurrentUser(isLandlordView ? mockUserTenant : mockUserLandlord)}>
               Cambiar a Vista {isLandlordView ? 'Arrendatario' : 'Arrendador'}
             </Button>
@@ -208,18 +222,22 @@ export default function IncidentsPage() {
       </div>
 
        {filteredIncidents.length > 0 ? (
-           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredIncidents.map(incident => (
-                  <IncidentCard 
-                    key={incident.id} 
-                    incident={incident} 
-                    currentUser={currentUser}
-                    onRespond={openResponseDialog}
-                    onClose={openCloseDialog}
-                    isProcessing={processingId === incident.id}
-                  />
-              ))}
-          </div>
+          viewMode === 'cards' ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredIncidents.map(incident => (
+                    <IncidentCard 
+                      key={incident.id} 
+                      incident={incident} 
+                      currentUser={currentUser}
+                      onRespond={openResponseDialog}
+                      onClose={openCloseDialog}
+                      isProcessing={processingId === incident.id}
+                    />
+                ))}
+            </div>
+          ) : (
+            <IncidentsDataTable columns={columns} data={filteredIncidents} />
+          )
        ) : (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <h3 className="text-lg font-medium">No hay incidentes</h3>

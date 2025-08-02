@@ -81,13 +81,17 @@ export interface Payment {
 }
 
 export type IncidentStatus = "pendiente" | "respondido" | "cerrado";
-export type IncidentType =
-  | "pago"
-  | "cuidado de la propiedad"
-  | "ruidos molestos"
-  | "reparaciones necesarias"
-  | "incumplimiento de contrato"
-  | "otros";
+export const incidentTypes = [
+  "pago",
+  "cuidado de la propiedad",
+  "ruidos molestos",
+  "reparaciones necesarias",
+  "incumplimiento de contrato",
+  "otros",
+] as const;
+
+export type IncidentType = typeof incidentTypes[number];
+
 
 export interface IncidentResponse {
   responseText: string;
