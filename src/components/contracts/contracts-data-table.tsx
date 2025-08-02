@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -70,6 +71,23 @@ export function ContractsDataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        <Select
+            value={(table.getColumn("status")?.getFilterValue() as string) ?? "all"}
+            onValueChange={(value) =>
+                table.getColumn("status")?.setFilterValue(value === "all" ? null : value)
+            }
+        >
+            <SelectTrigger className="max-w-xs">
+                <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="Borrador">Borrador</SelectItem>
+                <SelectItem value="Activo">Activo</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+                <SelectItem value="Cancelado">Cancelado</SelectItem>
+            </SelectContent>
+        </Select>
       </div>
       <div className="rounded-md border">
         <Table>
