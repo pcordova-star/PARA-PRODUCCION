@@ -18,7 +18,7 @@ import { es } from 'date-fns/locale';
 
 type ColumnsConfig = {
     onEdit: (contract: Contract) => void;
-    onDelete: (id: string) => void;
+    onDelete: (contract: Contract) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -113,7 +113,7 @@ export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Contract
               Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract.id)}>
+            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract)}>
               Eliminar
             </DropdownMenuItem>
           </DropdownMenuContent>

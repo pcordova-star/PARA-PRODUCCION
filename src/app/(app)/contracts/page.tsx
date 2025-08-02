@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { ContractsDataTable } from '@/components/contracts/contracts-data-table';
 import { columns } from '@/components/contracts/contracts-columns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 // Mock data - En una aplicación real, esto vendría de una API
 const initialContracts: Contract[] = [
@@ -51,6 +53,8 @@ export default function ContractsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contractToDelete, setContractToDelete] = useState<Contract | null>(null);
   const { toast } = useToast();
 
   const handleSaveContract = async (values: any) => {
@@ -108,10 +112,17 @@ export default function ContractsPage() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (contractId: string) => {
-    // Aquí iría la lógica para archivar o eliminar
-    setContracts(prev => prev.filter(c => c.id !== contractId));
-    toast({ title: 'Contrato eliminado', description: 'El contrato ha sido eliminado.', variant: 'destructive' });
+  const openDeleteDialog = (contract: Contract) => {
+    setContractToDelete(contract);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (!contractToDelete) return;
+    setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
+    toast({ title: 'Contrato eliminado', description: `El contrato con ${contractToDelete.tenantName} ha sido eliminado.`, variant: 'destructive' });
+    setIsDeleteDialogOpen(false);
+    setContractToDelete(null);
   };
   
   return (
@@ -132,7 +143,7 @@ export default function ContractsPage() {
       </div>
 
        <ContractsDataTable 
-        columns={columns({ onEdit: handleEdit, onDelete: handleDelete })} 
+        columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
         data={contracts} 
        />
 
@@ -144,6 +155,24 @@ export default function ContractsPage() {
         userProperties={userProperties.filter(p => p.status !== 'Arrendada' || p.id === selectedContract?.propertyId)}
         isSubmitting={isSubmitting}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de que desea eliminar este contrato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el contrato de sus registros.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Sí, eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { PropertiesDataTable } from '@/components/properties/properties-data-table';
 import { columns } from '@/components/properties/properties-columns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const initialProperties: Property[] = [
   {
@@ -63,6 +64,8 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
   const { toast } = useToast();
 
   const handleSaveProperty = (values: PropertyFormValues, isEditing: boolean, originalPropertyId?: string) => {
@@ -105,9 +108,17 @@ export default function PropertiesPage() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (propertyId: string) => {
-    setProperties(prev => prev.filter(p => p.id !== propertyId));
-    toast({ title: 'Propiedad eliminada', description: 'La propiedad ha sido eliminada con éxito.', variant: 'destructive' });
+  const openDeleteDialog = (property: Property) => {
+    setPropertyToDelete(property);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (!propertyToDelete) return;
+    setProperties(prev => prev.filter(p => p.id !== propertyToDelete.id));
+    toast({ title: 'Propiedad eliminada', description: `La propiedad en ${propertyToDelete.address} ha sido eliminada.`, variant: 'destructive' });
+    setIsDeleteDialogOpen(false);
+    setPropertyToDelete(null);
   };
   
   const handleDownloadTemplate = () => {
@@ -154,7 +165,7 @@ export default function PropertiesPage() {
       </div>
 
        <PropertiesDataTable 
-        columns={columns({ onEdit: handleEdit, onDelete: handleDelete })} 
+        columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
         data={properties} 
        />
 
@@ -164,6 +175,23 @@ export default function PropertiesPage() {
         property={selectedProperty}
         onSave={handleSaveProperty}
       />
+      
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de que desea eliminar esta propiedad?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente la propiedad de sus registros.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Sí, eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

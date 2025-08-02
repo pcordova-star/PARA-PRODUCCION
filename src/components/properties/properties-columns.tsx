@@ -16,7 +16,7 @@ import type { Property } from "@/types"
 
 type ColumnsConfig = {
     onEdit: (property: Property) => void;
-    onDelete: (id: string) => void;
+    onDelete: (property: Property) => void;
 }
 
 export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Property>[] => [
@@ -89,7 +89,7 @@ export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Property
               Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(property.id)}>
+            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(property)}>
               Eliminar
             </DropdownMenuItem>
           </DropdownMenuContent>
