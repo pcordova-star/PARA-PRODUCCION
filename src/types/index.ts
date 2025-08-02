@@ -17,7 +17,9 @@ export interface Property {
 export interface Contract {
   id: string;
   propertyId: string;
-  propertyAddress: string;
+  propertyAddress: string; // Duplicated in mock, should be propertyName
+  propertyName: string; // Added for PaymentCard
+  landlordName: string; // Added for PaymentFormDialog
   tenantName: string;
   tenantEmail: string;
   tenantRut: string;
@@ -42,4 +44,23 @@ export interface Contract {
   tenantProfession?: string;
   prohibitionToSublet?: boolean;
   specialClauses?: string;
+}
+
+export type UserRole = "Arrendador" | "Arrendatario";
+
+export interface Payment {
+  id: string;
+  contractId: string;
+  propertyName: string;
+  landlordName?: string;
+  tenantName?: string;
+  type: "arriendo" | "gastos comunes" | "otro";
+  amount: number;
+  paymentDate: string; // ISO string
+  declaredAt: string; // ISO string
+  acceptedAt?: string; // ISO string
+  status: "pendiente" | "aceptado";
+  notes?: string;
+  attachmentUrl?: string;
+  isOverdue?: boolean;
 }
