@@ -10,7 +10,6 @@ import { UserPlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase"; 
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,18 +29,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { UserRole } from "@/types";
+import { auth } from "@/lib/firebase";
 
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
+  displayName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
   email: z.string().email({ message: "Por favor ingresa un correo válido." }),
   password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
   confirmPassword: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
   role: z.enum(["Arrendador", "Arrendatario"], { required_error: "Debes seleccionar un rol." }),
   mobilePhone: z.string()
-    .regex(/^+?[1-9]\d{1,14}$/, { message: "Formato de número de teléfono inválido. Incluye código de país (ej: +569...)" })
+    .regex(/^\+?[1-9]\d{1,14}$/, { message: "Formato de número de teléfono inválido. Incluye código de país (ej: +569...)" })
     .optional()
-    .or(z.literal('')), 
+    .or(z.literal('')),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "Debes aceptar los términos y condiciones para continuar.",
   }),
@@ -58,7 +58,7 @@ function RegisterForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      displayName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -72,13 +72,13 @@ function RegisterForm() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      
+
       if(updateUserProfileInFirestore) {
         await updateUserProfileInFirestore(
           user.uid,
           values.email,
           values.role as UserRole,
-          values.name,
+          values.displayName,
           values.mobilePhone
         );
       }
@@ -102,7 +102,7 @@ function RegisterForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField control={form.control} name="name" render={({ field }) => (
+        <FormField control={form.control} name="displayName" render={({ field }) => (
           <FormItem>
             <FormLabel>Nombre Completo</FormLabel>
             <FormControl>
@@ -201,23 +201,21 @@ export default function SignupPage() {
                     <span className="text-xl font-bold">S.A.R.A</span>
                 </Link>
             </div>
-            <Card className="w-full max-w-md shadow-lg">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Crear una Cuenta</CardTitle>
-                    <CardDescription>Regístrese para empezar a usar S.A.R.A.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <RegisterForm />
-                </CardContent>
-                 <CardFooter className="flex flex-col gap-4">
+            <div className="w-full max-w-md shadow-lg rounded-lg border bg-card text-card-foreground p-6">
+                <div className="text-center mb-6">
+                    <h1 className="text-2xl font-bold">Crear una Cuenta</h1>
+                    <p className="text-muted-foreground">Regístrese para empezar a usar S.A.R.A.</p>
+                </div>
+                <RegisterForm />
+                <div className="mt-6 text-center">
                     <p className="text-sm text-muted-foreground">
                     ¿Ya tiene una cuenta?{' '}
                     <Link href="/login" className="font-medium text-primary hover:underline">
                         Iniciar Sesión
                     </Link>
                     </p>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }
