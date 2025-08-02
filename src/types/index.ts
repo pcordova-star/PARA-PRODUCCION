@@ -128,3 +128,26 @@ export interface IncidentFormValues {
     description: string;
     initialAttachment?: FileList;
 }
+
+export interface EvaluationCriteria {
+  paymentPunctuality: number; // 1-5
+  propertyCare: number; // 1-5
+  communication: number; // 1-5
+  generalBehavior: number; // 1-5
+}
+
+export interface Evaluation {
+  id: string;
+  contractId: string;
+  propertyId: string;
+  propertyName: string;
+  landlordId: string;
+  landlordName: string;
+  tenantId: string;
+  tenantName: string;
+  evaluationDate: string; // ISO String
+  status: "pendiente de confirmacion" | "recibida";
+  criteria: EvaluationCriteria;
+  tenantComment?: string;
+  tenantConfirmedAt?: string; // ISO String
+}

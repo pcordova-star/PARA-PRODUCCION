@@ -12,7 +12,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut } from 'lucide-react';
+import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck } from 'lucide-react';
 
 function Logo() {
   return (
@@ -34,6 +34,7 @@ export default function AppLayout({
     { href: "/contracts", label: "Contratos", icon: <FileText /> },
     { href: "/payments", label: "Pagos", icon: <CreditCard /> },
     { href: "/incidents", label: "Incidentes", icon: <ShieldAlert /> },
+    { href: "/evaluations", label: "Evaluaciones", icon: <ClipboardCheck /> },
     { href: "/legal-compliance", label: "Cumplimiento IA", icon: <Scale /> },
   ];
 
