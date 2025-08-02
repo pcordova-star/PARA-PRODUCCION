@@ -36,7 +36,7 @@ export default function AppLayout({
     { href: "/incidents", label: "Incidentes", icon: <ShieldAlert /> },
     { href: "/evaluations", label: "Evaluaciones", icon: <ClipboardCheck /> },
     { href: "/calendar", label: "Calendario", icon: <Calendar /> },
-    { href: "/legal-compliance", label: "Cumplimiento IA", icon: <Scale /> },
+    { href: "/legal-recovery", label: "Recuperación Legal", icon: <Scale /> },
     { href: "/certificate", label: "Certificado", icon: <FileBadge /> },
   ];
 
