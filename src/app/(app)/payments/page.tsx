@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, Loader2, LayoutGrid, List, FileDown } from 'lucide-react';
 import { PaymentCard } from '@/components/payments/payment-card';
 import { PaymentFormDialog } from '@/components/payments/payment-form-dialog';
 import type { Payment, Contract, UserRole } from '@/types';
@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PaymentsDataTable } from '@/components/payments/payments-data-table';
 import { columns as createColumns } from '@/components/payments/payments-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Papa from 'papaparse';
 
 // --- MOCK DATA ---
 const mockContracts: Contract[] = [
@@ -183,6 +184,35 @@ export default function PaymentsPage() {
 
   const columns = createColumns({ onAccept: openAcceptDialog, currentUserRole });
 
+  const handleExport = () => {
+    const dataToExport = filteredPayments.map(p => ({
+      ID_Pago: p.id,
+      ID_Contrato: p.contractId,
+      Propiedad: p.propertyName,
+      Arrendatario: p.tenantName,
+      Arrendador: p.landlordName,
+      Tipo: p.type,
+      Monto: p.amount,
+      Fecha_Pago: p.paymentDate.split('T')[0],
+      Fecha_Declaracion: p.declaredAt.split('T')[0],
+      Fecha_Aceptacion: p.acceptedAt ? p.acceptedAt.split('T')[0] : '',
+      Estado: p.status,
+      Atrasado: p.isOverdue ? 'Sí' : 'No',
+      Notas: p.notes,
+    }));
+
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "sara_pagos.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Exportación exitosa', description: 'El archivo de pagos ha sido descargado.' });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -195,7 +225,7 @@ export default function PaymentsPage() {
               : 'Declare los pagos de su arriendo de forma rápida y sencilla.'}
           </p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
             <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
               <LayoutGrid className="h-4 w-4" />
               <span className="sr-only">Vista de Tarjetas</span>
@@ -203,6 +233,10 @@ export default function PaymentsPage() {
             <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
               <List className="h-4 w-4" />
               <span className="sr-only">Vista de Lista</span>
+            </Button>
+             <Button variant="outline" onClick={handleExport}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar
             </Button>
           {currentUserRole === 'Arrendatario' && (
             <Button onClick={() => setIsFormOpen(true)}>

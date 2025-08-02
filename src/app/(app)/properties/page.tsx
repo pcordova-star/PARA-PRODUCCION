@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, PlusCircle, Upload, LayoutGrid, List } from 'lucide-react';
+import { Download, PlusCircle, Upload, LayoutGrid, List, FileDown } from 'lucide-react';
 import { PropertyFormDialog, type PropertyFormValues } from '@/components/properties/property-form-dialog';
 import type { Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { PropertiesDataTable } from '@/components/properties/properties-data-tab
 import { columns } from '@/components/properties/properties-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { PropertyCard } from '@/components/properties/property-card';
+import Papa from 'papaparse';
 
 
 const initialProperties: Property[] = [
@@ -142,6 +143,34 @@ export default function PropertiesPage() {
       toast({ title: 'Función no implementada', description: 'La carga masiva de propiedades estará disponible próximamente.' });
   }
 
+  const handleExport = () => {
+    const dataToExport = properties.map(p => ({
+      Codigo: p.code,
+      Direccion: p.address,
+      Comuna: p.comuna,
+      Region: p.region,
+      Tipo: p.type,
+      Precio: p.price,
+      Area_m2: p.area,
+      Dormitorios: p.bedrooms,
+      Banos: p.bathrooms,
+      RUT_Propietario: p.ownerRut,
+      Estado: p.status,
+      Descripcion: p.description,
+    }));
+    
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "sara_propiedades.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Exportación exitosa', description: 'El archivo de propiedades ha sido descargado.' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -151,7 +180,7 @@ export default function PropertiesPage() {
             Aquí puede ver y gestionar sus propiedades.
           </p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
             <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
               <LayoutGrid className="h-4 w-4" />
               <span className="sr-only">Vista de Tarjetas</span>
@@ -159,6 +188,10 @@ export default function PropertiesPage() {
             <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
               <List className="h-4 w-4" />
               <span className="sr-only">Vista de Lista</span>
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar
             </Button>
             <Button variant="outline" onClick={handleBulkUpload}>
                 <Upload className="mr-2 h-4 w-4" />

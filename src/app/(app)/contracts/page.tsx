@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FileDown } from 'lucide-react';
 import { ContractFormDialog } from '@/components/contracts/contract-form-dialog';
 import type { Contract, Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { ContractsDataTable } from '@/components/contracts/contracts-data-table'
 import { columns } from '@/components/contracts/contracts-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
+import Papa from 'papaparse';
 
 
 // Mock data - En una aplicación real, esto vendría de una API
@@ -27,6 +28,8 @@ const initialContracts: Contract[] = [
     propertyUsage: 'Habitacional',
     tenantEmail: 'juan.perez@email.com',
     tenantRut: '11.111.111-1',
+    propertyName: 'Depto. Providencia',
+    landlordName: 'Carlos R.',
   },
   {
     id: 'CTR-002',
@@ -40,6 +43,8 @@ const initialContracts: Contract[] = [
     propertyUsage: 'Habitacional',
     tenantEmail: 'ana.garcia@email.com',
     tenantRut: '22.222.222-2',
+    propertyName: 'Casa Las Condes',
+    landlordName: 'Carlos R.',
   },
 ];
 
@@ -127,6 +132,32 @@ export default function ContractsPage() {
     setContractToDelete(null);
   };
   
+  const handleExport = () => {
+    const dataToExport = contracts.map(c => ({
+      ID: c.id,
+      Propiedad_Direccion: c.propertyAddress,
+      Arrendatario: c.tenantName,
+      RUT_Arrendatario: c.tenantRut,
+      Email_Arrendatario: c.tenantEmail,
+      Fecha_Inicio: c.startDate.split('T')[0],
+      Fecha_Fin: c.endDate.split('T')[0],
+      Monto_Arriendo: c.rentAmount,
+      Estado: c.status,
+      Uso_Propiedad: c.propertyUsage,
+    }));
+
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "sara_contratos.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
+  };
+
   return (
     <div className="space-y-6">
        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -136,7 +167,7 @@ export default function ContractsPage() {
             Cree, envíe y administre sus contratos de arriendo.
           </p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
             <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
                 <LayoutGrid className="h-4 w-4" />
                 <span className="sr-only">Vista de Tarjetas</span>
@@ -144,6 +175,10 @@ export default function ContractsPage() {
             <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
                 <List className="h-4 w-4" />
                 <span className="sr-only">Vista de Lista</span>
+            </Button>
+             <Button variant="outline" onClick={handleExport}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar
             </Button>
             <Button onClick={handleAddNew}>
                 <PlusCircle className="mr-2 h-4 w-4" />
