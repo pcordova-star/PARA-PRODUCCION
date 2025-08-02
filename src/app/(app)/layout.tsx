@@ -1,3 +1,8 @@
+'use client';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserNav } from '@/components/user-nav';
 import {
   SidebarProvider,
@@ -13,6 +18,8 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 function Logo() {
   return (
@@ -28,6 +35,15 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { currentUser, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      router.push('/login');
+    }
+  }, [currentUser, loading, router]);
+
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> },
     { href: "/properties", label: "Propiedades", icon: <Home /> },
@@ -39,6 +55,29 @@ export default function AppLayout({
     { href: "/legal-recovery", label: "Recuperación Legal", icon: <Scale /> },
     { href: "/certificate", label: "Certificado", icon: <FileBadge /> },
   ];
+
+  if (loading || !currentUser) {
+    return (
+       <div className="flex min-h-screen w-full">
+        <div className="hidden md:flex flex-col w-64 border-r p-2 space-y-2">
+            <div className="p-2">
+                <Skeleton className="h-8 w-24" />
+            </div>
+            <div className="space-y-2 p-2">
+                {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+        </div>
+        <div className="flex-1">
+            <header className="sticky top-0 z-10 flex h-14 items-center justify-end border-b bg-background/80 px-4">
+                <Skeleton className="h-9 w-9 rounded-full" />
+            </header>
+            <main className="flex-1 p-4 md:p-6 lg:p-8">
+                 <Skeleton className="h-[400px] w-full" />
+            </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -64,12 +103,7 @@ export default function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className='p-2'>
-              <SidebarMenuButton asChild>
-                <Link href="/login">
-                    <LogOut />
-                    <span>Cerrar Sesión</span>
-                </Link>
-              </SidebarMenuButton>
+              <UserNav />
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="bg-background">

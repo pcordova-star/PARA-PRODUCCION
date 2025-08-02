@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,13 +8,55 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { UserRole } from '@/types';
 
 export default function SignupPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('Arrendatario');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignup = (e: React.FormEvent) => {
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/dashboard');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store user profile in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name: fullName,
+        email: email,
+        role: role,
+        createdAt: new Date().toISOString(),
+      });
+      
+      toast({ title: 'Cuenta creada exitosamente', description: 'Ahora puedes iniciar sesión.' });
+      router.push('/dashboard');
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        setError('Este correo electrónico ya está en uso.');
+      } else {
+        setError('Ocurrió un error al crear la cuenta. Inténtalo de nuevo.');
+      }
+      console.error("Signup error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -31,34 +74,69 @@ export default function SignupPage() {
         </CardHeader>
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
+            {error && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="fullName">Nombre Completo</Label>
-              <Input id="fullName" type="text" placeholder="Su Nombre Apellido" required />
+              <Input 
+                id="fullName" 
+                type="text" 
+                placeholder="Su Nombre Apellido" 
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                disabled={isLoading} 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Correo Electrónico</Label>
-              <Input id="email" type="email" placeholder="usuario@ejemplo.com" required />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="usuario@ejemplo.com" 
+                required 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" required />
+              <Input 
+                id="password" 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
             <div className="space-y-2">
               <Label>Soy un...</Label>
-              <RadioGroup defaultValue="tenant" className="flex gap-4 pt-1">
+              <RadioGroup 
+                defaultValue={role} 
+                className="flex gap-4 pt-1"
+                onValueChange={(value: UserRole) => setRole(value)}
+                disabled={isLoading}
+              >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="landlord" id="landlord" />
+                  <RadioGroupItem value="Arrendador" id="landlord" />
                   <Label htmlFor="landlord" className="font-normal">Arrendador</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="tenant" id="tenant" />
+                  <RadioGroupItem value="Arrendatario" id="tenant" />
                   <Label htmlFor="tenant" className="font-normal">Arrendatario</Label>
                 </div>
               </RadioGroup>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Registrarse
             </Button>
             <p className="text-sm text-muted-foreground">
