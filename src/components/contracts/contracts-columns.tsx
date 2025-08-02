@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import type { Contract } from "@/types"
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type ColumnsConfig = {
@@ -22,7 +22,9 @@ type ColumnsConfig = {
 }
 
 const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMM yyyy", { locale: es });
+    // Parsear la fecha ISO y formatearla en UTC para evitar problemas de zona horaria.
+    const date = parseISO(dateString);
+    return format(date, "dd MMM yyyy", { locale: es });
 };
 
 const formatCurrency = (amount: number) => {
