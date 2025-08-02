@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,8 +33,7 @@ import {
 } from "@/components/ui/select";
 import type { Property } from "@/types";
 import { useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from 'uuid';
+import { Loader2 } from "lucide-react";
 import { regions } from "@/lib/geodata";
 import { formatRut, validateRut } from "@/lib/rutUtils";
 
@@ -57,7 +57,7 @@ export const propertyFormSchema = z.object({
     "Galpón"
   ], { required_error: "Debes seleccionar un tipo de propiedad." }),
   price: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : Number(val)),
+    (val) => (val === "" || val == null ? undefined : Number(String(val).replace(/[^0-9]/g, ''))),
     z.coerce.number({ invalid_type_error: 'Debe ser un número.' }).positive({ message: "El precio debe ser un número positivo." }).optional()
   ),
   area: z.preprocess(
@@ -82,10 +82,10 @@ interface PropertyFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (values: PropertyFormValues, isEditing: boolean, originalPropertyId?: string) => void;
+  isSubmitting: boolean;
 }
 
-export function PropertyFormDialog({ property, open, onOpenChange, onSave }: PropertyFormDialogProps) {
-  const { toast } = useToast();
+export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSubmitting }: PropertyFormDialogProps) {
   const isEditing = Boolean(property);
   
   const [comunas, setComunas] = useState<string[]>([]);
@@ -137,7 +137,7 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
             bathrooms: property.bathrooms ?? undefined,
           }
         : {
-            code: uuidv4().slice(0, 8).toUpperCase(),
+            code: "",
             ownerRut: "",
             region: "",
             comuna: "",
@@ -164,14 +164,7 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
   }, [open, property, form]);
 
   async function onSubmit(values: PropertyFormValues) {
-    const finalValues = {
-      ...values,
-      ownerRut: values.ownerRut ? formatRut(values.ownerRut) : undefined,
-      status: isEditing ? values.status : "Disponible",
-      code: isEditing && values.code ? values.code : (values.code || uuidv4().slice(0, 8).toUpperCase()),
-    };
-
-    onSave(finalValues, isEditing, isEditing && property ? property.id : undefined);
+    onSave(values, isEditing, isEditing && property ? property.id : undefined);
   }
 
   return (
@@ -187,21 +180,19 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {isEditing && property?.code && (
-                <FormField
+              <FormField
                   control={form.control}
                   name="code"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Código de Propiedad</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={true} className="font-mono bg-muted" />
+                        <Input placeholder="Ej: PRO-001" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
               <FormField
                 control={form.control}
                 name="ownerRut"
@@ -342,7 +333,10 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
                   <FormItem>
                     <FormLabel>Precio (CLP/mes)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Ej: 350000" {...field} value={field.value ?? ''} />
+                      <Input type="text" placeholder="Ej: 350.000" {...field} value={field.value ? new Intl.NumberFormat('es-CL').format(field.value) : ''} onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          field.onChange(value ? parseInt(value, 10) : undefined);
+                      }} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -407,10 +401,11 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
 
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline">Cancelar</Button>
+                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
               </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? (isEditing ? "Guardando..." : "Añadiendo...") : (isEditing ? "Guardar Cambios" : "Añadir Propiedad")}    
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isEditing ? "Guardar Cambios" : "Añadir Propiedad"}    
               </Button>
             </DialogFooter>
           </form>
@@ -419,3 +414,5 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave }: Pro
     </Dialog>
   );
 }
+
+    

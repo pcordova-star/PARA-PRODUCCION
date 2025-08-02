@@ -1,104 +1,82 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, PlusCircle, Upload, LayoutGrid, List, FileDown } from 'lucide-react';
+import { Download, PlusCircle, Upload, LayoutGrid, List, FileDown, Loader2 } from 'lucide-react';
 import { PropertyFormDialog, type PropertyFormValues } from '@/components/properties/property-form-dialog';
 import type { Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { PropertiesDataTable } from '@/components/properties/properties-data-table';
 import { columns } from '@/components/properties/properties-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { PropertyCard } from '@/components/properties/property-card';
 import Papa from 'papaparse';
-
-
-const initialProperties: Property[] = [
-  {
-    id: '1',
-    code: 'PRO-001',
-    address: 'Av. Providencia 123',
-    comuna: 'Providencia',
-    region: 'Metropolitana de Santiago',
-    status: 'Disponible',
-    price: 500000,
-    type: 'Departamento',
-    ownerRut: '12.345.678-9',
-    area: 50,
-    bedrooms: 2,
-    bathrooms: 1,
-    description: 'Acogedor departamento en el corazón de Providencia.'
-  },
-  {
-    id: '2',
-    code: 'PRO-002',
-    address: 'Calle Falsa 123',
-    comuna: 'Las Condes',
-    region: 'Metropolitana de Santiago',
-    status: 'Arrendada',
-    price: 1200000,
-    type: 'Casa',
-    ownerRut: '98.765.432-1',
-    area: 200,
-    bedrooms: 4,
-    bathrooms: 3,
-    description: 'Amplia casa con jardín y piscina.'
-  },
-    {
-    id: '3',
-    code: 'PRO-003',
-    address: 'El Roble 456',
-    comuna: 'Ñuñoa',
-    region: 'Metropolitana de Santiago',
-    status: 'Mantenimiento',
-    price: 750000,
-    type: 'Departamento',
-    ownerRut: '11.222.333-4',
-    area: 80,
-    bedrooms: 3,
-    bathrooms: 2,
-    description: 'Departamento remodelado cerca de la plaza.'
-  },
-];
-
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PropertiesPage() {
-  const [properties, setProperties] = useState<Property[]>(initialProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const { toast } = useToast();
 
-  const handleSaveProperty = (values: PropertyFormValues, isEditing: boolean, originalPropertyId?: string) => {
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    try {
+      const propertiesCollection = collection(db, 'properties');
+      const propertiesSnapshot = await getDocs(propertiesCollection);
+      const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
+      setProperties(propertiesList);
+    } catch (error) {
+      console.error("Error fetching properties: ", error);
+      toast({
+        title: "Error al cargar propiedades",
+        description: "No se pudieron obtener los datos de Firestore.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
+
+  const handleSaveProperty = async (values: PropertyFormValues, isEditing: boolean, originalPropertyId?: string) => {
+    setIsSubmitting(true);
     try {
       if (isEditing && originalPropertyId) {
-        setProperties(prev =>
-          prev.map(p =>
-            p.id === originalPropertyId ? { ...p, ...values, id: originalPropertyId } : p
-          )
-        );
+        const propertyRef = doc(db, 'properties', originalPropertyId);
+        await updateDoc(propertyRef, values);
         toast({ title: 'Propiedad actualizada', description: 'Los cambios se han guardado con éxito.' });
       } else {
-        const newProperty: Property = {
+        const newPropertyData = {
           ...values,
-          id: uuidv4(),
-          code: values.code || uuidv4().slice(0, 8).toUpperCase(),
-          status: 'Disponible',
+          status: 'Disponible' as const,
         };
-        setProperties(prev => [newProperty, ...prev]);
+        await addDoc(collection(db, 'properties'), newPropertyData);
         toast({ title: 'Propiedad añadida', description: 'La nueva propiedad ha sido creada.' });
       }
+      fetchProperties(); // Re-fetch data to update the UI
       setIsFormOpen(false);
       setSelectedProperty(null);
     } catch (error) {
+       console.error("Error saving property:", error);
        toast({
         title: 'Error al guardar',
         description: 'No se pudo guardar la propiedad. Inténtalo de nuevo.',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -117,12 +95,22 @@ export default function PropertiesPage() {
     setIsDeleteDialogOpen(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!propertyToDelete) return;
-    setProperties(prev => prev.filter(p => p.id !== propertyToDelete.id));
-    toast({ title: 'Propiedad eliminada', description: `La propiedad en ${propertyToDelete.address} ha sido eliminada.`, variant: 'destructive' });
-    setIsDeleteDialogOpen(false);
-    setPropertyToDelete(null);
+    try {
+        await deleteDoc(doc(db, 'properties', propertyToDelete.id));
+        toast({ title: 'Propiedad eliminada', description: `La propiedad en ${propertyToDelete.address} ha sido eliminada.`, variant: 'destructive' });
+        fetchProperties(); // Re-fetch data
+        setIsDeleteDialogOpen(false);
+        setPropertyToDelete(null);
+    } catch (error) {
+        console.error("Error deleting property:", error);
+        toast({
+            title: 'Error al eliminar',
+            description: 'No se pudo eliminar la propiedad. Inténtalo de nuevo.',
+            variant: 'destructive',
+        });
+    }
   };
   
   const handleDownloadTemplate = () => {
@@ -208,17 +196,33 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-       {viewMode === 'cards' ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {properties.map(property => (
-                  <PropertyCard 
-                    key={property.id} 
-                    property={property} 
-                    onEdit={() => handleEdit(property)} 
-                    onDelete={() => openDeleteDialog(property)} 
-                  />
-              ))}
+       {loading ? (
+          <div className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
+              </div>
           </div>
+       ) : viewMode === 'cards' ? (
+          properties.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {properties.map(property => (
+                    <PropertyCard 
+                      key={property.id} 
+                      property={property} 
+                      onEdit={() => handleEdit(property)} 
+                      onDelete={() => openDeleteDialog(property)} 
+                    />
+                ))}
+            </div>
+          ) : (
+             <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                <h3 className="text-lg font-medium">No hay propiedades</h3>
+                <p className="text-muted-foreground mt-1">Añada su primera propiedad para comenzar.</p>
+            </div>
+          )
        ) : (
           <PropertiesDataTable 
             columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
@@ -232,6 +236,7 @@ export default function PropertiesPage() {
         onOpenChange={setIsFormOpen}
         property={selectedProperty}
         onSave={handleSaveProperty}
+        isSubmitting={isSubmitting}
       />
       
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -253,3 +258,5 @@ export default function PropertiesPage() {
     </div>
   );
 }
+
+    
