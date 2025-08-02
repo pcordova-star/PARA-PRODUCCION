@@ -50,23 +50,23 @@ export default function AppLayout({
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={item.href} legacyBehavior passHref>
-                    <SidebarMenuButton tooltip={item.label}>
+                  <SidebarMenuButton asChild tooltip={item.label}>
+                    <Link href={item.href}>
                       {item.icon}
                       <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </Link>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className='p-2'>
-              <Link href="/login" legacyBehavior passHref>
-                <SidebarMenuButton>
+              <SidebarMenuButton asChild>
+                <Link href="/login">
                     <LogOut />
                     <span>Cerrar Sesión</span>
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="bg-background">
