@@ -55,14 +55,14 @@ export function PaymentCard({
         <CardDescription className="text-2xl font-semibold text-primary">
           ${payment.amount.toLocaleString('es-CL')}
         </CardDescription>
-        <p className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           Fecha de Pago: {formatDate(payment.paymentDate)}
           {payment.isOverdue && (
             <Badge variant="destructive" className="ml-2 text-xs p-1">
               <AlertCircle className="h-3 w-3 mr-1" />Atrasado
             </Badge>
           )}
-        </p>
+        </div>
         <p className="text-sm text-muted-foreground truncate">
           {currentUserRole === "Arrendador" ? `Arrendatario: ${payment.tenantName || 'N/A'}` : `Arrendador: ${payment.landlordName || 'N/A'}`}
         </p>
