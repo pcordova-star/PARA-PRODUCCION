@@ -24,7 +24,13 @@ type ColumnsConfig = {
 const formatDate = (dateString: string) => {
     // Parsear la fecha ISO y formatearla en UTC para evitar problemas de zona horaria.
     const date = parseISO(dateString);
-    return format(date, "dd MMM yyyy", { locale: es });
+    // Usar toLocaleDateString con timeZone UTC para asegurar consistencia
+    return date.toLocaleDateString('es-CL', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+    });
 };
 
 const formatCurrency = (amount: number) => {
