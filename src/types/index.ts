@@ -48,13 +48,19 @@ export interface Contract {
 
 export type UserRole = "Arrendador" | "Arrendatario";
 
+export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "otro";
+export type ServiceType = "agua" | "electricidad" | "gas";
+
+
 export interface Payment {
   id: string;
   contractId: string;
   propertyName: string;
   landlordName?: string;
   tenantName?: string;
-  type: "arriendo" | "gastos comunes" | "otro";
+  type: PaymentType;
+  serviceType?: ServiceType;
+  otherTypeDescription?: string;
   amount: number;
   paymentDate: string; // ISO string
   declaredAt: string; // ISO string

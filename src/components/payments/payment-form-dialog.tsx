@@ -36,15 +36,18 @@ import { Paperclip, CreditCard, Loader2 } from "lucide-react";
 // MOCK: In a real app, this would come from firebase config
 // import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
-import type { Contract } from "@/types"; 
+import type { Contract, PaymentType, ServiceType } from "@/types"; 
 
-const paymentTypes = ["arriendo", "gastos comunes", "otro"] as const;
+const paymentTypes: PaymentType[] = ["arriendo", "gastos comunes", "servicios", "multas", "otro"];
+const serviceTypes: ServiceType[] = ["agua", "electricidad", "gas"];
 
 const paymentFormSchema = z.object({
   contractId: z.string().min(1, { message: "Debes seleccionar un contrato." }),
   type: z.enum(paymentTypes, { 
     required_error: "Debes seleccionar un tipo de pago.",
   }),
+  serviceType: z.enum(serviceTypes).optional(),
+  otherTypeDescription: z.string().optional(),
   amount: z.coerce.number().min(1, { message: "El monto debe ser al menos $1." }),
   paymentDate: z.string().min(1, { message: "Debes seleccionar la fecha del pago." }), 
   notes: z.string().max(500, { message: "Máximo 500 caracteres." }).optional().nullable(),
@@ -52,7 +55,24 @@ const paymentFormSchema = z.object({
     .custom<FileList>((val) => val instanceof FileList, "Se esperaba un archivo")
     .refine((files) => !files || files.length === 0 || files[0].size <= 5 * 1024 * 1024, `El tamaño máximo es 5MB.`)
     .optional(),
+}).refine(data => {
+    if (data.type === "servicios") {
+        return !!data.serviceType;
+    }
+    return true;
+}, {
+    message: "Debes seleccionar el tipo de servicio.",
+    path: ["serviceType"],
+}).refine(data => {
+    if (data.type === "otro") {
+        return !!data.otherTypeDescription && data.otherTypeDescription.length > 0;
+    }
+    return true;
+}, {
+    message: "Debes especificar el tipo de pago.",
+    path: ["otherTypeDescription"],
 });
+
 
 export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
@@ -76,6 +96,8 @@ export function PaymentFormDialog({
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
   });
+  
+  const paymentType = form.watch("type");
 
   useEffect(() => {
     if (open) {
@@ -184,7 +206,7 @@ export function PaymentFormDialog({
                     <SelectContent>
                       {paymentTypes.map((type) => (
                         <SelectItem key={type} value={type} className="capitalize">
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                          {type.charAt(0).toUpperCase() + type.slice(1).replace('servicios', 'Servicios')}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -193,6 +215,49 @@ export function PaymentFormDialog({
                 </FormItem>
               )}
             />
+
+            {paymentType === 'servicios' && (
+                <FormField
+                control={form.control}
+                name="serviceType"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Tipo de Servicio</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el servicio" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {serviceTypes.map((type) => (
+                            <SelectItem key={type} value={type} className="capitalize">
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
+
+            {paymentType === 'otro' && (
+                <FormField
+                control={form.control}
+                name="otherTypeDescription"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Descripción de Otro Pago</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Ej: Reparación de ventana" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            )}
 
             <FormField
               control={form.control}
