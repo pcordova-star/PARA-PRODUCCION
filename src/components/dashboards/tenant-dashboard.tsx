@@ -195,10 +195,10 @@ export function TenantDashboard() {
             <CardContent className="grid md:grid-cols-2 gap-6">
               <div className="rounded-lg mb-4"><ScoreDisplay score={globalScore} /></div>
               <div className="space-y-3 text-sm">
-                <p><span className="font-semibold">Estado:</span> <Badge className="bg-green-100 text-green-800 border-green-200">{activeContract.status}</Badge></p>
-                <p><span className="font-semibold">Propietario:</span> {activeContract.landlordName || "N/A"}</p>
-                <p><Wallet className="inline h-4 w-4 mr-2" /> <span className="font-semibold">Renta:</span> ${activeContract.rentAmount.toLocaleString('es-CL')}</p>
-                <p><Calendar className="inline h-4 w-4 mr-2" /> <span className="font-semibold">Fin de Contrato:</span> {new Date(activeContract.endDate).toLocaleDateString('es-CL')}</p>
+                <div className="flex items-center"><span className="font-semibold w-28">Estado:</span> <Badge className="bg-green-100 text-green-800 border-green-200">{activeContract.status}</Badge></div>
+                <p><span className="font-semibold w-28 inline-block">Propietario:</span> {activeContract.landlordName || "N/A"}</p>
+                <p className="flex items-center"><Wallet className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Renta:</span> ${activeContract.rentAmount.toLocaleString('es-CL')}</p>
+                <p className="flex items-center"><Calendar className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Fin de Contrato:</span> {new Date(activeContract.endDate).toLocaleDateString('es-CL')}</p>
                 <Button asChild className="w-full mt-4"><Link href={`/contracts/${activeContract.id}`}><FileText className="mr-2 h-4 w-4" /> Ver Detalles del Contrato</Link></Button>
               </div>
             </CardContent>
