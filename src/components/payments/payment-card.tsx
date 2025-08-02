@@ -11,7 +11,7 @@ import type { Payment, UserRole } from "@/types";
 interface PaymentCardProps {
   payment: Payment;
   currentUserRole: UserRole | null;
-  onAccept: (paymentId: string) => Promise<void>;
+  onAccept: () => void;
   isProcessing: boolean; 
 }
 
@@ -105,7 +105,7 @@ export function PaymentCard({
           <Button
             className="w-full bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800"
             variant="outline"
-            onClick={() => onAccept(payment.id)}
+            onClick={onAccept}
             disabled={isProcessing}
           >
             {isProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
