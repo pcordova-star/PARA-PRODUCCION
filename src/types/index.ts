@@ -20,11 +20,11 @@ export interface Contract {
   propertyAddress: string;
   propertyName: string;
   landlordName: string;
-  landlordId?: string; // Added for incidents
+  landlordId?: string; 
   tenantName: string;
   tenantEmail: string;
   tenantRut: string;
-  tenantId?: string; // Added for incidents
+  tenantId?: string; 
   startDate: string; 
   endDate: string; 
   rentAmount: number;
@@ -55,6 +55,7 @@ export interface UserProfile {
   role: UserRole;
   name: string;
   email: string;
+  createdAt?: string;
 }
 
 export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "otro";
@@ -71,9 +72,9 @@ export interface Payment {
   serviceType?: ServiceType;
   otherTypeDescription?: string;
   amount: number;
-  paymentDate: string; // ISO string
-  declaredAt: string; // ISO string
-  acceptedAt?: string; // ISO string
+  paymentDate: string; 
+  declaredAt: string; 
+  acceptedAt?: string; 
   status: "pendiente" | "aceptado";
   notes?: string;
   attachmentUrl?: string;
@@ -95,8 +96,8 @@ export type IncidentType = typeof incidentTypes[number];
 
 export interface IncidentResponse {
   responseText: string;
-  respondedAt: string; // ISO String
-  respondedBy: string; // User ID
+  respondedAt: string; 
+  respondedBy: string; 
   responseAttachmentUrl?: string;
   responseAttachmentName?: string;
 }
@@ -113,13 +114,13 @@ export interface Incident {
   type: IncidentType;
   description: string;
   status: IncidentStatus;
-  createdAt: string; // ISO String
-  createdBy: string; // User ID of creator
+  createdAt: string; 
+  createdBy: string; 
   initialAttachmentUrl?: string;
   initialAttachmentName?: string;
   responses?: IncidentResponse[];
-  closedAt?: string; // ISO String
-  closedBy?: string; // User ID of closer
+  closedAt?: string; 
+  closedBy?: string; 
 }
 
 export interface IncidentFormValues {
@@ -130,10 +131,10 @@ export interface IncidentFormValues {
 }
 
 export interface EvaluationCriteria {
-  paymentPunctuality: number; // 1-5
-  propertyCare: number; // 1-5
-  communication: number; // 1-5
-  generalBehavior: number; // 1-5
+  paymentPunctuality: number; 
+  propertyCare: number; 
+  communication: number; 
+  generalBehavior: number; 
 }
 
 export interface Evaluation {
@@ -145,9 +146,55 @@ export interface Evaluation {
   landlordName: string;
   tenantId: string;
   tenantName: string;
-  evaluationDate: string; // ISO String
+  evaluationDate: string; 
   status: "pendiente de confirmacion" | "recibida";
   criteria: EvaluationCriteria;
   tenantComment?: string;
-  tenantConfirmedAt?: string; // ISO String
+  tenantConfirmedAt?: string; 
+}
+
+// --- Tenant Certificate Types ---
+
+export interface TenantRentalHistory {
+  contractId: string;
+  propertyAddress: string;
+  startDate: string;
+  endDate: string;
+  landlordName: string;
+}
+
+export interface TenantEvaluationsSummary {
+  averagePunctuality: number | null;
+  averagePropertyCare: number | null;
+  averageCommunication: number | null;
+  averageGeneralBehavior: number | null;
+  overallAverage: number | null;
+  evaluations: Evaluation[];
+}
+
+export interface TenantPaymentsSummary {
+  totalPaymentsDeclared: number;
+  totalPaymentsAccepted: number;
+  totalAmountAccepted: number;
+  compliancePercentage: number | null;
+  totalOverduePayments: number;
+  overduePaymentsPercentage: number | null;
+}
+
+export interface TenantIncidentsSummary {
+  totalIncidentsInvolved: number;
+  incidentsReportedByTenant: number;
+  incidentsReceivedByTenant: number;
+  incidentsResolved: number;
+}
+
+export interface TenantCertificateData {
+  tenantProfile: UserProfile;
+  rentalHistory: TenantRentalHistory[];
+  evaluationsSummary: TenantEvaluationsSummary;
+  paymentsSummary: TenantPaymentsSummary;
+  incidentsSummary: TenantIncidentsSummary;
+  globalScore: number | null;
+  generationDate: string;
+  certificateId: string;
 }
