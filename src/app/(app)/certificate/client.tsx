@@ -239,14 +239,15 @@ export default function TenantCertificateClient() {
             <p><strong>Pagos Aceptados:</strong> {paymentsSummary.totalPaymentsAccepted}</p>
             <p><strong>Monto Total Aceptado:</strong> ${paymentsSummary.totalAmountAccepted.toLocaleString('es-CL')}</p>
             <p><strong>Cumplimiento de Declaraciones:</strong> {paymentsSummary.compliancePercentage !== null ? `${paymentsSummary.compliancePercentage.toFixed(1)}%` : 'N/A'}</p>
-            <p><strong>Pagos Declarados con Atraso:</strong> {paymentsSummary.totalOverduePayments} 
+            <div className="flex items-center">
+              <p><strong>Pagos Declarados con Atraso:</strong> {paymentsSummary.totalOverduePayments}</p>
               {paymentsSummary.overduePaymentsPercentage !== null && paymentsSummary.totalOverduePayments > 0 && (
                 <Badge variant="destructive" className="ml-2 text-xs">
                   <AlertOctagon className="h-3 w-3 mr-1" />
                   {paymentsSummary.overduePaymentsPercentage.toFixed(1)}% de los pagos
                 </Badge>
               )}
-            </p>
+            </div>
         </div>
       </section>
 
