@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, PlusCircle, Upload } from 'lucide-react';
+import { Download, PlusCircle, Upload, LayoutGrid, List } from 'lucide-react';
 import { PropertyFormDialog, type PropertyFormValues } from '@/components/properties/property-form-dialog';
 import type { Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { PropertiesDataTable } from '@/components/properties/properties-data-table';
 import { columns } from '@/components/properties/properties-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { PropertyCard } from '@/components/properties/property-card';
+
 
 const initialProperties: Property[] = [
   {
@@ -66,6 +68,7 @@ export default function PropertiesPage() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const { toast } = useToast();
 
   const handleSaveProperty = (values: PropertyFormValues, isEditing: boolean, originalPropertyId?: string) => {
@@ -141,33 +144,55 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Mis Propiedades</h1>
           <p className="text-muted-foreground">
             Aquí puede ver y gestionar sus propiedades.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
+              <LayoutGrid className="h-4 w-4" />
+              <span className="sr-only">Vista de Tarjetas</span>
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
+              <List className="h-4 w-4" />
+              <span className="sr-only">Vista de Lista</span>
+            </Button>
             <Button variant="outline" onClick={handleBulkUpload}>
                 <Upload className="mr-2 h-4 w-4" />
                 Carga Masiva
             </Button>
             <Button variant="outline" onClick={handleDownloadTemplate}>
                 <Download className="mr-2 h-4 w-4" />
-                Descargar Plantilla
+                Plantilla
             </Button>
             <Button onClick={handleAddNew}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Propiedad
+                Añadir
             </Button>
         </div>
       </div>
 
-       <PropertiesDataTable 
-        columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
-        data={properties} 
-       />
+       {viewMode === 'cards' ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {properties.map(property => (
+                  <PropertyCard 
+                    key={property.id} 
+                    property={property} 
+                    onEdit={() => handleEdit(property)} 
+                    onDelete={() => openDeleteDialog(property)} 
+                  />
+              ))}
+          </div>
+       ) : (
+          <PropertiesDataTable 
+            columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
+            data={properties} 
+          />
+       )}
+
 
        <PropertyFormDialog
         open={isFormOpen}

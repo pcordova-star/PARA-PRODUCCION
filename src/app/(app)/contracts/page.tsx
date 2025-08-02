@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { ContractFormDialog } from '@/components/contracts/contract-form-dialog';
 import type { Contract, Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContractsDataTable } from '@/components/contracts/contracts-data-table';
 import { columns } from '@/components/contracts/contracts-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ContractCard } from '@/components/contracts/contract-card';
 
 
 // Mock data - En una aplicación real, esto vendría de una API
@@ -55,6 +56,7 @@ export default function ContractsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [contractToDelete, setContractToDelete] = useState<Contract | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const { toast } = useToast();
 
   const handleSaveContract = async (values: any) => {
@@ -127,14 +129,22 @@ export default function ContractsPage() {
   
   return (
     <div className="space-y-6">
-       <div className="flex items-center justify-between gap-4">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Contratos</h1>
           <p className="text-muted-foreground">
             Cree, envíe y administre sus contratos de arriendo.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setViewMode('cards')} disabled={viewMode === 'cards'}>
+                <LayoutGrid className="h-4 w-4" />
+                <span className="sr-only">Vista de Tarjetas</span>
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setViewMode('list')} disabled={viewMode === 'list'}>
+                <List className="h-4 w-4" />
+                <span className="sr-only">Vista de Lista</span>
+            </Button>
             <Button onClick={handleAddNew}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear Contrato
@@ -142,10 +152,23 @@ export default function ContractsPage() {
         </div>
       </div>
 
-       <ContractsDataTable 
-        columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
-        data={contracts} 
-       />
+       {viewMode === 'cards' ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {contracts.map(contract => (
+                  <ContractCard 
+                    key={contract.id} 
+                    contract={contract} 
+                    onEdit={() => handleEdit(contract)} 
+                    onDelete={() => openDeleteDialog(contract)} 
+                  />
+              ))}
+          </div>
+       ) : (
+          <ContractsDataTable 
+            columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
+            data={contracts} 
+          />
+       )}
 
        <ContractFormDialog
         open={isFormOpen}
