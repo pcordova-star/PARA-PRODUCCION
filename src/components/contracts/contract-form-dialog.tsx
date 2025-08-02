@@ -36,8 +36,8 @@ const parseCurrency = (value: string): number | undefined => {
 
 const formSchema = z.object({
   propertyId: z.string().min(1, "Debe seleccionar una propiedad."),
-  tenantEmail: z.string().email("Email de inquilino inválido."),
-  tenantName: z.string().min(3, "Nombre de inquilino requerido."),
+  tenantEmail: z.string().email("Email de arrendatario inválido."),
+  tenantName: z.string().min(3, "Nombre de arrendatario requerido."),
   tenantRut: z.string().refine(validateRut, "RUT inválido"),
   
   startDate: z.date({ required_error: "Fecha de inicio requerida." }),
@@ -164,9 +164,9 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                                     </FormItem>
                                 )}/>
                                 <div className="grid md:grid-cols-3 gap-4">
-                                    <FormField control={form.control} name="tenantEmail" render={({ field }) => (<FormItem><FormLabel>Email Inquilino*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="tenantName" render={({ field }) => (<FormItem><FormLabel>Nombre Inquilino*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="tenantRut" render={({ field }) => (<FormItem><FormLabel>RUT Inquilino*</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(formatRut(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="tenantEmail" render={({ field }) => (<FormItem><FormLabel>Email Arrendatario*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="tenantName" render={({ field }) => (<FormItem><FormLabel>Nombre Arrendatario*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="tenantRut" render={({ field }) => (<FormItem><FormLabel>RUT Arrendatario*</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(formatRut(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                             </div>
                         </section>
@@ -302,7 +302,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                         </section>
 
                         <section>
-                            <h3 className="text-lg font-semibold border-b pb-2 mb-4">Información Adicional del Inquilino (Opcional)</h3>
+                            <h3 className="text-lg font-semibold border-b pb-2 mb-4">Información Adicional del Arrendatario (Opcional)</h3>
                              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="tenantNationality" render={({ field }) => (<FormItem><FormLabel>Nacionalidad</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="tenantCivilStatus" render={({ field }) => (<FormItem><FormLabel>Estado Civil</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
@@ -344,7 +344,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                             <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {contract ? "Guardar Cambios" : "Crear y Enviar a Inquilino"}
+                                {contract ? "Guardar Cambios" : "Crear y Enviar a Arrendatario"}
                             </Button>
                         </DialogFooter>
                     </form>

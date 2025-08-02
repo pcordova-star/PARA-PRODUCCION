@@ -22,15 +22,15 @@ type ColumnsConfig = {
 }
 
 const formatDate = (dateString: string) => {
-    // Parsear la fecha ISO y formatearla en UTC para evitar problemas de zona horaria.
-    const date = parseISO(dateString);
-    // Usar toLocaleDateString con timeZone UTC para asegurar consistencia
-    return date.toLocaleDateString('es-CL', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        timeZone: 'UTC',
-    });
+    try {
+      if (!dateString || !/^\d{4}-\d{2}-\d{2}/.test(dateString)) return "Fecha inválida";
+      const [year, month, day] = dateString.split('T')[0].split('-');
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return format(date, "d MMM yyyy", { locale: es });
+    } catch (error) {
+        console.error("Error formatting date:", dateString, error);
+        return "Fecha inválida";
+    }
 };
 
 const formatCurrency = (amount: number) => {
@@ -53,7 +53,7 @@ export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Contract
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Inquilino
+          Arrendatario
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )

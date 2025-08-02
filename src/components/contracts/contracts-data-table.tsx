@@ -55,7 +55,7 @@ export function ContractsDataTable<TData, TValue>({
     <div>
        <div className="flex items-center py-4">
         <Input
-          placeholder="Filtrar por inquilino..."
+          placeholder="Filtrar por arrendatario..."
           value={(table.getColumn("tenantName")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("tenantName")?.setFilterValue(event.target.value)
