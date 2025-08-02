@@ -8,7 +8,6 @@ import { PaymentFormDialog } from '@/components/payments/payment-form-dialog';
 import type { Payment, Contract, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // --- MOCK DATA ---
 const mockContracts: Contract[] = [
@@ -111,7 +110,9 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('Arrendatario');
+  
+  // NOTE: For now, we assume a landlord role. This will be replaced by a real auth system.
+  const currentUserRole: UserRole = 'Arrendador';
 
   const handleSavePayment = async (data: any) => {
     setProcessingId('new-payment');
@@ -178,16 +179,6 @@ export default function PaymentsPage() {
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
-           <Select value={currentUserRole} onValueChange={(value: UserRole) => setCurrentUserRole(value)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Seleccionar Rol" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Arrendatario">Vista Arrendatario</SelectItem>
-                    <SelectItem value="Arrendador">Vista Arrendador</SelectItem>
-                </SelectContent>
-            </Select>
-
           {currentUserRole === 'Arrendatario' && (
             <Button onClick={() => setIsFormOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
