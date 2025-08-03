@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Dashboard() {
   const { currentUser, loading } = useAuth();
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
         <div className="space-y-6">
             <Skeleton className="h-24 w-full" />
@@ -23,10 +23,6 @@ export default function Dashboard() {
             <Skeleton className="h-64 w-full" />
         </div>
     );
-  }
-
-  if (!currentUser) {
-      return <p>Por favor, inicie sesión para ver el dashboard.</p>
   }
 
   return (

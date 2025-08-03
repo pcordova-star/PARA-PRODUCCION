@@ -56,7 +56,7 @@ export default function AppLayout({
     { href: "/certificate", label: "Certificado", icon: <FileBadge /> },
   ];
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
        <div className="flex min-h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -65,10 +65,6 @@ export default function AppLayout({
         </div>
       </div>
     );
-  }
-  
-  if (!currentUser) {
-    return null; // Evita renderizar el layout si no hay usuario, el useEffect se encargará de redirigir
   }
 
   return (
