@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -80,7 +81,7 @@ export default function ContractsPage() {
       const propertyData = propertySnap.data();
 
       if (selectedContract) {
-        // Edit existing contract
+        // Edit existing contract (tenantId logic should be handled carefully here if needed)
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, {
             ...values,
@@ -90,10 +91,27 @@ export default function ContractsPage() {
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado con éxito.' });
       } else {
         // Create new contract
+        // Find tenant by email to get their UID
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", values.tenantEmail));
+        const querySnapshot = await getDocs(q);
+        
+        let tenantId: string | null = null;
+        if (!querySnapshot.empty) {
+            tenantId = querySnapshot.docs[0].id;
+        } else {
+            toast({
+                title: "Arrendatario no encontrado",
+                description: `El usuario con email ${values.tenantEmail} no está registrado. Se enviará la invitación, pero deberá registrarse para ver el contrato.`,
+                variant: "default"
+            });
+        }
+
         const newContractData = {
           ...values,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
+          tenantId: tenantId, // Assign found tenantId or null
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
           status: 'Borrador' as const,
