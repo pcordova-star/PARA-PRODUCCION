@@ -135,7 +135,11 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
     }, [contract, open, form]);
 
     const onSubmit = (values: FormValues) => {
-        onSave(values);
+        // Sanitize data before saving to Firestore
+        const sanitizedValues = Object.fromEntries(
+            Object.entries(values).map(([key, value]) => [key, value === undefined ? null : value])
+        );
+        onSave(sanitizedValues as FormValues);
     };
     
     return (
