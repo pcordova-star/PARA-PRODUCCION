@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,66 +11,9 @@ import { AnnouncementsSection } from "./announcements-section";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-
-// MOCK DATA
-const mockUser: UserProfile = { uid: 'user_tenant_456', role: 'Arrendatario', name: 'Juan Pérez', email: 'juan@sara.com' };
-const mockContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    propertyName: 'Depto. en Providencia',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-12-31T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Activo',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-  },
-   {
-    id: 'CTR-004',
-    propertyId: '4',
-    propertyAddress: 'Calle de la Amargura 123',
-    propertyName: 'Casa en Ñuñoa',
-    landlordId: 'user_landlord_789',
-    landlordName: 'Laura Propietaria',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    startDate: '2024-08-01T00:00:00Z',
-    endDate: '2025-07-31T00:00:00Z',
-    rentAmount: 850000,
-    status: 'Borrador',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-  }
-];
-
-const mockEvaluations: Evaluation[] = [
-  {
-    id: 'EVAL-001',
-    contractId: 'CTR-OLD-001',
-    propertyId: '10',
-    propertyName: 'Depto. Antiguo',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    evaluationDate: '2023-01-20T00:00:00Z',
-    status: 'recibida',
-    criteria: {
-      paymentPunctuality: 5,
-      propertyCare: 4,
-      communication: 5,
-      generalBehavior: 5,
-    },
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 
 const ScoreDisplay = ({ score }: { score: number | null }) => {
@@ -103,35 +47,48 @@ const ScoreDisplay = ({ score }: { score: number | null }) => {
 
 
 export function TenantDashboard() {
+  const { currentUser } = useAuth();
   const [globalScore, setGlobalScore] = useState<number | null>(null);
   const [activeContract, setActiveContract] = useState<Contract | null>(null);
   const [pendingContract, setPendingContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    if (!currentUser) return;
     setLoading(true);
-    // Simulate API Fetch
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Fetch Contracts
+      const contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid));
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      
+      const active = contractsList.find(c => c.status === 'Activo');
+      const pending = contractsList.find(c => c.status === 'Borrador');
+      setActiveContract(active || null);
+      setPendingContract(pending || null);
 
-    const active = mockContracts.find(c => c.status === 'Activo');
-    const pending = mockContracts.find(c => c.status === 'Borrador');
-    setActiveContract(active || null);
-    setPendingContract(pending || null);
+      // Fetch Evaluations
+      const evaluationsQuery = query(collection(db, 'evaluations'), where('tenantId', '==', currentUser.uid));
+      const evaluationsSnapshot = await getDocs(evaluationsQuery);
+      const evaluationsList = evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation));
 
-    if (mockEvaluations.length > 0) {
-      const numEvals = mockEvaluations.length;
-      const avgPunctuality = mockEvaluations.reduce((sum, e) => sum + e.criteria.paymentPunctuality, 0) / numEvals;
-      const avgPropertyCare = mockEvaluations.reduce((sum, e) => sum + e.criteria.propertyCare, 0) / numEvals;
-      const avgCommunication = mockEvaluations.reduce((sum, e) => sum + e.criteria.communication, 0) / numEvals;
-      const avgGeneralBehavior = mockEvaluations.reduce((sum, e) => sum + e.criteria.generalBehavior, 0) / numEvals;
-      const overallAvg = (avgPunctuality + avgPropertyCare + avgCommunication + avgGeneralBehavior) / 4;
-      setGlobalScore(parseFloat(overallAvg.toFixed(1)));
-    } else {
-      setGlobalScore(null);
+      if (evaluationsList.length > 0) {
+        const numEvals = evaluationsList.length;
+        const totalScore = evaluationsList.reduce((sum, e) => {
+            const criteria = e.criteria;
+            const avgCrit = (criteria.paymentPunctuality + criteria.propertyCare + criteria.communication + criteria.generalBehavior) / 4;
+            return sum + avgCrit;
+        }, 0);
+        setGlobalScore(parseFloat((totalScore / numEvals).toFixed(1)));
+      } else {
+        setGlobalScore(null);
+      }
+    } catch (error) {
+      console.error("Error fetching tenant dashboard data:", error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     fetchData();
@@ -199,7 +156,7 @@ export function TenantDashboard() {
                 <p><span className="font-semibold w-28 inline-block">Propietario:</span> {activeContract.landlordName || "N/A"}</p>
                 <p className="flex items-center"><Wallet className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Renta:</span> ${activeContract.rentAmount.toLocaleString('es-CL')}</p>
                 <p className="flex items-center"><Calendar className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Fin de Contrato:</span> {new Date(activeContract.endDate).toLocaleDateString('es-CL')}</p>
-                <Button asChild className="w-full mt-4"><Link href={`/contracts/${activeContract.id}`}><FileText className="mr-2 h-4 w-4" /> Ver Detalles del Contrato</Link></Button>
+                <Button asChild className="w-full mt-4"><Link href={`/contracts`}><FileText className="mr-2 h-4 w-4" /> Ver Detalles del Contrato</Link></Button>
               </div>
             </CardContent>
         </Card>
@@ -216,3 +173,5 @@ export function TenantDashboard() {
     </TooltipProvider>
   );
 }
+
+    

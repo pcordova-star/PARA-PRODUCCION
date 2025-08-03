@@ -1,64 +1,14 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { UserProfile, TenantCertificateData, Contract, Property, Evaluation, Payment, Incident, TenantRentalHistory, TenantEvaluationsSummary, TenantPaymentsSummary, TenantIncidentsSummary } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2, AlertCircle, Star, AlertOctagon } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
-
-// MOCK DATA
-const mockTenantProfile: UserProfile = {
-  uid: 'user_tenant_456',
-  email: 'juan.perez@email.com',
-  role: 'Arrendatario',
-  name: 'Juan Pérez',
-  createdAt: '2023-01-10T10:00:00Z',
-};
-
-const mockRentalHistory: TenantRentalHistory[] = [
-  {
-    contractId: 'CTR-001',
-    propertyAddress: 'Av. Providencia 123',
-    startDate: '2023-01-15',
-    endDate: '2024-01-14',
-    landlordName: 'Carlos Arrendador',
-  },
-  {
-    contractId: 'CTR-003',
-    propertyAddress: 'Calle Falsa 456',
-    startDate: '2024-02-01',
-    endDate: '2025-01-31',
-    landlordName: 'Laura Propietaria',
-  },
-];
-
-const mockEvaluationsSummary: TenantEvaluationsSummary = {
-  averagePunctuality: 4.5,
-  averagePropertyCare: 4.0,
-  averageCommunication: 5.0,
-  averageGeneralBehavior: 4.8,
-  overallAverage: 4.6,
-  evaluations: [
-    { id: 'EVAL-001', contractId: 'CTR-001', propertyName: 'Depto. en Providencia', tenantComment: 'Excelente arrendatario, muy responsable.', evaluationDate: '2024-01-20', tenantConfirmedAt: '2024-01-21', criteria: { paymentPunctuality: 5, propertyCare: 4, communication: 5, generalBehavior: 5 }, landlordId: '', landlordName: '', propertyId: '', status: 'recibida', tenantId: '', tenantName: '' },
-    { id: 'EVAL-002', contractId: 'CTR-003', propertyName: 'Casa en Ñuñoa', evaluationDate: '2025-02-05', criteria: { paymentPunctuality: 4, propertyCare: 4, communication: 5, generalBehavior: 4.5 }, landlordId: '', landlordName: '', propertyId: '', status: 'recibida', tenantId: '', tenantName: '' },
-  ],
-};
-
-const mockPaymentsSummary: TenantPaymentsSummary = {
-  totalPaymentsDeclared: 24,
-  totalPaymentsAccepted: 24,
-  totalAmountAccepted: 15600000,
-  compliancePercentage: 100.0,
-  totalOverduePayments: 1,
-  overduePaymentsPercentage: 4.2,
-};
-
-const mockIncidentsSummary: TenantIncidentsSummary = {
-  totalIncidentsInvolved: 2,
-  incidentsReportedByTenant: 1,
-  incidentsReceivedByTenant: 1,
-  incidentsResolved: 2,
-};
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 // Helper to safely format dates, defaulting to 'N/A'
 const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.DateTimeFormatOptions): string => {
@@ -71,36 +21,113 @@ const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.Dat
   }
 };
 
-
 async function fetchTenantCertificateData(tenantUid: string): Promise<TenantCertificateData | null> {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  try {
+    const userDocRef = doc(db, 'users', tenantUid);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists() || userDoc.data().role !== 'Arrendatario') {
+      return null;
+    }
+    const tenantProfile: UserProfile = { uid: tenantUid, ...userDoc.data() } as UserProfile;
 
-    if (tenantUid !== 'user_tenant_456') {
-        return null;
+    const contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', tenantUid));
+    const contractsSnapshot = await getDocs(contractsQuery);
+    const contracts = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+
+    const contractIds = contracts.map(c => c.id);
+    if (contractIds.length === 0) {
+      // Return basic data if no contracts
+      return {
+        tenantProfile: { ...tenantProfile, createdAt: formatDateSafe(tenantProfile.createdAt) },
+        rentalHistory: [], evaluationsSummary: { evaluations: [], averageCommunication: null, averageGeneralBehavior: null, averagePropertyCare: null, averagePunctuality: null, overallAverage: null },
+        paymentsSummary: { compliancePercentage: null, overduePaymentsPercentage: null, totalAmountAccepted: 0, totalOverduePayments: 0, totalPaymentsAccepted: 0, totalPaymentsDeclared: 0 },
+        incidentsSummary: { incidentsReceivedByTenant: 0, incidentsReportedByTenant: 0, incidentsResolved: 0, totalIncidentsInvolved: 0 },
+        globalScore: null, generationDate: formatDateSafe(new Date()),
+        certificateId: `SARA-CERT-${tenantUid.substring(0,5)}-${Date.now().toString().slice(-5)}`,
+      };
     }
 
-    const globalScore = mockEvaluationsSummary.overallAverage;
+    // Rental History
+    const rentalHistory: TenantRentalHistory[] = contracts.map(c => ({
+      contractId: c.id,
+      propertyAddress: c.propertyAddress,
+      startDate: formatDateSafe(c.startDate),
+      endDate: formatDateSafe(c.endDate),
+      landlordName: c.landlordName,
+    }));
+
+    // Evaluations
+    const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', 'in', contractIds));
+    const evaluationsSnapshot = await getDocs(evaluationsQuery);
+    const evaluations = evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation));
+    
+    let evaluationsSummary: TenantEvaluationsSummary;
+    if (evaluations.length > 0) {
+      const numEvals = evaluations.length;
+      const avgPunctuality = evaluations.reduce((sum, e) => sum + e.criteria.paymentPunctuality, 0) / numEvals;
+      const avgPropertyCare = evaluations.reduce((sum, e) => sum + e.criteria.propertyCare, 0) / numEvals;
+      const avgCommunication = evaluations.reduce((sum, e) => sum + e.criteria.communication, 0) / numEvals;
+      const avgGeneralBehavior = evaluations.reduce((sum, e) => sum + e.criteria.generalBehavior, 0) / numEvals;
+      evaluationsSummary = {
+        evaluations,
+        averagePunctuality,
+        averagePropertyCare,
+        averageCommunication,
+        averageGeneralBehavior,
+        overallAverage: (avgPunctuality + avgPropertyCare + avgCommunication + avgGeneralBehavior) / 4,
+      };
+    } else {
+        evaluationsSummary = { evaluations: [], averagePunctuality: null, averagePropertyCare: null, averageCommunication: null, averageGeneralBehavior: null, overallAverage: null };
+    }
+
+
+    // Payments
+    const paymentsQuery = query(collection(db, 'payments'), where('contractId', 'in', contractIds));
+    const paymentsSnapshot = await getDocs(paymentsQuery);
+    const payments = paymentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Payment));
+    
+    const totalPaymentsDeclared = payments.length;
+    const acceptedPayments = payments.filter(p => p.status === 'aceptado');
+    const totalPaymentsAccepted = acceptedPayments.length;
+    const totalAmountAccepted = acceptedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalOverduePayments = payments.filter(p => p.isOverdue).length;
+    const paymentsSummary: TenantPaymentsSummary = {
+      totalPaymentsDeclared, totalPaymentsAccepted, totalAmountAccepted,
+      compliancePercentage: totalPaymentsDeclared > 0 ? (totalPaymentsAccepted / totalPaymentsDeclared) * 100 : 100,
+      totalOverduePayments,
+      overduePaymentsPercentage: totalPaymentsDeclared > 0 ? (totalOverduePayments / totalPaymentsDeclared) * 100 : 0,
+    };
+    
+    // Incidents
+    const incidentsQuery = query(collection(db, 'incidents'), where('contractId', 'in', contractIds));
+    const incidentsSnapshot = await getDocs(incidentsQuery);
+    const incidents = incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident));
+    const incidentsSummary: TenantIncidentsSummary = {
+      totalIncidentsInvolved: incidents.length,
+      incidentsReportedByTenant: incidents.filter(i => i.createdBy === tenantUid).length,
+      incidentsReceivedByTenant: incidents.filter(i => i.createdBy !== tenantUid).length,
+      incidentsResolved: incidents.filter(i => i.status === 'cerrado').length,
+    };
 
     return {
-        tenantProfile: { ...mockTenantProfile, createdAt: formatDateSafe(mockTenantProfile.createdAt) },
-        rentalHistory: mockRentalHistory,
-        evaluationsSummary: mockEvaluationsSummary,
-        paymentsSummary: mockPaymentsSummary,
-        incidentsSummary: mockIncidentsSummary,
-        globalScore,
-        generationDate: formatDateSafe(new Date()),
-        certificateId: `SARA-CERT-${tenantUid.substring(0,5)}-${Date.now().toString().slice(-5)}`,
+      tenantProfile: { ...tenantProfile, createdAt: formatDateSafe(tenantProfile.createdAt) },
+      rentalHistory, evaluationsSummary, paymentsSummary, incidentsSummary,
+      globalScore: evaluationsSummary.overallAverage,
+      generationDate: formatDateSafe(new Date()),
+      certificateId: `SARA-CERT-${tenantUid.substring(0,5)}-${Date.now().toString().slice(-5)}`,
     };
+
+  } catch (error) {
+    console.error("Error fetching tenant certificate data from Firestore:", error);
+    return null;
+  }
 }
 
 export default function TenantCertificateClient() {
   const [certificateData, setCertificateData] = useState<TenantCertificateData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // MOCK currentUser
-  const currentUser = { uid: 'user_tenant_456', role: 'Arrendatario' };
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'Arrendatario') {
@@ -121,6 +148,7 @@ export default function TenantCertificateClient() {
         setError("Esta función solo está disponible para arrendatarios.");
         setIsLoading(false);
     } else if (!currentUser) {
+        // This case is handled by the AppLayout, but good to have a fallback.
         setError("Debes iniciar sesión para generar tu certificado.");
         setIsLoading(false);
     }
@@ -306,3 +334,5 @@ export default function TenantCertificateClient() {
     </div>
   );
 }
+
+    

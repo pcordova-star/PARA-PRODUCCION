@@ -1,98 +1,45 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Contract, Incident, UserProfile, IncidentResponse } from '@/types';
+import type { Contract, Incident } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertCircle, MessageSquare, CheckCircle2, Paperclip, UserCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface IncidentHistoryProps {
   contract: Contract;
 }
 
-// MOCK DATA
-const mockIncidents: Incident[] = [
-  {
-    id: 'INC-001',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    type: 'reparaciones necesarias',
-    description: 'La llave del lavamanos del baño principal está goteando constantemente. Necesita ser reparada.',
-    status: 'pendiente',
-    createdAt: '2024-07-20T10:00:00Z',
-    createdBy: 'user_tenant_456',
-  },
-  {
-    id: 'INC-002',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    type: 'pago',
-    description: 'El pago de los gastos comunes de Junio no ha sido registrado.',
-    status: 'respondido',
-    createdAt: '2024-07-18T15:30:00Z',
-    createdBy: 'user_landlord_123',
-    responses: [
-      {
-        responseText: 'Hola Carlos, disculpa la demora. Ya realicé el pago, adjunto el comprobante. Saludos.',
-        respondedAt: '2024-07-19T11:00:00Z',
-        respondedBy: 'user_tenant_456',
-      },
-    ],
-  },
-    {
-    id: 'INC-003',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    type: 'cuidado de la propiedad',
-    description: 'Se ha detectado una mancha de humedad en el techo del dormitorio principal. Se solicita revisión.',
-    status: 'cerrado',
-    createdAt: '2024-06-10T09:00:00Z',
-    createdBy: 'user_tenant_456',
-    responses: [
-      {
-        responseText: 'Hola Juan, gracias por avisar. Coordinaré una visita con un técnico para esta semana.',
-        respondedAt: '2024-06-10T14:00:00Z',
-        respondedBy: 'user_landlord_123',
-      },
-       {
-        responseText: 'El técnico revisó y reparó la filtración. El problema está solucionado.',
-        respondedAt: '2024-06-15T18:00:00Z',
-        respondedBy: 'user_landlord_123',
-      }
-    ],
-    closedAt: '2024-06-16T10:00:00Z',
-    closedBy: 'user_tenant_456'
-  },
-];
-
-
 export function IncidentHistory({ contract }: IncidentHistoryProps) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
 
   const fetchIncidents = useCallback(async () => {
+    if (!currentUser) return;
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const contractIncidents = mockIncidents.filter(inc => inc.contractId === contract.id);
-    setIncidents(contractIncidents);
-    setIsLoading(false);
-  }, [contract]);
+    try {
+      const incidentsQuery = query(collection(db, 'incidents'), where('contractId', '==', contract.id));
+      const incidentsSnapshot = await getDocs(incidentsQuery);
+      const incidentsList = incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setIncidents(incidentsList);
+    } catch (error) {
+      console.error("Error fetching incidents:", error);
+      toast({
+        title: "Error al cargar incidentes",
+        description: "No se pudo obtener el historial de incidentes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [contract, currentUser, toast]);
 
   useEffect(() => {
     fetchIncidents();
@@ -192,3 +139,5 @@ export function IncidentHistory({ contract }: IncidentHistoryProps) {
     </div>
   );
 }
+
+    

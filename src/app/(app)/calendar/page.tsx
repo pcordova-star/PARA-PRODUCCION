@@ -1,11 +1,17 @@
+
 'use client';
 
 import { Calendar, momentLocalizer, Views, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { useEffect, useState, useMemo } from 'react';
-import type { Contract, UserProfile } from '@/types';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import type { Contract } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 // Set moment to Spanish for calendar messages
 import 'moment/locale/es';
@@ -63,62 +69,24 @@ const eventStyleGetter = (event: CalendarEvent) => {
   };
 };
 
-
-// MOCK DATA
-const mockContracts: Contract[] = [
-    {
-        id: 'CTR-001',
-        propertyId: '1',
-        propertyAddress: 'Av. Providencia 123',
-        propertyName: 'Depto. Providencia',
-        landlordId: 'user_landlord_123',
-        landlordName: 'Carlos R.',
-        tenantId: 'user_tenant_456',
-        tenantName: 'Juan Pérez',
-        startDate: '2023-08-15T00:00:00Z',
-        endDate: '2024-08-14T00:00:00Z',
-        rentAmount: 500000,
-        status: 'Activo',
-        propertyUsage: 'Habitacional',
-        tenantEmail: 'juan.perez@email.com',
-        tenantRut: '11.111.111-1',
-        rentPaymentDay: 5,
-        commonExpensesIncluded: 'no incluidos',
-        commonExpensesPaymentDay: 15,
-    },
-    {
-        id: 'CTR-002',
-        propertyId: '2',
-        propertyAddress: 'Calle Falsa 123',
-        propertyName: 'Casa Las Condes',
-        landlordId: 'user_landlord_123',
-        landlordName: 'Carlos R.',
-        tenantId: 'user_tenant_789',
-        tenantName: 'Ana García',
-        startDate: '2024-01-01T00:00:00Z',
-        endDate: '2025-12-31T00:00:00Z',
-        rentAmount: 1200000,
-        status: 'Activo',
-        propertyUsage: 'Habitacional',
-        tenantEmail: 'ana.garcia@email.com',
-        tenantRut: '22.222.222-2',
-        rentPaymentDay: 1,
-        utilitiesPaymentDay: 25,
-    },
-];
-const mockUser: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos R.', email: 'carlos.r@email.com' };
-
 export default function CalendarView() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>(Views.MONTH);
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchCalendarData = () => {
-      setLoading(true);
-      
-      const contracts = mockContracts;
+  const fetchCalendarData = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+
+    try {
+      const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
+      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contracts = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+
       const generatedEvents: CalendarEvent[] = [];
       const today = moment();
 
@@ -189,11 +157,21 @@ export default function CalendarView() {
       });
       
       setEvents(generatedEvents);
+    } catch (error) {
+      console.error("Error fetching calendar data:", error);
+      toast({
+        title: "Error al cargar el calendario",
+        description: "No se pudieron obtener los datos de los contratos.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [currentUser, toast]);
 
+  useEffect(() => {
     fetchCalendarData();
-  }, []);
+  }, [fetchCalendarData]);
   
   const calendarMessages = useMemo(() => ({
       next: "Siguiente",
@@ -241,3 +219,5 @@ export default function CalendarView() {
     </div>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -6,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ClipboardCopy, Loader2 } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface PriorNoticeProps {
   contract: Contract;
@@ -19,46 +23,9 @@ interface FetchedData {
   hasRelevantIncidents: boolean;
 }
 
-// MOCK DATA
-const mockPayments: Payment[] = [
-    {
-        id: 'PAY-002',
-        contractId: 'CTR-001',
-        propertyName: 'Depto. en Providencia',
-        landlordName: 'Carlos Arrendador',
-        tenantName: 'Juan Pérez',
-        type: 'arriendo',
-        amount: 500000,
-        paymentDate: '2024-08-04T00:00:00Z',
-        declaredAt: '2024-08-04T11:30:00Z',
-        status: 'pendiente',
-        isOverdue: false,
-        notes: 'Pago de arriendo de Agosto.',
-        attachmentUrl: '#',
-    },
-];
-
-const mockIncidents: Incident[] = [
-     {
-        id: 'INC-001',
-        contractId: 'CTR-001',
-        propertyId: '1',
-        propertyName: 'Depto. en Providencia',
-        landlordId: 'user_landlord_123',
-        landlordName: 'Carlos Arrendador',
-        tenantId: 'user_tenant_456',
-        tenantName: 'Juan Pérez',
-        type: 'reparaciones necesarias',
-        description: 'La llave del lavamanos del baño principal está goteando constantemente. Necesita ser reparada.',
-        status: 'pendiente',
-        createdAt: '2024-07-20T10:00:00Z',
-        createdBy: 'user_tenant_456',
-    },
-];
-const mockCurrentUser: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos Arrendador', email: 'carlos.arrendador@sara.com' };
-
 export function PriorNotice({ contract }: PriorNoticeProps) {
   const { toast } = useToast();
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [noticeText, setNoticeText] = useState("");
   const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
@@ -76,48 +43,60 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
   };
 
   const fetchContractData = useCallback(async () => {
+    if (!currentUser) return;
     setIsLoading(true);
 
-    // Simulate API Fetch
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      let pendingPaymentDetails = "";
+      let relevantIncidentDetails = "";
+      let totalAmountDue = 0;
+      let hasPendingPayments = false;
+      let hasRelevantIncidents = false;
 
-    let pendingPaymentDetails = "";
-    let relevantIncidentDetails = "";
-    let totalAmountDue = 0;
-    let hasPendingPayments = false;
-    let hasRelevantIncidents = false;
+      const paymentsQuery = query(collection(db, 'payments'), where('contractId', '==', contract.id), where('status', '==', 'pendiente'));
+      const paymentsSnapshot = await getDocs(paymentsQuery);
+      const pendingPayments = paymentsSnapshot.docs.map(doc => doc.data() as Payment);
 
-    const pendingPayments = mockPayments.filter(p => p.contractId === contract.id && p.status === 'pendiente');
+      if (pendingPayments.length > 0) {
+        hasPendingPayments = true;
+        pendingPaymentDetails += "Deuda Pendiente de Pago:\n";
+        pendingPayments.forEach(p => {
+          pendingPaymentDetails += `- Tipo: ${p.type}, Monto: $${p.amount.toLocaleString('es-CL')}, Fecha de Pago: ${formatDate(p.paymentDate)}\n`;
+          totalAmountDue += p.amount;
+        });
+        pendingPaymentDetails += `TOTAL ADEUDADO: $${totalAmountDue.toLocaleString('es-CL')}\n\n`;
+      } else {
+        pendingPaymentDetails = "No se encontraron pagos pendientes declarados.\n\n";
+      }
 
-    if (pendingPayments.length > 0) {
-      hasPendingPayments = true;
-      pendingPaymentDetails += "Deuda Pendiente de Pago:\n";
-      pendingPayments.forEach(p => {
-        pendingPaymentDetails += `- Tipo: ${p.type}, Monto: $${p.amount.toLocaleString('es-CL')}, Fecha de Pago: ${formatDate(p.paymentDate)}\n`;
-        totalAmountDue += p.amount;
-      });
-      pendingPaymentDetails += `TOTAL ADEUDADO: $${totalAmountDue.toLocaleString('es-CL')}\n\n`;
-    } else {
-      pendingPaymentDetails = "No se encontraron pagos pendientes declarados.\n\n";
+      const relevantIncidentTypes: Incident["type"][] = ["cuidado de la propiedad", "reparaciones necesarias", "incumplimiento de contrato"];
+      const incidentsQuery = query(collection(db, 'incidents'), where('contractId', '==', contract.id), where('type', 'in', relevantIncidentTypes));
+      const incidentsSnapshot = await getDocs(incidentsQuery);
+      const relevantIncidents = incidentsSnapshot.docs.map(doc => doc.data() as Incident);
+
+      if (relevantIncidents.length > 0) {
+        hasRelevantIncidents = true;
+        relevantIncidentDetails += "Otros Incumplimientos Contractuales Observados:\n";
+        relevantIncidents.forEach(i => {
+          relevantIncidentDetails += `- Tipo: ${i.type}, Fecha: ${formatDate(i.createdAt)}, Descripción: ${i.description.substring(0, 100)}...\n`;
+        });
+        relevantIncidentDetails += "\n";
+      } else {
+        relevantIncidentDetails = "No se encontraron incidentes relevantes registrados.\n\n";
+      }
+      
+      setFetchedData({ pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents });
+    } catch (error) {
+        console.error("Error fetching data for prior notice:", error);
+        toast({
+            title: "Error al obtener datos",
+            description: "No se pudieron cargar los detalles de pagos e incidentes.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
     }
-
-    const relevantIncidentTypes: Incident["type"][] = ["cuidado de la propiedad", "reparaciones necesarias", "incumplimiento de contrato"];
-    const relevantIncidents = mockIncidents.filter(i => i.contractId === contract.id && relevantIncidentTypes.includes(i.type));
-
-    if (relevantIncidents.length > 0) {
-      hasRelevantIncidents = true;
-      relevantIncidentDetails += "Otros Incumplimientos Contractuales Observados:\n";
-      relevantIncidents.forEach(i => {
-        relevantIncidentDetails += `- Tipo: ${i.type}, Fecha: ${formatDate(i.createdAt)}, Descripción: ${i.description.substring(0, 100)}...\n`;
-      });
-      relevantIncidentDetails += "\n";
-    } else {
-      relevantIncidentDetails = "No se encontraron incidentes relevantes registrados.\n\n";
-    }
-    
-    setFetchedData({ pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents });
-    setIsLoading(false);
-  }, [contract]);
+  }, [contract, currentUser, toast]);
 
   useEffect(() => {
     fetchContractData();
@@ -166,7 +145,7 @@ ${actionRequired}
 
 En caso de no dar cumplimiento a lo requerido dentro del plazo señalado, se procederá a iniciar las acciones legales correspondientes para obtener la restitución del inmueble y el cobro de las sumas adeudadas.
 
-Puede realizar el pago/contacto a través de [ESPECIFICAR MEDIO DE PAGO/CONTACTO: Ej: transferencia a la cuenta N° XXXXX del Banco YYYY, titular ZZZZ, RUT WWWW-W, correo electrónico ${mockCurrentUser?.email || '[SU CORREO ELECTRÓNICO]'}}.
+Puede realizar el pago/contacto a través de [ESPECIFICAR MEDIO DE PAGO/CONTACTO: Ej: transferencia a la cuenta N° XXXXX del Banco YYYY, titular ZZZZ, RUT WWWW-W, correo electrónico ${currentUser?.email || '[SU CORREO ELECTRÓNICO]'}}.
 
 Sin otro particular, le saluda atentamente,
 
@@ -174,12 +153,12 @@ ____________________________________
 ${contract.landlordName?.toUpperCase() || "[NOMBRE DEL ARRENDADOR]"}
 Arrendador(a)
 RUT: [SU RUT]
-Correo Electrónico: ${mockCurrentUser?.email || '[SU CORREO ELECTRÓNICO]'}
+Correo Electrónico: ${currentUser?.email || '[SU CORREO ELECTRÓNICO]'}
 Teléfono: [SU TELÉFONO]
 `;
     setNoticeText(generatedText.trim());
 
-  }, [contract, isLoading, fetchedData, today, cityPlaceholder]);
+  }, [contract, isLoading, fetchedData, today, cityPlaceholder, currentUser]);
 
 
   const handleCopyToClipboard = () => {
@@ -235,3 +214,5 @@ Teléfono: [SU TELÉFONO]
     </div>
   );
 }
+
+    

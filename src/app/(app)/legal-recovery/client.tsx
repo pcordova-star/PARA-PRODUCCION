@@ -1,127 +1,106 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Contract, Property, Incident } from '@/types';
+import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
 import { IncidentHistory } from '@/components/legal/IncidentHistory';
 import { PriorNotice } from '@/components/legal/PriorNotice';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { FileWarning, Download, Send } from 'lucide-react';
+import { FileWarning, Download, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-
-// --- MOCK DATA ---
-const mockContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    propertyName: 'Depto. en Providencia',
-    landlordId: 'user_landlord_123',
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_456',
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-12-31T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Activo',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-    securityDepositAmount: 500000,
-    rentPaymentDay: 5,
-    specialClauses: "Se permite una mascota pequeña (perro o gato) en la propiedad, con la condición de que el arrendatario se hará cargo de cualquier daño que esta pueda causar."
-  },
-   {
-    id: 'CTR-003',
-    propertyId: '3',
-    propertyName: 'Oficina Central, Apoquindo 5000',
-    landlordName: 'Laura Propietaria',
-    propertyAddress: 'Apoquindo 5000',
-    tenantName: 'Startup Innovadora SpA',
-    startDate: '2024-01-01T00:00:00Z',
-    endDate: '2025-12-31T00:00:00Z',
-    rentAmount: 800000,
-    status: 'Activo',
-    propertyUsage: 'Comercial',
-    tenantEmail: 'contacto@startup.com',
-    tenantRut: '76.123.456-7',
-    securityDepositAmount: 1600000,
-    rentPaymentDay: 1,
-  },
-];
-
-const mockProperties: Property[] = [
-  {
-    id: '1',
-    code: 'PRO-001',
-    address: 'Av. Providencia 123',
-    comuna: 'Providencia',
-    region: 'Metropolitana de Santiago',
-    status: 'Arrendada',
-    price: 500000,
-    type: 'Departamento',
-    ownerRut: '12.345.678-9',
-    area: 50,
-    bedrooms: 2,
-    bathrooms: 1,
-    description: 'Acogedor departamento en el corazón de Providencia.'
-  },
-   {
-    id: '3',
-    code: 'PRO-003',
-    address: 'Apoquindo 5000',
-    comuna: 'Las Condes',
-    region: 'Metropolitana de Santiago',
-    status: 'Arrendada',
-    price: 800000,
-    type: 'Local Comercial',
-    ownerRut: '11.222.333-4',
-    area: 80,
-    bedrooms: 0,
-    bathrooms: 1,
-    description: 'Oficina moderna en polo de negocios.'
-  },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function LegalRecoveryClient() {
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useAuth();
+
+  const fetchData = useCallback(async () => {
+    if (!currentUser || currentUser.role !== 'Arrendador') {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const contractsQuery = query(collection(db, 'contracts'), where('landlordId', '==', currentUser.uid));
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+
+      const propertyIds = [...new Set(contractsList.map(c => c.propertyId))];
+      if (propertyIds.length > 0) {
+          const propertiesQuery = query(collection(db, 'properties'), where('__name__', 'in', propertyIds));
+          const propertiesSnapshot = await getDocs(propertiesQuery);
+          const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
+          setProperties(propertiesList);
+      }
+      
+      if (contractsList.length > 0 && !selectedContractId) {
+        setSelectedContractId(contractsList[0].id);
+      }
+
+    } catch (error) {
+      console.error("Error fetching legal recovery data:", error);
+      toast({
+        title: "Error al cargar datos",
+        description: "No se pudieron obtener los contratos y propiedades.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, toast, selectedContractId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const activeContracts = useMemo(() => {
-    // MOCK: Assuming landlord view. Filter for active contracts.
-    return mockContracts.filter(c => c.status === 'Activo');
-  }, []);
+    return contracts.filter(c => c.status === 'Activo');
+  }, [contracts]);
 
   const selectedContract = useMemo(() => {
-    return mockContracts.find(c => c.id === selectedContractId) || null;
-  }, [selectedContractId]);
+    return contracts.find(c => c.id === selectedContractId) || null;
+  }, [selectedContractId, contracts]);
 
   const selectedProperty = useMemo(() => {
     if (!selectedContract) return null;
-    return mockProperties.find(p => p.id === selectedContract.propertyId) || null;
-  }, [selectedContract]);
+    return properties.find(p => p.id === selectedContract.propertyId) || null;
+  }, [selectedContract, properties]);
   
-  // Set default selected contract on initial render
-  React.useEffect(() => {
-    if (activeContracts.length > 0 && !selectedContractId) {
-      setSelectedContractId(activeContracts[0].id);
-    }
-  }, [activeContracts, selectedContractId]);
-
   const handleSendToLawyer = () => {
-    // Simulate sending action
     setIsSendDialogOpen(false);
     toast({
       title: 'Documentación Enviada',
       description: 'Los documentos del caso han sido enviados al abogado en convenio (simulación).',
     });
   };
+
+  if (loading) {
+      return <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
+
+  if (currentUser?.role !== 'Arrendador') {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Acceso Denegado</AlertTitle>
+        <AlertDescription>Esta sección solo está disponible para arrendadores.</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -154,11 +133,11 @@ export default function LegalRecoveryClient() {
               </Select>
             </div>
             <div className="flex gap-2 justify-self-end self-end">
-              <Button variant="outline" onClick={() => window.print()}>
+              <Button variant="outline" onClick={() => window.print()} disabled={!selectedContract}>
                 <Download className="mr-2 h-4 w-4" />
                 Descargar Documentación
               </Button>
-              <Button onClick={() => setIsSendDialogOpen(true)}>
+              <Button onClick={() => setIsSendDialogOpen(true)} disabled={!selectedContract}>
                 <Send className="mr-2 h-4 w-4" />
                 Enviar a Abogado
               </Button>
@@ -232,3 +211,5 @@ export default function LegalRecoveryClient() {
     </div>
   );
 }
+
+    

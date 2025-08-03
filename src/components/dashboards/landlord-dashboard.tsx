@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -5,8 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Building2, FileText, PlusCircle, Gavel, Upload, Calendar, Wallet, AlertTriangle,
-  Timer, CheckCircle, XCircle, BarChart, Users, Megaphone, ClipboardCheck, DollarSign, PieChart as PieChartIcon
+  Building2, FileText, PlusCircle, Upload, Calendar, Wallet, AlertTriangle,
+  BarChart, PieChart as PieChartIcon
 } from "lucide-react";
 import type { Property, Contract, Payment, Incident, Evaluation, UserProfile } from "@/types";
 import { AnnouncementsSection } from "./announcements-section";
@@ -15,44 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import moment from 'moment';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-
-// --- MOCK DATA ---
-const mockUser: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos Arrendador', email: 'carlos@sara.com' };
-
-const mockProperties: Property[] = [
-  { id: '1', code: 'PRO-001', address: 'Av. Providencia 123', comuna: 'Providencia', region: 'Metropolitana de Santiago', status: 'Arrendada', type: 'Departamento', description: 'desc' },
-  { id: '2', code: 'PRO-002', address: 'Calle Falsa 123', comuna: 'Las Condes', region: 'Metropolitana de Santiago', status: 'Arrendada', type: 'Casa', description: 'desc' },
-  { id: '3', code: 'PRO-003', address: 'El Roble 456', comuna: 'Ñuñoa', region: 'Metropolitana de Santiago', status: 'Disponible', type: 'Departamento', description: 'desc' },
-  { id: '4', code: 'PRO-004', address: 'Los Cerezos 789', comuna: 'Providencia', region: 'Metropolitana de Santiago', status: 'Mantenimiento', type: 'Departamento', description: 'desc' },
-];
-
-const mockContracts: Contract[] = [
-  { id: 'CTR-001', propertyId: '1', propertyName: 'Depto. Providencia', tenantName: 'Juan Pérez', startDate: '2023-08-15T00:00:00Z', endDate: '2024-08-14T00:00:00Z', rentAmount: 500000, status: 'Activo', propertyAddress: '', landlordName: '', tenantEmail: '', tenantRut: '', propertyUsage: 'Habitacional' },
-  { id: 'CTR-002', propertyId: '2', propertyName: 'Casa Las Condes', tenantName: 'Ana García', startDate: '2024-01-01T00:00:00Z', endDate: '2024-02-28T00:00:00Z', rentAmount: 1200000, status: 'Finalizado', propertyAddress: '', landlordName: '', tenantEmail: '', tenantRut: '', propertyUsage: 'Habitacional' },
-  { id: 'CTR-003', propertyId: '3', propertyName: 'Depto. Ñuñoa', tenantName: 'Pedro Soto', startDate: '2024-09-01T00:00:00Z', endDate: '2025-08-31T00:00:00Z', rentAmount: 750000, status: 'Activo', propertyAddress: '', landlordName: '', tenantEmail: '', tenantRut: '', propertyUsage: 'Habitacional' },
-  { id: 'CTR-004', propertyId: '4', propertyName: 'Depto. Los Cerezos', tenantName: 'Maria Rojas', startDate: '2024-07-01T00:00:00Z', endDate: '2025-06-30T00:00:00Z', rentAmount: 600000, status: 'Borrador', propertyAddress: '', landlordName: '', tenantEmail: '', tenantRut: '', propertyUsage: 'Habitacional' },
-];
-
-const mockPayments: Payment[] = [
-    { id: 'PAY-001', contractId: 'CTR-001', amount: 500000, paymentDate: moment().subtract(1, 'month').toISOString(), status: 'aceptado', propertyName: 'Depto. Providencia', declaredAt: '', type: 'arriendo' },
-    { id: 'PAY-002', contractId: 'CTR-003', amount: 750000, paymentDate: moment().toISOString(), status: 'aceptado', propertyName: 'Depto. Ñuñoa', declaredAt: '', type: 'arriendo' },
-    { id: 'PAY-003', contractId: 'CTR-001', amount: 500000, paymentDate: moment().toISOString(), status: 'pendiente', propertyName: 'Depto. Providencia', declaredAt: '', type: 'arriendo' },
-];
-
-
-const mockIncidents: Incident[] = [
-  { id: 'INC-001', contractId: 'CTR-001', propertyName: 'Depto. Providencia', type: 'reparaciones necesarias', status: 'pendiente', createdAt: '2024-07-20T10:00:00Z', landlordId: 'user_landlord_123', propertyId: '1', tenantId: 'user_tenant_456', description: 'desc', createdBy: 'user_tenant_456' },
-  { id: 'INC-002', contractId: 'CTR-003', propertyName: 'Depto. Ñuñoa', type: 'pago', status: 'respondido', createdAt: '2024-07-18T15:30:00Z', landlordId: 'user_landlord_123', propertyId: '3', tenantId: 'user_tenant_789', description: 'desc', createdBy: 'user_landlord_123' },
-  { id: 'INC-003', contractId: 'CTR-003', propertyName: 'Depto. Ñuñoa', type: 'ruidos molestos', status: 'cerrado', createdAt: '2024-06-18T15:30:00Z', landlordId: 'user_landlord_123', propertyId: '3', tenantId: 'user_tenant_789', description: 'desc', createdBy: 'user_tenant_789' },
-];
-
-
-const mockEvaluations: Evaluation[] = [
-  { id: 'EVAL-001', contractId: 'CTR-002', propertyName: 'Casa Las Condes', status: 'recibida', criteria: { paymentPunctuality: 5, propertyCare: 4, communication: 5, generalBehavior: 5 }, evaluationDate: '2024-03-05T00:00:00Z', landlordId: 'user_landlord_123', landlordName: '', propertyId: '2', tenantId: '', tenantName: '' },
-];
-
+import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export function LandlordDashboard() {
+  const { currentUser } = useAuth();
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   
   const [properties, setProperties] = useState<Property[]>([]);
@@ -64,16 +33,45 @@ export function LandlordDashboard() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    if (!currentUser) return;
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setProperties(mockProperties);
-    setContracts(mockContracts);
-    setPayments(mockPayments);
-    setIncidents(mockIncidents);
-    setEvaluations(mockEvaluations);
-    setLoading(false);
-  }, []);
+    try {
+      // Fetch Properties
+      const propertiesQuery = query(collection(db, 'properties'), where('ownerUid', '==', currentUser.uid));
+      const propertiesSnapshot = await getDocs(propertiesQuery);
+      const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
+      setProperties(propertiesList);
+      
+      // Fetch Contracts
+      const contractsQuery = query(collection(db, 'contracts'), where('landlordId', '==', currentUser.uid));
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+      
+      const contractIds = contractsList.map(c => c.id);
+      if (contractIds.length > 0) {
+        // Fetch Payments
+        const paymentsQuery = query(collection(db, 'payments'), where('contractId', 'in', contractIds));
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        setPayments(paymentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Payment)));
+        
+        // Fetch Incidents
+        const incidentsQuery = query(collection(db, 'incidents'), where('contractId', 'in', contractIds));
+        const incidentsSnapshot = await getDocs(incidentsQuery);
+        setIncidents(incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident)));
+        
+        // Fetch Evaluations
+        const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', 'in', contractIds));
+        const evaluationsSnapshot = await getDocs(evaluationsQuery);
+        setEvaluations(evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation)));
+      }
+
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     fetchData();
@@ -256,7 +254,7 @@ export function LandlordDashboard() {
                   <Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button>
                   <Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button>
                   <Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button>
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><ClipboardCheck className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button>
+                  <Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button>
                   <Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button>
                   <Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button>
               </CardContent>
@@ -270,3 +268,5 @@ export function LandlordDashboard() {
     </TooltipProvider>
   );
 }
+
+    
