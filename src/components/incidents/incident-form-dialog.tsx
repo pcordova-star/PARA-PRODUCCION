@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -61,7 +61,7 @@ export type IncidentFormDialogValues = z.infer<typeof incidentFormSchema>;
 interface IncidentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: IncidentFormDialogValues & { initialAttachmentUrl: string | null; initialAttachmentName: string | null; }, contract: Contract) => Promise<void>;
+  onSave: (data: any, contract: Contract) => Promise<void>;
   userContracts: Contract[];
   currentUserRole: UserRole | null;
 }
@@ -81,10 +81,10 @@ export function IncidentFormDialog({
     resolver: zodResolver(incidentFormSchema),
   });
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       form.reset({
-        contractId: userContracts.find((c) => c.status === "Activo")?.id || "",
+        contractId: userContracts.length > 0 ? userContracts[0].id : "",
         type: "otros",
         description: "",
         initialAttachment: undefined,
@@ -168,7 +168,6 @@ export function IncidentFormDialog({
                       </SelectTrigger>
                       <SelectContent>
                         {userContracts
-                          .filter((c) => c.status === "Activo")
                           .map((contract) => (
                             <SelectItem key={contract.id} value={contract.id}>
                               {contract.propertyName} (
