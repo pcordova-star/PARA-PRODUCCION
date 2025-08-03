@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import type { UserRole } from "@/types";
 import { auth } from "@/lib/firebase";
+import { sendEmail } from "@/lib/notifications";
 
 
 const formSchema = z.object({
@@ -39,7 +40,7 @@ const formSchema = z.object({
   confirmPassword: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
   role: z.enum(["Arrendador", "Arrendatario"], { required_error: "Debes seleccionar un rol." }),
   mobilePhone: z.string()
-    .regex(/^\+?[1-9]\d{1,14}$/, { message: "Formato de número de teléfono inválido. Incluye código de país (ej: +569...)" })
+    .regex(/^(\+?[1-9]\d{1,14})$/, { message: "Formato de número de teléfono inválido. Incluye código de país (ej: +569...)" })
     .optional()
     .or(z.literal('')),
   acceptTerms: z.boolean().refine(val => val === true, {
@@ -82,6 +83,19 @@ function RegisterForm() {
           values.mobilePhone
         );
       }
+
+      // Send welcome email
+      await sendEmail({
+        to: values.email,
+        subject: "¡Bienvenido a S.A.R.A!",
+        html: `
+          <h1>Hola ${values.displayName},</h1>
+          <p>Te damos la bienvenida a S.A.R.A - Sistema de Administración Responsable de Arriendos.</p>
+          <p>Tu cuenta como <strong>${values.role}</strong> ha sido creada exitosamente. Ya puedes iniciar sesión y comenzar a gestionar tus arriendos de forma fácil y segura.</p>
+          <p>Gracias por unirte a nuestra comunidad.</p>
+          <p>El equipo de S.A.R.A</p>
+        `,
+      });
 
       toast({
         title: "Registro Exitoso",
@@ -197,7 +211,7 @@ export default function SignupPage() {
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <div className="absolute top-6 left-6">
                 <Link href="/" className="flex items-center gap-2 text-primary" prefetch={false}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
                     <span className="text-xl font-bold">S.A.R.A</span>
                 </Link>
             </div>
