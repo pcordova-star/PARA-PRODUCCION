@@ -56,27 +56,19 @@ export default function AppLayout({
     { href: "/certificate", label: "Certificado", icon: <FileBadge /> },
   ];
 
-  if (loading || !currentUser) {
+  if (loading) {
     return (
-       <div className="flex min-h-screen w-full">
-        <div className="hidden md:flex flex-col w-64 border-r p-2 space-y-2">
-            <div className="p-2">
-                <Skeleton className="h-8 w-24" />
-            </div>
-            <div className="space-y-2 p-2">
-                {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-        </div>
-        <div className="flex-1">
-            <header className="sticky top-0 z-10 flex h-14 items-center justify-end border-b bg-background/80 px-4">
-                <Skeleton className="h-9 w-9 rounded-full" />
-            </header>
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
-                 <Skeleton className="h-[400px] w-full" />
-            </main>
+       <div className="flex min-h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Logo />
+          <p className="text-muted-foreground">Cargando tu sesión...</p>
         </div>
       </div>
     );
+  }
+  
+  if (!currentUser) {
+    return null; // Evita renderizar el layout si no hay usuario, el useEffect se encargará de redirigir
   }
 
   return (
