@@ -1,162 +1,145 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import type { Evaluation, Contract, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
-
 import { EvaluationCard } from '@/components/evaluations/evaluation-card';
 import { EvaluationFormDialog } from '@/components/evaluations/evaluation-form-dialog';
 import { TenantEvaluationConfirmationDialog } from '@/components/evaluations/tenant-evaluation-confirmation-dialog';
 import { EvaluationsDataTable } from '@/components/evaluations/evaluations-data-table';
 import { columns as createColumns } from '@/components/evaluations/evaluations-columns';
-
-
-// --- MOCK DATA ---
-const mockUserLandlord: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos Arrendador', email: 'carlos@sara.com' };
-const mockUserTenant: UserProfile = { uid: 'user_tenant_456', role: 'Arrendatario', name: 'Juan Pérez', email: 'juan@sara.com' };
-
-const mockContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    propertyName: 'Depto. en Providencia',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: mockUserTenant.uid,
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-01-14T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Finalizado',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-  },
-  {
-    id: 'CTR-002',
-    propertyId: '2',
-    propertyAddress: 'Calle Falsa 123',
-    propertyName: 'Casa en Las Condes',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_789',
-    tenantName: 'Ana García',
-    startDate: '2022-03-01T00:00:00Z',
-    endDate: '2023-02-28T00:00:00Z',
-    rentAmount: 1200000,
-    status: 'Finalizado',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'ana.garcia@email.com',
-    tenantRut: '22.222.222-2',
-  },
-];
-
-const initialEvaluations: Evaluation[] = [
-  {
-    id: 'EVAL-001',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: mockUserTenant.uid,
-    tenantName: 'Juan Pérez',
-    evaluationDate: '2024-01-20T00:00:00Z',
-    status: 'recibida',
-    criteria: {
-      paymentPunctuality: 5,
-      propertyCare: 4,
-      communication: 5,
-      generalBehavior: 5,
-    },
-    tenantComment: 'Gracias por la evaluación. Fue un gusto ser su arrendatario.',
-    tenantConfirmedAt: '2024-01-21T00:00:00Z',
-  },
-   {
-    id: 'EVAL-002',
-    contractId: 'CTR-002',
-    propertyId: '2',
-    propertyName: 'Casa en Las Condes',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: 'user_tenant_789',
-    tenantName: 'Ana García',
-    evaluationDate: '2023-03-05T00:00:00Z',
-    status: 'pendiente de confirmacion',
-    criteria: {
-      paymentPunctuality: 4,
-      propertyCare: 3,
-      communication: 4,
-      generalBehavior: 4,
-    },
-  },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { sendEmail } from '@/lib/notifications';
 
 
 export default function EvaluationsPage() {
   const { toast } = useToast();
-  const [evaluations, setEvaluations] = useState<Evaluation[]>(initialEvaluations);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [evaluationToConfirm, setEvaluationToConfirm] = useState<Evaluation | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const { currentUser } = useAuth();
 
-  // MOCK: Simulating current user.
-  const [currentUser, setCurrentUser] = useState<UserProfile>(mockUserLandlord);
-  const isLandlordView = currentUser.role === 'Arrendador';
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const contractsQuery = query(
+        collection(db, 'contracts'),
+        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
+      );
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+      
+      const contractIds = contractsList.map(c => c.id);
+      if (contractIds.length > 0) {
+        const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', 'in', contractIds));
+        const evaluationsSnapshot = await getDocs(evaluationsQuery);
+        const evaluationsList = evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation));
+        setEvaluations(evaluationsList);
+      } else {
+        setEvaluations([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const handleSaveEvaluation = async (data: any) => {
+    if (!currentUser || currentUser.role !== 'Arrendador') return;
     setProcessingId('new-evaluation');
-    const contract = mockContracts.find(c => c.id === data.contractId);
+    const contract = contracts.find(c => c.id === data.contractId);
     if (!contract) {
         toast({ title: 'Error', description: 'Contrato no encontrado', variant: 'destructive' });
         setProcessingId(null);
         return;
     };
 
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-
-    const newEvaluation: Evaluation = {
-        id: uuidv4(),
-        ...data,
-        propertyId: contract.propertyId,
-        propertyName: contract.propertyName,
-        landlordId: contract.landlordId,
-        landlordName: contract.landlordName,
-        tenantId: contract.tenantId,
-        tenantName: contract.tenantName,
-        evaluationDate: new Date().toISOString(),
-        status: 'pendiente de confirmacion',
-    };
-
-    setEvaluations(prev => [newEvaluation, ...prev]);
-    toast({ title: 'Evaluación Creada', description: 'El arrendatario será notificado para confirmar la recepción.' });
-    setIsFormOpen(false);
-    setProcessingId(null);
+    try {
+        const newEvaluationData: Omit<Evaluation, 'id'> = {
+            ...data,
+            propertyId: contract.propertyId,
+            propertyName: contract.propertyName,
+            landlordId: contract.landlordId,
+            landlordName: contract.landlordName,
+            tenantId: contract.tenantId,
+            tenantName: contract.tenantName,
+            evaluationDate: new Date().toISOString(),
+            status: 'pendiente de confirmacion',
+        };
+        await addDoc(collection(db, 'evaluations'), newEvaluationData);
+        
+        const tenantDoc = await getDoc(doc(db, 'users', contract.tenantId!));
+        const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : null;
+        
+        if (tenantEmail) {
+            await sendEmail({
+                to: tenantEmail,
+                subject: `Has recibido una evaluación de ${currentUser.name}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                            <h1 style="color: #2077c2; text-align: center;">¡Has sido evaluado!</h1>
+                            <p>Hola ${contract.tenantName},</p>
+                            <p><strong>${currentUser.name}</strong> ha completado tu evaluación para el arriendo de la propiedad <strong>${contract.propertyName}</strong>.</p>
+                            <p>Para mantener la transparencia y asegurar que estás de acuerdo con la evaluación, te pedimos que la revises y confirmes su recepción en la plataforma.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                            </div>
+                        </div>
+                    </div>
+                `,
+            });
+        }
+        
+        toast({ title: 'Evaluación Creada', description: 'El arrendatario ha sido notificado para confirmar la recepción.' });
+        fetchData();
+        setIsFormOpen(false);
+    } catch (error) {
+        console.error("Error saving evaluation:", error);
+        toast({ title: 'Error', description: 'No se pudo guardar la evaluación.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
   
   const handleConfirmReception = async (evaluationId: string, { tenantComment }: { tenantComment?: string }) => {
     setProcessingId(evaluationId);
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-
-    setEvaluations(prev =>
-      prev.map(ev =>
-        ev.id === evaluationId
-          ? { ...ev, status: 'recibida', tenantComment: tenantComment || undefined, tenantConfirmedAt: new Date().toISOString() }
-          : ev
-      )
-    );
-    toast({ title: 'Recepción Confirmada', description: 'La evaluación ha sido marcada como recibida.' });
-    setIsConfirmationOpen(false);
-    setEvaluationToConfirm(null);
-    setProcessingId(null);
+    try {
+        const evaluationRef = doc(db, 'evaluations', evaluationId);
+        await updateDoc(evaluationRef, {
+            status: 'recibida',
+            tenantComment: tenantComment || null,
+            tenantConfirmedAt: new Date().toISOString()
+        });
+        toast({ title: 'Recepción Confirmada', description: 'La evaluación ha sido marcada como recibida.' });
+        fetchData();
+        setIsConfirmationOpen(false);
+        setEvaluationToConfirm(null);
+    } catch(error) {
+        console.error("Error confirming evaluation:", error);
+        toast({ title: 'Error', description: 'No se pudo confirmar la evaluación.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
   
   const openConfirmationDialog = (evaluation: Evaluation) => {
@@ -164,18 +147,24 @@ export default function EvaluationsPage() {
     setIsConfirmationOpen(true);
   };
 
-  const filteredEvaluations = useMemo(() => {
-    if (isLandlordView) {
-      return evaluations.filter(ev => ev.landlordId === currentUser.uid);
-    }
-    return evaluations.filter(ev => ev.tenantId === currentUser.uid);
-  }, [evaluations, currentUser, isLandlordView]);
-
   const finishedContractsForLandlord = useMemo(() => {
-    return mockContracts.filter(c => c.landlordId === currentUser.uid && c.status === 'Finalizado');
-  }, [currentUser]);
+    if (!currentUser || currentUser.role !== 'Arrendador') return [];
+    return contracts.filter(c => c.status === 'Finalizado');
+  }, [contracts, currentUser]);
 
-  const columns = createColumns({ userRole: currentUser.role, onConfirm: openConfirmationDialog });
+  const columns = createColumns({ userRole: currentUser!.role, onConfirm: openConfirmationDialog });
+
+  if (loading) {
+     return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6">
@@ -183,7 +172,7 @@ export default function EvaluationsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Evaluaciones de Arrendatarios</h1>
           <p className="text-muted-foreground">
-            {isLandlordView 
+            {currentUser?.role === 'Arrendador' 
               ? 'Evalúe a sus arrendatarios al finalizar un contrato.'
               : 'Revise las evaluaciones recibidas de sus arrendadores.'
             }
@@ -198,10 +187,7 @@ export default function EvaluationsPage() {
               <List className="h-4 w-4" />
               <span className="sr-only">Vista de Lista</span>
             </Button>
-            <Button onClick={() => setCurrentUser(isLandlordView ? mockUserTenant : mockUserLandlord)}>
-              Cambiar a Vista {isLandlordView ? 'Arrendatario' : 'Arrendador'}
-            </Button>
-            {isLandlordView && (
+            {currentUser?.role === 'Arrendador' && (
               <Button onClick={() => setIsFormOpen(true)}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Evaluar Arrendatario
@@ -210,21 +196,21 @@ export default function EvaluationsPage() {
         </div>
       </div>
 
-       {filteredEvaluations.length > 0 ? (
+       {evaluations.length > 0 ? (
          viewMode === 'cards' ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredEvaluations.map(ev => (
+              {evaluations.map(ev => (
                 <EvaluationCard 
                   key={ev.id}
                   evaluation={ev}
-                  userRole={currentUser.role}
+                  userRole={currentUser!.role}
                   onConfirmReception={openConfirmationDialog}
                   isProcessing={processingId === ev.id}
                 />
               ))}
             </div>
          ) : (
-            <EvaluationsDataTable columns={columns} data={filteredEvaluations} />
+            <EvaluationsDataTable columns={columns} data={evaluations} />
          )
        ) : (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { IncidentCard } from '@/components/incidents/incident-card';
@@ -8,78 +8,22 @@ import { IncidentFormDialog } from '@/components/incidents/incident-form-dialog'
 import { IncidentResponseDialog } from '@/components/incidents/incident-response-dialog';
 import type { Incident, Contract, UserRole, UserProfile, IncidentResponse } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { IncidentsDataTable } from '@/components/incidents/incidents-data-table';
 import { columns as createColumns } from '@/components/incidents/incidents-columns';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { sendEmail } from '@/lib/notifications';
 
-// --- MOCK DATA ---
-const mockUserLandlord: UserProfile = { uid: 'user_landlord_123', role: 'Arrendador', name: 'Carlos Arrendador', email: 'carlos@sara.com' };
-const mockUserTenant: UserProfile = { uid: 'user_tenant_456', role: 'Arrendatario', name: 'Juan Pérez', email: 'juan@sara.com' };
-
-const mockContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    propertyName: 'Depto. en Providencia',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: mockUserTenant.uid,
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-12-31T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Activo',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-  },
-];
-
-const initialIncidents: Incident[] = [
-  {
-    id: 'INC-001',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: mockUserTenant.uid,
-    tenantName: 'Juan Pérez',
-    type: 'reparaciones necesarias',
-    description: 'La llave del lavamanos del baño principal está goteando constantemente. Necesita ser reparada.',
-    status: 'pendiente',
-    createdAt: '2024-07-20T10:00:00Z',
-    createdBy: mockUserTenant.uid,
-  },
-  {
-    id: 'INC-002',
-    contractId: 'CTR-001',
-    propertyId: '1',
-    propertyName: 'Depto. en Providencia',
-    landlordId: mockUserLandlord.uid,
-    landlordName: 'Carlos Arrendador',
-    tenantId: mockUserTenant.uid,
-    tenantName: 'Juan Pérez',
-    type: 'pago',
-    description: 'El pago de los gastos comunes de Junio no ha sido registrado.',
-    status: 'respondido',
-    createdAt: '2024-07-18T15:30:00Z',
-    createdBy: mockUserLandlord.uid,
-    responses: [
-      {
-        responseText: 'Hola Carlos, disculpa la demora. Ya realicé el pago, adjunto el comprobante. Saludos.',
-        respondedAt: '2024-07-19T11:00:00Z',
-        respondedBy: mockUserTenant.uid,
-      },
-    ],
-  },
-];
 
 export default function IncidentsPage() {
   const { toast } = useToast();
-  const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isResponseOpen, setIsResponseOpen] = useState(false);
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
@@ -87,66 +31,137 @@ export default function IncidentsPage() {
   const [incidentToCloseId, setIncidentToCloseId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const { currentUser } = useAuth();
 
 
-  // MOCK: Simulating current user. In a real app, this would come from an auth context.
-  const [currentUser, setCurrentUser] = useState<UserProfile>(mockUserLandlord);
-  const isLandlordView = currentUser.role === 'Arrendador';
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const contractsQuery = query(
+        collection(db, 'contracts'),
+        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
+      );
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+      
+      const contractIds = contractsList.map(c => c.id);
+      if (contractIds.length > 0) {
+        const incidentsQuery = query(collection(db, 'incidents'), where('contractId', 'in', contractIds));
+        const incidentsSnapshot = await getDocs(incidentsQuery);
+        const incidentsList = incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident));
+        setIncidents(incidentsList);
+      } else {
+        setIncidents([]);
+      }
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const handleSaveIncident = async (data: any) => {
+    if (!currentUser) return;
     setProcessingId('new-incident');
-    const contract = mockContracts.find(c => c.id === data.contractId);
+    const contract = contracts.find(c => c.id === data.contractId);
     if (!contract) return;
     
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-    
-    const newIncident: Incident = {
-      id: uuidv4(),
-      ...data,
-      propertyId: contract.propertyId,
-      propertyName: contract.propertyName,
-      landlordId: contract.landlordId,
-      landlordName: contract.landlordName,
-      tenantId: contract.tenantId,
-      tenantName: contract.tenantName,
-      createdAt: new Date().toISOString(),
-      createdBy: currentUser.uid,
-      status: 'pendiente',
-    };
+    try {
+        const newIncidentData: Omit<Incident, 'id'> = {
+          ...data,
+          propertyId: contract.propertyId,
+          propertyName: contract.propertyName,
+          landlordId: contract.landlordId,
+          landlordName: contract.landlordName,
+          tenantId: contract.tenantId,
+          tenantName: contract.tenantName,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.uid,
+          status: 'pendiente',
+        };
+        await addDoc(collection(db, 'incidents'), newIncidentData);
 
-    setIncidents(prev => [newIncident, ...prev]);
-    toast({ title: 'Incidente Reportado', description: 'La otra parte será notificada.' });
-    setIsFormOpen(false);
-    setProcessingId(null);
+        const isLandlordCreator = currentUser.role === 'Arrendador';
+        const recipientId = isLandlordCreator ? contract.tenantId : contract.landlordId;
+        const recipientDoc = await getDoc(doc(db, 'users', recipientId!));
+        const recipientEmail = recipientDoc.exists() ? recipientDoc.data().email : null;
+        const recipientName = isLandlordCreator ? contract.tenantName : contract.landlordName;
+
+        if (recipientEmail) {
+            await sendEmail({
+                to: recipientEmail,
+                subject: `Nuevo Incidente Reportado en ${contract.propertyName}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                            <h1 style="color: #d9534f; text-align: center;">Nuevo Incidente Reportado</h1>
+                            <p>Hola ${recipientName},</p>
+                            <p><strong>${currentUser.name}</strong> ha reportado un nuevo incidente para la propiedad <strong>${contract.propertyName}</strong>.</p>
+                            <ul>
+                                <li><strong>Tipo:</strong> ${data.type}</li>
+                                <li><strong>Descripción:</strong> ${data.description}</li>
+                            </ul>
+                            <p>Por favor, inicia sesión en S.A.R.A para revisar y responder a este incidente.</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                            </div>
+                        </div>
+                    </div>
+                `,
+            });
+        }
+
+        toast({ title: 'Incidente Reportado', description: 'La otra parte será notificada.' });
+        fetchData();
+        setIsFormOpen(false);
+    } catch(error) {
+        console.error("Error saving incident:", error);
+        toast({ title: 'Error', description: 'No se pudo reportar el incidente.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
 
-  const handleSaveResponse = async (incidentId: string, data: IncidentResponse) => {
+  const handleSaveResponse = async (incidentId: string, data: any) => {
+    if (!currentUser) return;
     setProcessingId(incidentId);
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
+    
+    try {
+        const incidentRef = doc(db, 'incidents', incidentId);
+        const incidentDoc = await getDoc(incidentRef);
+        if (!incidentDoc.exists()) throw new Error("Incident not found");
 
-    setIncidents(prev =>
-      prev.map(inc => {
-        if (inc.id === incidentId) {
-          const newResponse: IncidentResponse = {
+        const existingResponses = incidentDoc.data().responses || [];
+        const newResponse: IncidentResponse = {
             ...data,
             respondedAt: new Date().toISOString(),
             respondedBy: currentUser.uid,
-          };
-          return {
-            ...inc,
+        };
+
+        await updateDoc(incidentRef, {
             status: 'respondido',
-            responses: [...(inc.responses || []), newResponse],
-          };
-        }
-        return inc;
-      })
-    );
-    toast({ title: 'Respuesta Enviada', description: 'La respuesta ha sido registrada.' });
-    setIsResponseOpen(false);
-    setIncidentToRespond(null);
-    setProcessingId(null);
+            responses: [...existingResponses, newResponse],
+        });
+        
+        toast({ title: 'Respuesta Enviada', description: 'La respuesta ha sido registrada.' });
+        fetchData();
+        setIsResponseOpen(false);
+        setIncidentToRespond(null);
+    } catch (error) {
+        console.error("Error saving response:", error);
+        toast({ title: 'Error', description: 'No se pudo guardar la respuesta.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
   
   const openResponseDialog = (incident: Incident) => {
@@ -160,38 +175,47 @@ export default function IncidentsPage() {
   };
 
   const confirmCloseIncident = async () => {
-    if (!incidentToCloseId) return;
+    if (!incidentToCloseId || !currentUser) return;
     setProcessingId(incidentToCloseId);
     
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-
-    setIncidents(prev =>
-      prev.map(inc =>
-        inc.id === incidentToCloseId
-          ? { ...inc, status: 'cerrado', closedAt: new Date().toISOString(), closedBy: currentUser.uid }
-          : inc
-      )
-    );
-    toast({ title: 'Incidente Cerrado', description: 'El incidente ha sido marcado como resuelto.' });
-    setIsCloseDialogOpen(false);
-    setIncidentToCloseId(null);
-    setProcessingId(null);
+    try {
+        const incidentRef = doc(db, 'incidents', incidentToCloseId);
+        await updateDoc(incidentRef, {
+            status: 'cerrado',
+            closedAt: new Date().toISOString(),
+            closedBy: currentUser.uid,
+        });
+        toast({ title: 'Incidente Cerrado', description: 'El incidente ha sido marcado como resuelto.' });
+        fetchData();
+        setIsCloseDialogOpen(false);
+        setIncidentToCloseId(null);
+    } catch (error) {
+         console.error("Error closing incident:", error);
+        toast({ title: 'Error', description: 'No se pudo cerrar el incidente.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
 
-  const filteredIncidents = useMemo(() => {
-    if (isLandlordView) {
-        return incidents;
-    }
-    return incidents.filter(inc => inc.tenantId === currentUser.uid);
-  }, [incidents, currentUser, isLandlordView]);
 
   const userContracts = useMemo(() => {
-    if (isLandlordView) return mockContracts.filter(c => c.landlordId === currentUser.uid);
-    return mockContracts.filter(c => c.tenantId === currentUser.uid);
-  }, [currentUser, isLandlordView]);
+    if (!currentUser) return [];
+    return contracts.filter(c => c.status === 'Activo');
+  }, [contracts, currentUser]);
 
-  const columns = createColumns({ onRespond: openResponseDialog, onClose: openCloseDialog, currentUser });
+  const columns = createColumns({ onRespond: openResponseDialog, onClose: openCloseDialog, currentUser: currentUser! });
+  
+  if (loading) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,9 +235,6 @@ export default function IncidentsPage() {
               <List className="h-4 w-4" />
               <span className="sr-only">Vista de Lista</span>
             </Button>
-            <Button onClick={() => setCurrentUser(isLandlordView ? mockUserTenant : mockUserLandlord)}>
-              Cambiar a Vista {isLandlordView ? 'Arrendatario' : 'Arrendador'}
-            </Button>
             <Button onClick={() => setIsFormOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Reportar Incidente
@@ -221,10 +242,10 @@ export default function IncidentsPage() {
         </div>
       </div>
 
-       {filteredIncidents.length > 0 ? (
+       {incidents.length > 0 ? (
           viewMode === 'cards' ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredIncidents.map(incident => (
+                {incidents.map(incident => (
                     <IncidentCard 
                       key={incident.id} 
                       incident={incident} 
@@ -236,7 +257,7 @@ export default function IncidentsPage() {
                 ))}
             </div>
           ) : (
-            <IncidentsDataTable columns={columns} data={filteredIncidents} />
+            <IncidentsDataTable columns={columns} data={incidents} />
           )
        ) : (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -252,7 +273,7 @@ export default function IncidentsPage() {
         onOpenChange={setIsFormOpen}
         onSave={handleSaveIncident}
         userContracts={userContracts}
-        currentUserRole={currentUser.role}
+        currentUserRole={currentUser?.role || null}
       />
 
       <IncidentResponseDialog
@@ -260,7 +281,7 @@ export default function IncidentsPage() {
         onOpenChange={setIsResponseOpen}
         incident={incidentToRespond}
         onSave={handleSaveResponse}
-        currentUserRole={currentUser.role}
+        currentUserRole={currentUser?.role || null}
       />
       
       <AlertDialog open={isCloseDialogOpen} onOpenChange={setIsCloseDialogOpen}>

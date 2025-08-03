@@ -1,151 +1,133 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2, LayoutGrid, List, FileDown } from 'lucide-react';
 import { PaymentCard } from '@/components/payments/payment-card';
 import { PaymentFormDialog } from '@/components/payments/payment-form-dialog';
-import type { Payment, Contract, UserRole } from '@/types';
+import type { Payment, Contract, UserRole, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { PaymentsDataTable } from '@/components/payments/payments-data-table';
 import { columns as createColumns } from '@/components/payments/payments-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Papa from 'papaparse';
-
-// --- MOCK DATA ---
-const mockContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    propertyName: 'Depto. en Providencia',
-    landlordName: 'Carlos Arrendador',
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-12-31T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Activo',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-  },
-  {
-    id: 'CTR-002',
-    propertyId: '2',
-    propertyAddress: 'Calle Falsa 123',
-    propertyName: 'Casa en Las Condes',
-    landlordName: 'Carlos Arrendador',
-    tenantName: 'Ana García',
-    startDate: '2023-03-01T00:00:00Z',
-    endDate: '2025-02-28T00:00:00Z',
-    rentAmount: 1200000,
-    status: 'Finalizado',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'ana.garcia@email.com',
-    tenantRut: '22.222.222-2',
-  },
-   {
-    id: 'CTR-003',
-    propertyId: '3',
-    propertyName: 'Oficina Central',
-    landlordName: 'Laura Propietaria',
-    propertyAddress: 'Apoquindo 5000',
-    tenantName: 'Startup Innovadora SpA',
-    startDate: '2024-01-01T00:00:00Z',
-    endDate: '2025-12-31T00:00:00Z',
-    rentAmount: 800000,
-    status: 'Activo',
-    propertyUsage: 'Comercial',
-    tenantEmail: 'contacto@startup.com',
-    tenantRut: '76.123.456-7',
-  },
-];
-
-const initialPayments: Payment[] = [
-  {
-    id: 'PAY-001',
-    contractId: 'CTR-001',
-    propertyName: 'Depto. en Providencia',
-    landlordName: 'Carlos Arrendador',
-    tenantName: 'Juan Pérez',
-    type: 'arriendo',
-    amount: 500000,
-    paymentDate: '2024-07-05T00:00:00Z',
-    declaredAt: '2024-07-05T10:00:00Z',
-    acceptedAt: '2024-07-05T14:00:00Z',
-    status: 'aceptado',
-    isOverdue: false,
-    notes: 'Pago de arriendo de Julio.',
-    attachmentUrl: '#',
-  },
-  {
-    id: 'PAY-002',
-    contractId: 'CTR-001',
-    propertyName: 'Depto. en Providencia',
-    landlordName: 'Carlos Arrendador',
-    tenantName: 'Juan Pérez',
-    type: 'arriendo',
-    amount: 500000,
-    paymentDate: '2024-08-04T00:00:00Z',
-    declaredAt: '2024-08-04T11:30:00Z',
-    status: 'pendiente',
-    isOverdue: false,
-    notes: 'Pago de arriendo de Agosto.',
-    attachmentUrl: '#',
-  },
-  {
-    id: 'PAY-003',
-    contractId: 'CTR-003',
-    propertyName: 'Oficina Central',
-    landlordName: 'Laura Propietaria',
-    tenantName: 'Startup Innovadora SpA',
-    type: 'arriendo',
-    amount: 800000,
-    paymentDate: '2024-07-01T00:00:00Z',
-    declaredAt: '2024-07-01T09:00:00Z',
-    status: 'aceptado',
-    isOverdue: true,
-  },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { sendEmail } from '@/lib/notifications';
 
 export default function PaymentsPage() {
   const { toast } = useToast();
-  const [payments, setPayments] = useState<Payment[]>(initialPayments);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [paymentToProcess, setPaymentToProcess] = useState<Payment | null>(null);
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
-  
-  // NOTE: For now, we assume a landlord role. This will be replaced by a real auth system.
-  const currentUserRole: UserRole = 'Arrendador';
+  const { currentUser } = useAuth();
+
+  const fetchData = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    try {
+      const contractsQuery = query(
+        collection(db, 'contracts'),
+        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
+      );
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+      
+      const contractIds = contractsList.map(c => c.id);
+      if (contractIds.length > 0) {
+        const paymentsQuery = query(collection(db, 'payments'), where('contractId', 'in', contractIds));
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        const paymentsList = paymentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Payment));
+        setPayments(paymentsList);
+      } else {
+        setPayments([]);
+      }
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const handleSavePayment = async (data: any) => {
+    if (!currentUser || currentUser.role !== 'Arrendatario') {
+        toast({ title: 'Acción no permitida', description: 'Solo los arrendatarios pueden declarar pagos.', variant: 'destructive' });
+        return;
+    }
     setProcessingId('new-payment');
-    const contract = mockContracts.find(c => c.id === data.contractId);
+    
+    const contract = contracts.find(c => c.id === data.contractId);
     if (!contract) {
       toast({ title: 'Error', description: 'Contrato no encontrado', variant: 'destructive' });
       setProcessingId(null);
       return;
     }
 
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-    
-    const newPayment: Payment = {
-      ...data,
-      id: uuidv4(),
-      propertyName: contract.propertyName,
-      landlordName: contract.landlordName,
-      tenantName: contract.tenantName,
-      declaredAt: new Date().toISOString(),
-      status: 'pendiente',
-    };
-    setPayments(prev => [newPayment, ...prev]);
-    toast({ title: 'Pago Declarado', description: 'El pago ha sido registrado y está pendiente de aceptación.' });
-    setIsFormOpen(false);
-    setProcessingId(null);
+    // This is a mock, in a real app you would fetch the landlord's actual email from a 'users' collection
+    const landlordDoc = await getDoc(doc(db, 'users', contract.landlordId!));
+    const landlordEmail = landlordDoc.exists() ? landlordDoc.data().email : 'landlord-email-not-found@example.com';
+
+    try {
+        const newPaymentData: Omit<Payment, 'id'> = {
+          ...data,
+          propertyName: contract.propertyName,
+          landlordId: contract.landlordId,
+          landlordName: contract.landlordName,
+          tenantId: contract.tenantId,
+          tenantName: contract.tenantName,
+          declaredAt: new Date().toISOString(),
+          status: 'pendiente',
+        };
+        await addDoc(collection(db, 'payments'), newPaymentData);
+
+        // Send notification email to landlord
+        await sendEmail({
+            to: landlordEmail,
+            subject: `Nuevo Pago Declarado por ${currentUser.name}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                        <h1 style="color: #2077c2; text-align: center;">Nuevo Pago Declarado</h1>
+                        <p>Hola ${contract.landlordName},</p>
+                        <p><strong>${currentUser.name}</strong> ha declarado un nuevo pago para la propiedad <strong>${contract.propertyName}</strong>.</p>
+                        <ul>
+                            <li><strong>Tipo:</strong> ${data.type}</li>
+                            <li><strong>Monto:</strong> $${data.amount.toLocaleString('es-CL')}</li>
+                            <li><strong>Fecha de Pago:</strong> ${new Date(data.paymentDate).toLocaleDateString('es-CL')}</li>
+                        </ul>
+                        <p>Por favor, inicia sesión en S.A.R.A para revisar y aceptar este pago.</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                        </div>
+                    </div>
+                </div>
+            `,
+        });
+
+        toast({ title: 'Pago Declarado', description: 'El pago ha sido registrado y el arrendador ha sido notificado.' });
+        fetchData();
+        setIsFormOpen(false);
+    } catch(error) {
+        console.error("Error saving payment:", error);
+        toast({ title: 'Error', description: 'No se pudo declarar el pago.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+    }
   };
 
   const openAcceptDialog = (payment: Payment) => {
@@ -154,38 +136,64 @@ export default function PaymentsPage() {
   };
   
   const confirmAcceptPayment = async () => {
-    if (!paymentToProcess) return;
+    if (!paymentToProcess || !currentUser || currentUser.role !== 'Arrendador') return;
     setProcessingId(paymentToProcess.id);
     setIsAcceptDialogOpen(false);
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 1000));
-    setPayments(prev =>
-      prev.map(p =>
-        p.id === paymentToProcess.id ? { ...p, status: 'aceptado', acceptedAt: new Date().toISOString() } : p
-      )
-    );
-    toast({ title: 'Pago Aceptado', description: 'El pago ha sido marcado como aceptado.', variant: 'default' });
-    setProcessingId(null);
-    setPaymentToProcess(null);
+    
+    try {
+        const paymentRef = doc(db, 'payments', paymentToProcess.id);
+        await updateDoc(paymentRef, {
+            status: 'aceptado',
+            acceptedAt: new Date().toISOString(),
+        });
+        
+        const tenantDoc = await getDoc(doc(db, 'users', paymentToProcess.tenantId!));
+        const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : 'tenant-email-not-found@example.com';
+
+        await sendEmail({
+            to: tenantEmail,
+            subject: `Tu Pago ha sido Aceptado`,
+            html: `
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                        <h1 style="color: #28a745; text-align: center;">¡Pago Confirmado!</h1>
+                        <p>Hola ${paymentToProcess.tenantName},</p>
+                        <p>Tu pago para la propiedad <strong>${paymentToProcess.propertyName}</strong> ha sido aceptado por ${currentUser.name}.</p>
+                        <ul>
+                            <li><strong>Tipo:</strong> ${paymentToProcess.type}</li>
+                            <li><strong>Monto:</strong> $${paymentToProcess.amount.toLocaleString('es-CL')}</li>
+                            <li><strong>Fecha de Pago:</strong> ${new Date(paymentToProcess.paymentDate).toLocaleDateString('es-CL')}</li>
+                        </ul>
+                        <p>Este correo sirve como confirmación de tu pago. Puedes ver todos tus pagos en tu panel de S.A.R.A.</p>
+                         <div style="text-align: center; margin: 30px 0;">
+                            <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                        </div>
+                    </div>
+                </div>
+            `,
+        });
+
+        toast({ title: 'Pago Aceptado', description: 'El pago ha sido marcado como aceptado.', variant: 'default' });
+        fetchData();
+    } catch(error) {
+        console.error("Error accepting payment:", error);
+        toast({ title: 'Error', description: 'No se pudo aceptar el pago.', variant: 'destructive' });
+    } finally {
+        setProcessingId(null);
+        setPaymentToProcess(null);
+    }
   };
 
-  const filteredPayments = useMemo(() => {
-    // This is a placeholder for real filtering logic based on logged-in user
-    if (currentUserRole === 'Arrendador') {
-      return payments; // Landlord sees all payments
-    }
-    // Tenant sees their own payments (mocked)
-    return payments.filter(p => p.tenantName === 'Juan Pérez' || p.tenantName === 'Startup Innovadora SpA');
-  }, [payments, currentUserRole]);
+  const userContracts = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'Arrendador') return contracts;
+    return contracts.filter(c => c.tenantId === currentUser.uid);
+  }, [contracts, currentUser]);
 
-  const activeTenantContracts = useMemo(() => {
-     return mockContracts.filter(c => c.status === 'Activo');
-  }, []);
-
-  const columns = createColumns({ onAccept: openAcceptDialog, currentUserRole });
+  const columns = createColumns({ onAccept: openAcceptDialog, currentUserRole: currentUser?.role || 'Arrendatario' });
 
   const handleExport = () => {
-    const dataToExport = filteredPayments.map(p => ({
+    const dataToExport = payments.map(p => ({
       ID_Pago: p.id,
       ID_Contrato: p.contractId,
       Propiedad: p.propertyName,
@@ -212,7 +220,18 @@ export default function PaymentsPage() {
     document.body.removeChild(link);
     toast({ title: 'Exportación exitosa', description: 'El archivo de pagos ha sido descargado.' });
   };
-
+  
+  if (loading) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6">
@@ -220,7 +239,7 @@ export default function PaymentsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Pagos</h1>
           <p className="text-muted-foreground">
-            {currentUserRole === 'Arrendador'
+            {currentUser?.role === 'Arrendador'
               ? 'Revise y acepte los pagos declarados por sus arrendatarios.'
               : 'Declare los pagos de su arriendo de forma rápida y sencilla.'}
           </p>
@@ -238,7 +257,7 @@ export default function PaymentsPage() {
                 <FileDown className="mr-2 h-4 w-4" />
                 Exportar
             </Button>
-          {currentUserRole === 'Arrendatario' && (
+          {currentUser?.role === 'Arrendatario' && (
             <Button onClick={() => setIsFormOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Declarar Pago
@@ -247,27 +266,27 @@ export default function PaymentsPage() {
         </div>
       </div>
       
-      {filteredPayments.length > 0 ? (
+      {payments.length > 0 ? (
         viewMode === 'cards' ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredPayments.map(payment => (
+            {payments.map(payment => (
                 <PaymentCard
                 key={payment.id}
                 payment={payment}
-                currentUserRole={currentUserRole}
+                currentUserRole={currentUser?.role || null}
                 onAccept={() => openAcceptDialog(payment)}
                 isProcessing={processingId === payment.id}
                 />
             ))}
             </div>
         ) : (
-            <PaymentsDataTable columns={columns} data={filteredPayments} />
+            <PaymentsDataTable columns={columns} data={payments} />
         )
       ) : (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <h3 className="text-lg font-medium">No hay pagos para mostrar</h3>
             <p className="text-muted-foreground mt-1">
-                {currentUserRole === 'Arrendatario' ? 'Declare su primer pago para comenzar.' : 'Aún no se han declarado pagos.'}
+                {currentUser?.role === 'Arrendatario' ? 'Declare su primer pago para comenzar.' : 'Aún no se han declarado pagos.'}
             </p>
         </div>
       )}
@@ -276,7 +295,7 @@ export default function PaymentsPage() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSave={handleSavePayment}
-        tenantContracts={activeTenantContracts}
+        tenantContracts={userContracts.filter(c => c.status === 'Activo')}
       />
       
       <AlertDialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
@@ -284,7 +303,7 @@ export default function PaymentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Confirmar aceptación de pago?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción marcará el pago como aceptado y no se puede deshacer.
+              Esta acción marcará el pago como aceptado y no se puede deshacer. Se enviará una notificación al arrendatario.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
