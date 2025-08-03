@@ -1,6 +1,7 @@
 export interface Property {
   id: string;
   code: string;
+  ownerUid?: string; // Added to link property to a user
   ownerRut?: string;
   region: string;
   comuna: string;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,9 +11,10 @@ import { columns } from '@/components/properties/properties-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { PropertyCard } from '@/components/properties/property-card';
 import Papa from 'papaparse';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -26,12 +26,18 @@ export default function PropertiesPage() {
   const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const { toast } = useToast();
+  const { currentUser } = useAuth();
 
   const fetchProperties = useCallback(async () => {
+    if (!currentUser || currentUser.role !== 'Arrendador') {
+        setLoading(false);
+        setProperties([]);
+        return;
+    };
     setLoading(true);
     try {
-      const propertiesCollection = collection(db, 'properties');
-      const propertiesSnapshot = await getDocs(propertiesCollection);
+      const propertiesQuery = query(collection(db, 'properties'), where('ownerUid', '==', currentUser.uid));
+      const propertiesSnapshot = await getDocs(propertiesQuery);
       const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
       setProperties(propertiesList);
     } catch (error) {
@@ -44,7 +50,7 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [currentUser, toast]);
 
   useEffect(() => {
     fetchProperties();
@@ -158,6 +164,33 @@ export default function PropertiesPage() {
     document.body.removeChild(link);
     toast({ title: 'Exportación exitosa', description: 'El archivo de propiedades ha sido descargado.' });
   };
+  
+  if (loading) {
+     return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+            </div>
+        </div>
+     );
+  }
+
+  if (currentUser?.role !== 'Arrendador') {
+      return (
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <h3 className="text-lg font-medium">Acceso Restringido</h3>
+              <p className="text-muted-foreground mt-1">
+                  Esta sección solo está disponible para usuarios con el rol de Arrendador.
+              </p>
+          </div>
+      );
+  }
 
   return (
     <div className="space-y-6">
@@ -196,16 +229,7 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-       {loading ? (
-          <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  <Skeleton className="h-64 w-full" />
-                  <Skeleton className="h-64 w-full" />
-                  <Skeleton className="h-64 w-full" />
-              </div>
-          </div>
-       ) : viewMode === 'cards' ? (
+       {viewMode === 'cards' ? (
           properties.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {properties.map(property => (
@@ -258,5 +282,3 @@ export default function PropertiesPage() {
     </div>
   );
 }
-
-    

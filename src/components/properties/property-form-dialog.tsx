@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +35,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { regions } from "@/lib/geodata";
 import { formatRut, validateRut } from "@/lib/rutUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const propertyFormSchema = z.object({
   code: z.string().optional(),
@@ -73,6 +73,7 @@ export const propertyFormSchema = z.object({
     z.coerce.number({ invalid_type_error: 'Debe ser un número.' }).int({ message: "Debe ser un número entero." }).min(0, { message: "No puede ser negativo." }).optional()
   ),
   description: z.string().min(10, { message: "La descripción debe tener al menos 10 caracteres." }),
+  ownerUid: z.string().optional(), // Add ownerUid to the schema
 });
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
@@ -87,6 +88,7 @@ interface PropertyFormDialogProps {
 
 export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSubmitting }: PropertyFormDialogProps) {
   const isEditing = Boolean(property);
+  const { currentUser } = useAuth();
   
   const [comunas, setComunas] = useState<string[]>([]);
 
@@ -164,6 +166,9 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
   }, [open, property, form]);
 
   async function onSubmit(values: PropertyFormValues) {
+    if (currentUser) {
+        values.ownerUid = currentUser.uid;
+    }
     onSave(values, isEditing, isEditing && property ? property.id : undefined);
   }
 
@@ -414,5 +419,3 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
     </Dialog>
   );
 }
-
-    

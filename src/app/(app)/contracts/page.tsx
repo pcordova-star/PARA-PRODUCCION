@@ -1,61 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid, List, FileDown } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List, FileDown, Loader2 } from 'lucide-react';
 import { ContractFormDialog } from '@/components/contracts/contract-form-dialog';
-import type { Contract, Property } from '@/types';
+import type { Contract, Property, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { ContractsDataTable } from '@/components/contracts/contracts-data-table';
 import { columns } from '@/components/contracts/contracts-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-
-
-// Mock data - En una aplicación real, esto vendría de una API
-const initialContracts: Contract[] = [
-  {
-    id: 'CTR-001',
-    propertyId: '1',
-    propertyAddress: 'Av. Providencia 123',
-    tenantName: 'Juan Pérez',
-    startDate: '2023-01-15T00:00:00Z',
-    endDate: '2024-01-14T00:00:00Z',
-    rentAmount: 500000,
-    status: 'Activo',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'juan.perez@email.com',
-    tenantRut: '11.111.111-1',
-    propertyName: 'Depto. Providencia',
-    landlordName: 'Carlos R.',
-  },
-  {
-    id: 'CTR-002',
-    propertyId: '2',
-    propertyAddress: 'Calle Falsa 123',
-    tenantName: 'Ana García',
-    startDate: '2023-03-01T00:00:00Z',
-    endDate: '2025-02-28T00:00:00Z',
-    rentAmount: 1200000,
-    status: 'Finalizado',
-    propertyUsage: 'Habitacional',
-    tenantEmail: 'ana.garcia@email.com',
-    tenantRut: '22.222.222-2',
-    propertyName: 'Casa Las Condes',
-    landlordName: 'Carlos R.',
-  },
-];
-
-const userProperties: Property[] = [
-    { id: '1', address: 'Av. Providencia 123', code: 'PRO-001', comuna: 'Providencia', region: 'Metropolitana de Santiago', status: 'Arrendada', type: 'Departamento', description: 'desc' },
-    { id: '2', address: 'Calle Falsa 123', code: 'PRO-002', comuna: 'Las Condes', region: 'Metropolitana de Santiago', status: 'Arrendada', type: 'Casa', description: 'desc' },
-    { id: '3', address: 'El Roble 456', code: 'PRO-003', comuna: 'Ñuñoa', region: 'Metropolitana de Santiago', status: 'Disponible', type: 'Departamento', description: 'desc' },
-];
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { sendEmail } from '@/lib/notifications';
 
 export default function ContractsPage() {
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [userProperties, setUserProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,42 +28,102 @@ export default function ContractsPage() {
   const [contractToDelete, setContractToDelete] = useState<Contract | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const { toast } = useToast();
+  const { currentUser } = useAuth();
+
+  const fetchContractsAndProperties = useCallback(async () => {
+    if (!currentUser) return;
+    setLoading(true);
+
+    try {
+      // Fetch Contracts
+      const contractsQuery = query(
+        collection(db, 'contracts'),
+        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
+      );
+      const contractsSnapshot = await getDocs(contractsQuery);
+      const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      setContracts(contractsList);
+      
+      // Fetch Properties for the form (only if landlord)
+      if (currentUser.role === 'Arrendador') {
+        const propertiesQuery = query(collection(db, 'properties'), where('ownerUid', '==', currentUser.uid));
+        const propertiesSnapshot = await getDocs(propertiesQuery);
+        const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
+        setUserProperties(propertiesList);
+      }
+
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+      toast({
+        title: "Error al cargar datos",
+        description: "No se pudieron obtener los contratos o propiedades.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, toast]);
+
+  useEffect(() => {
+    fetchContractsAndProperties();
+  }, [fetchContractsAndProperties]);
 
   const handleSaveContract = async (values: any) => {
+    if (!currentUser || currentUser.role !== 'Arrendador') {
+        toast({ title: 'Acción no permitida', description: 'Solo los arrendadores pueden crear contratos.', variant: 'destructive' });
+        return;
+    }
     setIsSubmitting(true);
-    try {
-      // Simular una llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const property = userProperties.find(p => p.id === values.propertyId);
-      if (!property) {
+    try {
+      const propertyRef = doc(db, 'properties', values.propertyId);
+      const propertySnap = await getDoc(propertyRef);
+      if (!propertySnap.exists()) {
           throw new Error("Property not found");
       }
+      const propertyData = propertySnap.data();
 
       if (selectedContract) {
-        // Editar
-        setContracts(prev =>
-          prev.map(c =>
-            c.id === selectedContract.id
-              ? { ...c, ...values, propertyAddress: property.address, id: selectedContract.id, status: c.status }
-              : c
-          )
-        );
+        // Edit existing contract
+        const contractRef = doc(db, 'contracts', selectedContract.id);
+        await updateDoc(contractRef, {
+            ...values,
+            propertyAddress: propertyData.address,
+            propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+        });
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado con éxito.' });
       } else {
-        // Crear
-        const newContract: Contract = {
+        // Create new contract
+        const newContractData = {
           ...values,
-          id: uuidv4(),
-          propertyAddress: property.address,
-          status: 'Borrador',
+          landlordId: currentUser.uid,
+          landlordName: currentUser.name,
+          propertyAddress: propertyData.address,
+          propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+          status: 'Borrador' as const,
         };
-        setContracts(prev => [newContract, ...prev]);
-        toast({ title: 'Contrato creado', description: 'El nuevo contrato está en estado Borrador.' });
+        await addDoc(collection(db, 'contracts'), newContractData);
+        
+        // Send email notification
+        await sendEmail({
+          to: values.tenantEmail,
+          subject: `Nuevo Contrato de Arriendo de ${currentUser.name}`,
+          html: `
+            <h1>Hola ${values.tenantName},</h1>
+            <p><strong>${currentUser.name}</strong> te ha enviado un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyData.address}</strong>.</p>
+            <p>Por favor, inicia sesión en S.A.R.A para revisar los detalles del contrato y aceptarlo.</p>
+            <p>Gracias por usar S.A.R.A.</p>
+          `,
+        });
+
+        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
       }
+
+      fetchContractsAndProperties();
       setIsFormOpen(false);
       setSelectedContract(null);
     } catch (error) {
+      console.error("Error saving contract:", error);
       toast({
         title: 'Error al guardar',
         description: 'No se pudo guardar el contrato. Inténtalo de nuevo.',
@@ -124,12 +149,22 @@ export default function ContractsPage() {
     setIsDeleteDialogOpen(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!contractToDelete) return;
-    setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
-    toast({ title: 'Contrato eliminado', description: `El contrato con ${contractToDelete.tenantName} ha sido eliminado.`, variant: 'destructive' });
-    setIsDeleteDialogOpen(false);
-    setContractToDelete(null);
+    try {
+        await deleteDoc(doc(db, 'contracts', contractToDelete.id));
+        toast({ title: 'Contrato eliminado', description: `El contrato con ${contractToDelete.tenantName} ha sido eliminado.`, variant: 'destructive' });
+        fetchContractsAndProperties();
+        setIsDeleteDialogOpen(false);
+        setContractToDelete(null);
+    } catch (error) {
+        console.error("Error deleting contract:", error);
+        toast({
+            title: 'Error al eliminar',
+            description: 'No se pudo eliminar el contrato.',
+            variant: 'destructive',
+        });
+    }
   };
   
   const handleExport = () => {
@@ -139,8 +174,8 @@ export default function ContractsPage() {
       Arrendatario: c.tenantName,
       RUT_Arrendatario: c.tenantRut,
       Email_Arrendatario: c.tenantEmail,
-      Fecha_Inicio: c.startDate.split('T')[0],
-      Fecha_Fin: c.endDate.split('T')[0],
+      Fecha_Inicio: c.startDate ? c.startDate.split('T')[0] : '',
+      Fecha_Fin: c.endDate ? c.endDate.split('T')[0] : '',
       Monto_Arriendo: c.rentAmount,
       Estado: c.status,
       Uso_Propiedad: c.propertyUsage,
@@ -157,6 +192,22 @@ export default function ContractsPage() {
     document.body.removeChild(link);
     toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
   };
+
+  if (loading) {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-72 w-full" />
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -180,10 +231,12 @@ export default function ContractsPage() {
                 <FileDown className="mr-2 h-4 w-4" />
                 Exportar
             </Button>
-            <Button onClick={handleAddNew}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Crear Contrato
-            </Button>
+            {currentUser?.role === 'Arrendador' && (
+                <Button onClick={handleAddNew}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Crear Contrato
+                </Button>
+            )}
         </div>
       </div>
 
