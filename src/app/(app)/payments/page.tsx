@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2, LayoutGrid, List, FileDown } from 'lucide-react';
 import { PaymentCard } from '@/components/payments/payment-card';
@@ -33,10 +34,9 @@ export default function PaymentsPage() {
     if (!currentUser) return;
     setLoading(true);
     try {
-      const contractsQuery = query(
-        collection(db, 'contracts'),
-        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
-      );
+      const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
+      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
@@ -77,8 +77,7 @@ export default function PaymentsPage() {
       setProcessingId(null);
       return;
     }
-
-    // This is a mock, in a real app you would fetch the landlord's actual email from a 'users' collection
+    
     const landlordDoc = await getDoc(doc(db, 'users', contract.landlordId!));
     const landlordEmail = landlordDoc.exists() ? landlordDoc.data().email : 'landlord-email-not-found@example.com';
 
@@ -88,8 +87,8 @@ export default function PaymentsPage() {
           propertyName: contract.propertyName,
           landlordId: contract.landlordId,
           landlordName: contract.landlordName,
-          tenantId: contract.tenantId,
-          tenantName: contract.tenantName,
+          tenantId: currentUser.uid,
+          tenantName: currentUser.name,
           declaredAt: new Date().toISOString(),
           status: 'pendiente',
         };
@@ -186,8 +185,7 @@ export default function PaymentsPage() {
 
   const userContracts = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser.role === 'Arrendador') return contracts;
-    return contracts.filter(c => c.tenantId === currentUser.uid);
+    return contracts.filter(c => c.status === 'Activo');
   }, [contracts, currentUser]);
 
   const columns = createColumns({ onAccept: openAcceptDialog, currentUserRole: currentUser?.role || 'Arrendatario' });
@@ -295,7 +293,7 @@ export default function PaymentsPage() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSave={handleSavePayment}
-        tenantContracts={userContracts.filter(c => c.status === 'Activo')}
+        tenantContracts={userContracts}
       />
       
       <AlertDialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>

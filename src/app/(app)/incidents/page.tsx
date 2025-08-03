@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -38,10 +39,8 @@ export default function IncidentsPage() {
     if (!currentUser) return;
     setLoading(true);
     try {
-      const contractsQuery = query(
-        collection(db, 'contracts'),
-        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
-      );
+      const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
+      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
@@ -88,11 +87,21 @@ export default function IncidentsPage() {
         };
         await addDoc(collection(db, 'incidents'), newIncidentData);
 
-        const isLandlordCreator = currentUser.role === 'Arrendador';
-        const recipientId = isLandlordCreator ? contract.tenantId : contract.landlordId;
-        const recipientDoc = await getDoc(doc(db, 'users', recipientId!));
+        const isCreatorLandlord = currentUser.role === 'Arrendador';
+        const recipientId = isCreatorLandlord ? contract.tenantId : contract.landlordId;
+        
+        if (!recipientId) {
+            console.warn("Recipient ID is missing, cannot send notification.");
+            toast({ title: 'Incidente Reportado', description: 'El incidente fue creado, pero no se pudo notificar a la otra parte (ID no encontrado).' });
+            fetchData();
+            setIsFormOpen(false);
+            setProcessingId(null);
+            return;
+        }
+
+        const recipientDoc = await getDoc(doc(db, 'users', recipientId));
         const recipientEmail = recipientDoc.exists() ? recipientDoc.data().email : null;
-        const recipientName = isLandlordCreator ? contract.tenantName : contract.landlordName;
+        const recipientName = isCreatorLandlord ? contract.tenantName : contract.landlordName;
 
         if (recipientEmail) {
             await sendEmail({

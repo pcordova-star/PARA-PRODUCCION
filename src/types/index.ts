@@ -1,3 +1,4 @@
+
 export interface Property {
   id: string;
   code: string;
@@ -21,11 +22,11 @@ export interface Contract {
   propertyAddress: string;
   propertyName: string;
   landlordName: string;
-  landlordId?: string; 
+  landlordId: string; 
   tenantName: string;
   tenantEmail: string;
   tenantRut: string;
-  tenantId?: string; 
+  tenantId: string | null; 
   startDate: string; 
   endDate: string; 
   rentAmount: number;
@@ -68,7 +69,9 @@ export interface Payment {
   id: string;
   contractId: string;
   propertyName: string;
+  landlordId: string;
   landlordName?: string;
+  tenantId: string;
   tenantName?: string;
   type: PaymentType;
   serviceType?: ServiceType;
@@ -111,7 +114,7 @@ export interface Incident {
   propertyName: string;
   landlordId: string;
   landlordName?: string;
-  tenantId: string;
+  tenantId: string | null;
   tenantName?: string;
   type: IncidentType;
   description: string;

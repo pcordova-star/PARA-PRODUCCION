@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -33,8 +34,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Paperclip, CreditCard, Loader2 } from "lucide-react"; 
-// MOCK: In a real app, this would come from firebase config
-// import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import type { Contract, PaymentType, ServiceType } from "@/types"; 
 
@@ -102,7 +101,7 @@ export function PaymentFormDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        contractId: tenantContracts.find((c) => c.status === "Activo")?.id || "",
+        contractId: tenantContracts.length > 0 ? tenantContracts[0].id : "",
         type: "arriendo", 
         amount: 0,
         paymentDate: new Date().toISOString().split('T')[0], 

@@ -32,9 +32,12 @@ const getStatusBadgeVariant = (status: Contract["status"]) => {
     }
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "Fecha Indefinida";
     try {
+        // Assuming dateString is in ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
         const date = new Date(dateString);
+        // Correct for timezone offset if necessary, but format should handle it
         return format(date, "d MMM yyyy", { locale: es });
     } catch {
         return "Fecha inválida";
@@ -53,7 +56,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
             <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">Contrato {contract.id.split('-')[0]}</CardTitle>
+                    <CardTitle className="text-lg">Contrato {contract.propertyName}</CardTitle>
                     <Badge className={`${getStatusBadgeVariant(contract.status)} capitalize text-xs font-semibold`}>{contract.status}</Badge>
                 </div>
                 <CardDescription className="pt-1 text-2xl font-bold text-primary">
@@ -67,7 +70,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                 </div>
                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <User className="h-5 w-5 shrink-0" />
-                    <span className="truncate">{userRole === 'Arrendador' ? contract.tenantName : contract.landlordName}</span>
+                    <span className="truncate">{userRole === 'Arrendador' ? `Arrendatario: ${contract.tenantName}` : `Arrendador: ${contract.landlordName}`}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
                      <div className="flex items-center gap-2">
@@ -83,11 +86,11 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
                 {userRole === 'Arrendatario' && contract.status === 'Borrador' && (
-                    <div className="flex w-full justify-between">
-                        <Button variant="outline" size="sm" className="border-red-500 text-red-500 hover:bg-red-50" onClick={() => onUpdateStatus('Cancelado')}>
+                    <div className="flex w-full justify-between gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 border-red-500 text-red-500 hover:bg-red-50" onClick={() => onUpdateStatus('Cancelado')}>
                             <XCircle className="mr-2 h-4 w-4" /> Rechazar
                         </Button>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => onUpdateStatus('Activo')}>
+                        <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => onUpdateStatus('Activo')}>
                             <CheckCircle className="mr-2 h-4 w-4" /> Aprobar
                         </Button>
                     </div>
@@ -95,7 +98,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                  {userRole === 'Arrendador' && contract.status !== 'Finalizado' && (
                     <>
                         <Button variant="outline" size="sm">Ver</Button>
-                        <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
+                        <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>
                             <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onDelete} aria-label="Eliminar">

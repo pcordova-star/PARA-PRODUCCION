@@ -1,7 +1,8 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,20 +14,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import type { Contract, UserRole } from "@/types"
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type ColumnsConfig = {
     onEdit: (contract: Contract) => void;
     onDelete: (contract: Contract) => void;
     userRole: UserRole;
+    onUpdateStatus: (contractId: string, status: 'Activo' | 'Cancelado') => void;
 }
 
 const formatDate = (dateString: string) => {
     try {
-      if (!dateString || !/^\d{4}-\d{2}-\d{2}/.test(dateString)) return "Fecha inválida";
-      const [year, month, day] = dateString.split('T')[0].split('-');
-      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      if (!dateString) return "Fecha inválida";
+      const date = new Date(dateString);
       return format(date, "d MMM yyyy", { locale: es });
     } catch (error) {
         console.error("Error formatting date:", dateString, error);
@@ -41,7 +42,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export const columns = ({ onEdit, onDelete, userRole }: ColumnsConfig): ColumnDef<Contract>[] => [
+export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus }: ColumnsConfig): ColumnDef<Contract>[] => [
   {
     accessorKey: "propertyAddress",
     header: "Propiedad",
@@ -86,20 +87,21 @@ export const columns = ({ onEdit, onDelete, userRole }: ColumnsConfig): ColumnDe
         switch (status) {
             case 'Activo':
                 variant = 'default';
-                className = 'bg-green-500 hover:bg-green-600 text-white';
+                className = 'bg-green-100 text-green-800 border-green-200';
                 break;
             case 'Borrador':
                  variant = 'outline';
-                 className = 'border-yellow-500 text-yellow-600';
+                 className = 'bg-yellow-100 text-yellow-800 border-yellow-200';
                 break;
             case 'Finalizado':
                 variant = 'secondary';
                 break;
             case 'Cancelado':
                 variant = 'destructive';
+                className = 'bg-red-100 text-red-800 border-red-200';
                 break;
         }
-        return <Badge variant={variant} className={className}>{status}</Badge>;
+        return <Badge variant={variant} className={`${className} capitalize`}>{status}</Badge>;
     }
   },
   {
@@ -118,14 +120,27 @@ export const columns = ({ onEdit, onDelete, userRole }: ColumnsConfig): ColumnDe
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuItem>Ver Contrato</DropdownMenuItem>
+
             {userRole === 'Arrendador' && (
               <>
-                <DropdownMenuItem onClick={() => onEdit(contract)}>
-                  Editar
+                <DropdownMenuItem onClick={() => onEdit(contract)} disabled={contract.status !== 'Borrador'}>
+                  <Pencil className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract)}>
-                  Eliminar
+                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                </DropdownMenuItem>
+              </>
+            )}
+            
+            {userRole === 'Arrendatario' && contract.status === 'Borrador' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-green-600" onClick={() => onUpdateStatus(contract.id, 'Activo')}>
+                  <CheckCircle className="mr-2 h-4 w-4" /> Aprobar Contrato
+                </DropdownMenuItem>
+                 <DropdownMenuItem className="text-destructive" onClick={() => onUpdateStatus(contract.id, 'Cancelado')}>
+                  <XCircle className="mr-2 h-4 w-4" /> Rechazar Contrato
                 </DropdownMenuItem>
               </>
             )}

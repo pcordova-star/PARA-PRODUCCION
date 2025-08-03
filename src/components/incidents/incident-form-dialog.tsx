@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -205,7 +206,7 @@ export function IncidentFormDialog({
                             value={type}
                             className="capitalize"
                           >
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                            {type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}
                           </SelectItem>
                         ))}
                       </SelectContent>

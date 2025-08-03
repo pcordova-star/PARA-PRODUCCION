@@ -80,43 +80,47 @@ export default function ContractsPage() {
       }
       const propertyData = propertySnap.data();
 
+      // Find tenant by email to get their UID
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", values.tenantEmail), where("role", "==", "Arrendatario"));
+      const querySnapshot = await getDocs(q);
+      
+      let tenantId: string | null = null;
+      let tenantData: UserProfile | null = null;
+      if (!querySnapshot.empty) {
+          tenantId = querySnapshot.docs[0].id;
+          tenantData = querySnapshot.docs[0].data() as UserProfile;
+      } else {
+          toast({
+              title: "Arrendatario no encontrado",
+              description: `El usuario con email ${values.tenantEmail} no está registrado. Se enviará la invitación, pero deberá registrarse para ver el contrato.`,
+              variant: "default"
+          });
+      }
+      
+      const contractDataPayload = {
+          ...values,
+          landlordId: currentUser.uid,
+          landlordName: currentUser.name,
+          tenantId: tenantId,
+          // Ensure tenantName and tenantRut from form are used, even if tenant exists
+          tenantName: values.tenantName,
+          tenantRut: values.tenantRut,
+          propertyAddress: propertyData.address,
+          propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+          status: 'Borrador' as const,
+      };
+
       if (selectedContract) {
-        // Edit existing contract (tenantId logic should be handled carefully here if needed)
+        // Edit existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, {
-            ...values,
-            propertyAddress: propertyData.address,
-            propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+            ...contractDataPayload,
         });
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado con éxito.' });
       } else {
         // Create new contract
-        // Find tenant by email to get their UID
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", values.tenantEmail), where("role", "==", "Arrendatario"));
-        const querySnapshot = await getDocs(q);
-        
-        let tenantId: string | null = null;
-        if (!querySnapshot.empty) {
-            tenantId = querySnapshot.docs[0].id;
-        } else {
-            toast({
-                title: "Arrendatario no encontrado",
-                description: `El usuario con email ${values.tenantEmail} no está registrado. Se enviará la invitación, pero deberá registrarse para ver el contrato.`,
-                variant: "default"
-            });
-        }
-
-        const newContractData = {
-          ...values,
-          landlordId: currentUser.uid,
-          landlordName: currentUser.name,
-          tenantId: tenantId, // Assign found tenantId or null
-          propertyAddress: propertyData.address,
-          propertyName: `${propertyData.type} en ${propertyData.comuna}`,
-          status: 'Borrador' as const,
-        };
-        await addDoc(collection(db, 'contracts'), newContractData);
+        await addDoc(collection(db, 'contracts'), contractDataPayload);
         
         // Send email notification
         await sendEmail({
@@ -241,7 +245,7 @@ export default function ContractsPage() {
     toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
   };
 
-  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role });
+  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role, onUpdateStatus: (id, status) => handleUpdateStatus(contracts.find(c => c.id === id)!, status) });
 
   if (loading) {
     return (
