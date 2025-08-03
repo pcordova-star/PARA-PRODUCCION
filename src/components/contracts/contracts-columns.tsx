@@ -12,13 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import type { Contract } from "@/types"
+import type { Contract, UserRole } from "@/types"
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type ColumnsConfig = {
     onEdit: (contract: Contract) => void;
     onDelete: (contract: Contract) => void;
+    userRole: UserRole;
 }
 
 const formatDate = (dateString: string) => {
@@ -40,20 +41,20 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Contract>[] => [
+export const columns = ({ onEdit, onDelete, userRole }: ColumnsConfig): ColumnDef<Contract>[] => [
   {
     accessorKey: "propertyAddress",
     header: "Propiedad",
   },
   {
-    accessorKey: "tenantName",
+    accessorKey: userRole === 'Arrendador' ? "tenantName" : "landlordName",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Arrendatario
+          {userRole === 'Arrendador' ? 'Arrendatario' : 'Arrendador'}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -117,13 +118,17 @@ export const columns = ({ onEdit, onDelete }: ColumnsConfig): ColumnDef<Contract
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuItem>Ver Contrato</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(contract)}>
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract)}>
-              Eliminar
-            </DropdownMenuItem>
+            {userRole === 'Arrendador' && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(contract)}>
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract)}>
+                  Eliminar
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )

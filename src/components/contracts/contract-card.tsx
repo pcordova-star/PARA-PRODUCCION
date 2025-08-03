@@ -4,15 +4,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Contract } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2 } from "lucide-react";
+import type { Contract, UserRole } from "@/types";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface ContractCardProps {
     contract: Contract;
+    userRole: UserRole;
     onEdit: () => void;
     onDelete: () => void;
+    onUpdateStatus: (status: 'Activo' | 'Cancelado') => void;
 }
 
 const getStatusBadgeVariant = (status: Contract["status"]) => {
@@ -46,7 +48,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) {
+export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateStatus }: ContractCardProps) {
     return (
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
             <CardHeader className="pb-4">
@@ -65,7 +67,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                 </div>
                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <User className="h-5 w-5 shrink-0" />
-                    <span className="truncate">{contract.tenantName}</span>
+                    <span className="truncate">{userRole === 'Arrendador' ? contract.tenantName : contract.landlordName}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
                      <div className="flex items-center gap-2">
@@ -80,13 +82,27 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" size="sm">Ver</Button>
-                <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onDelete} aria-label="Eliminar">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                {userRole === 'Arrendatario' && contract.status === 'Borrador' && (
+                    <div className="flex w-full justify-between">
+                        <Button variant="outline" size="sm" className="border-red-500 text-red-500 hover:bg-red-50" onClick={() => onUpdateStatus('Cancelado')}>
+                            <XCircle className="mr-2 h-4 w-4" /> Rechazar
+                        </Button>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => onUpdateStatus('Activo')}>
+                            <CheckCircle className="mr-2 h-4 w-4" /> Aprobar
+                        </Button>
+                    </div>
+                )}
+                 {userRole === 'Arrendador' && contract.status !== 'Finalizado' && (
+                    <>
+                        <Button variant="outline" size="sm">Ver</Button>
+                        <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onDelete} aria-label="Eliminar">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </>
+                )}
             </CardFooter>
         </Card>
     );

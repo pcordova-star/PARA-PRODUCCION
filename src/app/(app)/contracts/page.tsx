@@ -7,7 +7,7 @@ import { ContractFormDialog } from '@/components/contracts/contract-form-dialog'
 import type { Contract, Property, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ContractsDataTable } from '@/components/contracts/contracts-data-table';
-import { columns } from '@/components/contracts/contracts-columns';
+import { columns as createColumns } from '@/components/contracts/contracts-columns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
@@ -35,16 +35,12 @@ export default function ContractsPage() {
     setLoading(true);
 
     try {
-      // Fetch Contracts
-      const contractsQuery = query(
-        collection(db, 'contracts'),
-        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
-      );
+      const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
+      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
       
-      // Fetch Properties for the form (only if landlord)
       if (currentUser.role === 'Arrendador') {
         const propertiesQuery = query(collection(db, 'properties'), where('ownerUid', '==', currentUser.uid));
         const propertiesSnapshot = await getDocs(propertiesQuery);
@@ -181,6 +177,25 @@ export default function ContractsPage() {
         });
     }
   };
+
+  const handleUpdateStatus = async (contract: Contract, status: Contract['status']) => {
+    try {
+      const contractRef = doc(db, 'contracts', contract.id);
+      await updateDoc(contractRef, { status });
+      toast({
+        title: `Contrato ${status === 'Activo' ? 'Aprobado' : 'Rechazado'}`,
+        description: `El estado del contrato ha sido actualizado.`,
+      });
+      fetchContractsAndProperties();
+    } catch (error) {
+      console.error("Error updating contract status:", error);
+      toast({
+        title: 'Error al actualizar',
+        description: 'No se pudo cambiar el estado del contrato.',
+        variant: 'destructive',
+      });
+    }
+  };
   
   const handleExport = () => {
     const dataToExport = contracts.map(c => ({
@@ -207,6 +222,8 @@ export default function ContractsPage() {
     document.body.removeChild(link);
     toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
   };
+
+  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role });
 
   if (loading) {
     return (
@@ -261,14 +278,16 @@ export default function ContractsPage() {
                   <ContractCard 
                     key={contract.id} 
                     contract={contract} 
+                    userRole={currentUser!.role}
                     onEdit={() => handleEdit(contract)} 
-                    onDelete={() => openDeleteDialog(contract)} 
+                    onDelete={() => openDeleteDialog(contract)}
+                    onUpdateStatus={(status) => handleUpdateStatus(contract, status)}
                   />
               ))}
           </div>
        ) : (
           <ContractsDataTable 
-            columns={columns({ onEdit: handleEdit, onDelete: openDeleteDialog })} 
+            columns={columns} 
             data={contracts} 
           />
        )}
