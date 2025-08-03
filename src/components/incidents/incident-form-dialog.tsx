@@ -40,15 +40,7 @@ import type {
   IncidentFormValues,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-
-const incidentTypes: IncidentType[] = [
-  "pago",
-  "cuidado de la propiedad",
-  "ruidos molestos",
-  "reparaciones necesarias",
-  "incumplimiento de contrato",
-  "otros",
-];
+import { incidentTypes } from "@/types";
 
 const incidentFormSchema = z.object({
   contractId: z.string().min(1, { message: "Debes seleccionar un contrato." }),
@@ -69,7 +61,7 @@ export type IncidentFormDialogValues = z.infer<typeof incidentFormSchema>;
 interface IncidentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: IncidentFormDialogValues & { initialAttachmentUrl: string | null; initialAttachmentName: string | null; }) => Promise<void>;
+  onSave: (data: IncidentFormDialogValues & { initialAttachmentUrl: string | null; initialAttachmentName: string | null; }, contract: Contract) => Promise<void>;
   userContracts: Contract[];
   currentUserRole: UserRole | null;
 }
@@ -111,6 +103,17 @@ export function IncidentFormDialog({
       });
       return;
     }
+    
+    const selectedContract = userContracts.find(c => c.id === values.contractId);
+    if (!selectedContract) {
+      toast({
+        title: "Error de Contrato",
+        description: "El contrato seleccionado no es válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
 
     let attachmentUrl: string | null = null;
     let attachmentName: string | null = null;
@@ -130,7 +133,7 @@ export function IncidentFormDialog({
       ...values, 
       initialAttachmentUrl: attachmentUrl, 
       initialAttachmentName: attachmentName 
-    });
+    }, selectedContract);
 
     form.reset();
   }
@@ -161,7 +164,7 @@ export function IncidentFormDialog({
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un contrato" />
+                        <SelectValue placeholder="Selecciona un contrato activo" />
                       </SelectTrigger>
                       <SelectContent>
                         {userContracts

@@ -69,11 +69,9 @@ export default function IncidentsPage() {
   }, [fetchData]);
 
 
-  const handleSaveIncident = async (data: any) => {
+  const handleSaveIncident = async (data: any, contract: Contract) => {
     if (!currentUser) return;
     setProcessingId('new-incident');
-    const contract = contracts.find(c => c.id === data.contractId);
-    if (!contract) return;
     
     try {
         const newIncidentData: Omit<Incident, 'id'> = {
