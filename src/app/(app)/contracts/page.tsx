@@ -109,10 +109,25 @@ export default function ContractsPage() {
           to: values.tenantEmail,
           subject: `Nuevo Contrato de Arriendo de ${currentUser.name}`,
           html: `
-            <h1>Hola ${values.tenantName},</h1>
-            <p><strong>${currentUser.name}</strong> te ha enviado un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyData.address}</strong>.</p>
-            <p>Por favor, inicia sesión en S.A.R.A para revisar los detalles del contrato y aceptarlo.</p>
-            <p>Gracias por usar S.A.R.A.</p>
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+              <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h1 style="color: #2077c2; text-align: center;">¡Tienes un nuevo contrato de arriendo pendiente!</h1>
+                <p>Hola ${values.tenantName},</p>
+                <p><strong>${currentUser.name}</strong> te ha invitado a revisar y firmar un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyData.address}</strong> a través de S.A.R.A.</p>
+                <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
+                <ol style="padding-left: 20px;">
+                  <li><strong>Regístrate o Inicia Sesión</strong>: Si aún no tienes una cuenta, regístrate en S.A.R.A. Si ya tienes una, simplemente inicia sesión.</li>
+                  <li><strong>Revisa el Contrato</strong>: En tu panel principal (Dashboard), encontrarás el nuevo contrato pendiente de aprobación.</li>
+                  <li><strong>Aprueba el Contrato</strong>: Lee detenidamente los términos y, si estás de acuerdo, aprueba el contrato para activarlo.</li>
+                </ol>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                </div>
+                <p style="font-size: 0.9em; color: #777;">Si tienes alguna pregunta, por favor contacta directamente a ${currentUser.name}.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
+                <p style="font-size: 0.8em; color: #aaa; text-align: center;">Enviado a través de S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
+              </div>
+            </div>
           `,
         });
 
