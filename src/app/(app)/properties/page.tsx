@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, PlusCircle, Upload, LayoutGrid, List, FileDown, Loader2 } from 'lucide-react';
+import { Download, PlusCircle, Upload, LayoutGrid, List, FileDown, Loader2, AlertCircle } from 'lucide-react';
 import { PropertyFormDialog, type PropertyFormValues } from '@/components/properties/property-form-dialog';
 import type { Property } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where } 
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -183,12 +185,13 @@ export default function PropertiesPage() {
 
   if (currentUser?.role !== 'Arrendador') {
       return (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <h3 className="text-lg font-medium">Acceso Restringido</h3>
-              <p className="text-muted-foreground mt-1">
-                  Esta sección solo está disponible para usuarios con el rol de Arrendador.
-              </p>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Acceso Denegado</AlertTitle>
+            <AlertDescription>
+                Esta sección solo está disponible para usuarios con el rol de Arrendador.
+            </AlertDescription>
+          </Alert>
       );
   }
 
