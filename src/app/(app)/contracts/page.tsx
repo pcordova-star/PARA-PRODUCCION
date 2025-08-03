@@ -93,7 +93,7 @@ export default function ContractsPage() {
         // Create new contract
         // Find tenant by email to get their UID
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", values.tenantEmail));
+        const q = query(usersRef, where("email", "==", values.tenantEmail), where("role", "==", "Arrendatario"));
         const querySnapshot = await getDocs(q);
         
         let tenantId: string | null = null;
@@ -130,7 +130,7 @@ export default function ContractsPage() {
                 <p><strong>${currentUser.name}</strong> te ha invitado a revisar y firmar un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyData.address}</strong> a través de S.A.R.A.</p>
                 <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
                 <ol style="padding-left: 20px;">
-                  <li><strong>Regístrate o Inicia Sesión</strong>: Si aún no tienes una cuenta, regístrate en S.A.R.A. Si ya tienes una, simplemente inicia sesión.</li>
+                  <li><strong>Regístrate o Inicia Sesión</strong>: Si aún no tienes una cuenta, regístrate en S.A.R.A con el correo <strong>${values.tenantEmail}</strong>. Si ya tienes una, simplemente inicia sesión.</li>
                   <li><strong>Revisa el Contrato</strong>: En tu panel principal (Dashboard), encontrarás el nuevo contrato pendiente de aprobación.</li>
                   <li><strong>Aprueba el Contrato</strong>: Lee detenidamente los términos y, si estás de acuerdo, aprueba el contrato para activarlo.</li>
                 </ol>
