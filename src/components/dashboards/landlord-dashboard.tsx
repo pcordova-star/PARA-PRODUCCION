@@ -51,8 +51,8 @@ export function LandlordDashboard() {
       const propertiesList = propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Property));
       setProperties(propertiesList);
       
-      // Fetch Contracts
-      const contractsQuery = query(collection(db, 'contracts'), where('landlordId', '==', currentUser.uid));
+      // Fetch Contracts (including 'Borrador' for notifications)
+      const contractsQuery = query(collection(db, 'contracts'), where('landlordId', '==', currentUser.uid), where('status', '!=', 'Archivado'));
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
