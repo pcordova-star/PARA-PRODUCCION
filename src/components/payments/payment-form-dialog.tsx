@@ -49,7 +49,7 @@ const paymentFormSchema = z.object({
   otherTypeDescription: z.string().optional(),
   amount: z.coerce.number().min(1, { message: "El monto debe ser al menos $1." }),
   paymentDate: z.string().min(1, { message: "Debes seleccionar la fecha del pago." }), 
-  notes: z.string().max(500, { message: "Máximo 500 caracteres." }).optional().nullable(),
+  notes: z.string().max(500, { message: "Máximo 500 caracteres." }).optional(),
   attachment: z
     .custom<FileList>((val) => val instanceof FileList, "Se esperaba un archivo")
     .refine((files) => !files || files.length === 0 || files[0].size <= 5 * 1024 * 1024, `El tamaño máximo es 5MB.`)
@@ -78,7 +78,7 @@ export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 interface PaymentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: PaymentFormValues & { attachmentUrl: string | null }) => Promise<void>;
+  onSave: (data: PaymentFormValues) => Promise<void>;
   tenantContracts: Contract[];
 }
 
@@ -126,23 +126,9 @@ export function PaymentFormDialog({
 
   async function onSubmit(values: PaymentFormValues) {
     setIsUploading(true);
-    let attachmentUrl: string | null = null;
-    
-    // MOCK UPLOAD
-    if (values.attachment && values.attachment.length > 0) {
-      const file = values.attachment[0];
-      toast({ title: "Subiendo archivo...", description: `Simulando subida de ${file.name}.` });
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate upload delay
-      attachmentUrl = `https://mockstorage.com/receipts/${Date.now()}_${file.name}`;
-      toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente (simulado)." });
-    }
-
-    await onSave({ 
-      ...values, 
-      attachmentUrl: attachmentUrl 
-    });
-
+    await onSave(values);
     setIsUploading(false);
+    onOpenChange(false);
   }
 
   const formatCurrencyInput = (value: number | string | null | undefined): string => {
@@ -311,7 +297,7 @@ export function PaymentFormDialog({
                 <FormItem>
                   <FormLabel>Notas (Opcional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Detalles adicionales del pago..." {...field} value={field.value || ''} rows={3} />
+                    <Textarea placeholder="Detalles adicionales del pago..." {...field} value={field.value ?? ''} rows={3} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -321,19 +307,21 @@ export function PaymentFormDialog({
             <FormField
               control={form.control}
               name="attachment"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Adjuntar Comprobante (Opcional)</FormLabel>
                   <FormControl>
                     <Input
-                      {...fieldProps}
                       type="file"
                       accept="image/*,application/pdf"
                       onChange={(event) => {
                         const files = event.target.files;
                         setSelectedFileName(files?.[0]?.name || null);
-                        onChange(files);
+                        field.onChange(files);
                       }}
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
                     />
                   </FormControl>
                   <UiFormDescription>

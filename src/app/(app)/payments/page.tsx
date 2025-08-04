@@ -5,7 +5,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2, LayoutGrid, List, FileDown } from 'lucide-react';
 import { PaymentCard } from '@/components/payments/payment-card';
-import { PaymentFormDialog } from '@/components/payments/payment-form-dialog';
+import { PaymentFormDialog, type PaymentFormValues } from '@/components/payments/payment-form-dialog';
 import type { Payment, Contract, UserRole, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentsDataTable } from '@/components/payments/payments-data-table';
@@ -13,8 +13,9 @@ import { columns as createColumns } from '@/components/payments/payments-columns
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Papa from 'papaparse';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Skeleton } from '@/components/ui/skeleton';
 import { sendEmail } from '@/lib/notifications';
 
@@ -64,7 +65,7 @@ export default function PaymentsPage() {
   }, [fetchData]);
 
 
-  const handleSavePayment = async (data: any) => {
+  const handleSavePayment = async (data: PaymentFormValues) => {
     if (!currentUser || currentUser.role !== 'Arrendatario') {
         toast({ title: 'Acción no permitida', description: 'Solo los arrendatarios pueden declarar pagos.', variant: 'destructive' });
         return;
@@ -82,10 +83,21 @@ export default function PaymentsPage() {
     const landlordEmail = landlordDoc.exists() ? landlordDoc.data().email : 'landlord-email-not-found@example.com';
 
     try {
+        let attachmentUrl: string | null = null;
+        if (data.attachment && data.attachment.length > 0) {
+            const file = data.attachment[0];
+            const storageRef = ref(storage, `payment-attachments/${currentUser.uid}/${Date.now()}-${file.name}`);
+            toast({ title: "Subiendo archivo...", description: "Por favor espera." });
+            const snapshot = await uploadBytes(storageRef, file);
+            attachmentUrl = await getDownloadURL(snapshot.ref);
+            toast({ title: "Archivo subido", description: "El comprobante se ha subido correctamente." });
+        }
+
         const { attachment, ...restOfData } = data;
 
         const newPaymentData: Omit<Payment, 'id'> = {
           ...restOfData,
+          attachmentUrl: attachmentUrl,
           propertyName: contract.propertyName,
           landlordId: contract.landlordId,
           landlordName: contract.landlordName,
@@ -95,7 +107,6 @@ export default function PaymentsPage() {
           status: 'pendiente',
         };
 
-        // Sanitize data: Firestore does not accept 'undefined'
         const sanitizedPaymentData = Object.fromEntries(
             Object.entries(newPaymentData).map(([key, value]) => [key, value === undefined ? null : value])
         );
