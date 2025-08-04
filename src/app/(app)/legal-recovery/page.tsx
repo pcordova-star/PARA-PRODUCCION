@@ -2,7 +2,7 @@
 'use client';
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle } from "lucide-react";
 import LegalRecoveryClient from "./client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,8 +35,6 @@ function LegalRecoveryPageContent() {
 
 export default function LegalRecoveryPage() {
     return (
-        <AuthProvider>
-            <LegalRecoveryPageContent />
-        </AuthProvider>
+        <LegalRecoveryPageContent />
     );
 }
