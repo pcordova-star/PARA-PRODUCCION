@@ -1,22 +1,24 @@
 
 "use server";
 
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, FileWarning } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { SignContractClient } from './client';
-import { adminDb } from '@/lib/firebase-admin';
 
 async function getContractByToken(token: string): Promise<Contract | null> {
-    const q = query(adminDb.collection("contracts"), where("signatureToken", "==", token));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
+    const contractsRef = adminDb.collection("contracts");
+    const snapshot = await contractsRef.where("signatureToken", "==", token).limit(1).get();
+    
+    if (snapshot.empty) {
         return null;
     }
-    const contractDoc = querySnapshot.docs[0];
+    
+    const contractDoc = snapshot.docs[0];
     return { ...contractDoc.data(), id: contractDoc.id } as Contract;
 }
 
