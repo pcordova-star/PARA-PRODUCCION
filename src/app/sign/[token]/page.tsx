@@ -1,8 +1,7 @@
 
 "use server";
 
-import { adminDb } from '@/lib/firebase-admin';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
@@ -11,8 +10,9 @@ import { AlertCircle } from 'lucide-react';
 import { SignContractClient } from './client';
 
 async function getContractByToken(token: string): Promise<Contract | null> {
-    const contractsRef = adminDb.collection("contracts");
-    const snapshot = await contractsRef.where("signatureToken", "==", token).limit(1).get();
+    const contractsRef = collection(db, "contracts");
+    const q = query(contractsRef, where("signatureToken", "==", token), limit(1));
+    const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
         return null;
