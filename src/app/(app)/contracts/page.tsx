@@ -47,8 +47,7 @@ export default function ContractsPage() {
       if (currentUser.role === 'Arrendador') {
         contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid), where('status', '!=', 'Archivado'));
       } else {
-        // Correct query for tenant: find contracts where their UID is in the tenantId field.
-        contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid));
+        contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid), where('status', '!=', 'Archivado'));
       }
 
       const contractsSnapshot = await getDocs(contractsQuery);
@@ -95,7 +94,7 @@ export default function ContractsPage() {
       const propertyData = propertySnap.data() as Property;
 
       const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", values.tenantEmail), where("role", "==", "Arrendatario"));
+      const q = query(usersRef, where("email", "==", values.tenantEmail));
       const querySnapshot = await getDocs(q);
       
       let tenantId: string | null = null;
@@ -109,7 +108,7 @@ export default function ContractsPage() {
       
       const signatureToken = selectedContract?.signatureToken || uuidv4();
 
-      const contractDataPayload: Omit<Contract, 'id'> = {
+      const contractDataPayload = {
           ...values,
           startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
@@ -126,26 +125,23 @@ export default function ContractsPage() {
           signedByLandlord: false,
       };
 
-      if (selectedContract) { // Editing existing contract
+      if (selectedContract) {
         const contractRef = doc(db, 'contracts', selectedContract.id);
-        await updateDoc(contractRef, { ...contractDataPayload });
+        await updateDoc(contractRef, contractDataPayload);
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
-      } else { // Creating a new contract
-        // 1. Create the contract document first to get an ID
-        const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
+      } else {
+        const newContractRef = doc(collection(db, 'contracts'));
+        await setDoc(newContractRef, contractDataPayload);
         
-        // 2. If tenant does not exist, create or update the temporary user document
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
             if (tempUserSnap.exists()) {
-                 // If doc exists, just add the new contract ID to the array
                  await updateDoc(tempUserRef, {
                     pendingContracts: arrayUnion(newContractRef.id)
                 });
             } else {
-                // If doc does not exist, create it with the new contract ID in the array
                 await setDoc(tempUserRef, {
                     pendingContracts: [newContractRef.id]
                 });
@@ -373,7 +369,7 @@ export default function ContractsPage() {
       />
 
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpen-change={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de que desea archivar este contrato?</AlertDialogTitle>
@@ -393,5 +389,3 @@ export default function ContractsPage() {
     </div>
   );
 }
-
-    
