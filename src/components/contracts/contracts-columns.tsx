@@ -53,6 +53,7 @@ export const columns = ({ onEdit, onDelete, userRole, onSign, onViewDetails }: C
     header: "Propiedad",
   },
   {
+    id: 'user-role-specific-name', // Static ID for filtering
     accessorKey: userRole === 'Arrendador' ? "tenantName" : "landlordName",
     header: ({ column }) => {
       return (

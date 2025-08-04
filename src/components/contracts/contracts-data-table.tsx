@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -52,14 +53,16 @@ export function ContractsDataTable<TData, TValue>({
     },
   })
 
+  const userFilterColumnId = 'user-role-specific-name';
+
   return (
     <div>
        <div className="flex items-center gap-4 py-4">
         <Input
-          placeholder="Filtrar por arrendatario..."
-          value={(table.getColumn("tenantName")?.getFilterValue() as string) ?? ""}
+          placeholder="Filtrar por arrendatario/arrendador..."
+          value={(table.getColumn(userFilterColumnId)?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("tenantName")?.setFilterValue(event.target.value)
+            table.getColumn(userFilterColumnId)?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
