@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, MessageSquare } from "lucide-react";
+import { Paperclip, MessageSquare, Loader2 } from "lucide-react";
 import type { Incident, UserRole } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { storage } from "@/lib/firebase";
@@ -62,7 +62,7 @@ export function IncidentResponseDialog({
 }: IncidentResponseDialogProps) {
   const { toast } = useToast();
   const { currentUser } = useAuth();
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<IncidentResponseFormValues>({
     resolver: zodResolver(incidentResponseFormSchema),
@@ -71,7 +71,6 @@ export function IncidentResponseDialog({
   React.useEffect(() => {
       if (open) {
           form.reset({ responseText: "", responseAttachment: undefined });
-          setSelectedFileName(null);
       }
   }, [open, form]);
 
@@ -81,31 +80,36 @@ export function IncidentResponseDialog({
       return;
     }
     
-    const dataToSave: { 
-        responseText: string;
-        responseAttachmentUrl?: string;
-        responseAttachmentName?: string;
-     } = {
-        responseText: values.responseText,
-    };
+    setIsSubmitting(true);
 
-    if (values.responseAttachment?.length) {
-      const file = values.responseAttachment[0];
-      dataToSave.responseAttachmentName = file.name;
-      const storageRef = ref(storage, `incident-attachments/${currentUser.uid}/responses/${Date.now()}-${file.name}`);
-      try {
-        toast({ title: "Subiendo archivo...", description: "Por favor espera." });
-        const snapshot = await uploadBytes(storageRef, file);
-        dataToSave.responseAttachmentUrl = await getDownloadURL(snapshot.ref);
-        toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente." });
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        toast({ title: "Error de Subida", description: "No se pudo subir el archivo.", variant: "destructive" });
-        return;
-      }
+    try {
+        const dataToSave: { 
+            responseText: string;
+            responseAttachmentUrl?: string;
+            responseAttachmentName?: string;
+        } = {
+            responseText: values.responseText,
+        };
+
+        if (values.responseAttachment?.length) {
+          const file = values.responseAttachment[0];
+          dataToSave.responseAttachmentName = file.name;
+          const storageRef = ref(storage, `incident-attachments/${currentUser.uid}/responses/${Date.now()}-${file.name}`);
+          
+          toast({ title: "Subiendo archivo...", description: "Por favor espera." });
+          const snapshot = await uploadBytes(storageRef, file);
+          dataToSave.responseAttachmentUrl = await getDownloadURL(snapshot.ref);
+          toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente." });
+        }
+
+        await onSave(incident.id, dataToSave);
+        form.reset();
+    } catch (error) {
+         console.error("Error submitting response:", error);
+         toast({ title: "Error de Envío", description: "No se pudo guardar la respuesta.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
     }
-
-    await onSave(incident.id, dataToSave);
   }
 
   if (!incident) return null;
@@ -147,9 +151,7 @@ export function IncidentResponseDialog({
                     <Input
                       type="file"
                       onChange={(event) => {
-                        const files = event.target.files;
-                        setSelectedFileName(files?.[0]?.name || null);
-                        onChange(files);
+                        onChange(event.target.files);
                       }}
                       {...rest}
                     />
@@ -163,10 +165,11 @@ export function IncidentResponseDialog({
             />
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button variant="outline" disabled={form.formState.isSubmitting}>Cancelar</Button>
+                <Button variant="outline" disabled={isSubmitting}>Cancelar</Button>
               </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Enviando..." : "Enviar Respuesta"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isSubmitting ? "Enviando..." : "Enviar Respuesta"}
               </Button>
             </DialogFooter>
           </form>
