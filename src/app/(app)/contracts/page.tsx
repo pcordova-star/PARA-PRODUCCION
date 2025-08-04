@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc, setDoc, documentId } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,6 +47,7 @@ export default function ContractsPage() {
       if (currentUser.role === 'Arrendador') {
         contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid), where('status', '!=', 'Archivado'));
       } else {
+        // Correct query for tenant: find contracts where their UID is in the tenantId field.
         contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid));
       }
 
@@ -108,13 +109,13 @@ export default function ContractsPage() {
       
       const signatureToken = selectedContract?.signatureToken || uuidv4();
 
-      const contractDataPayload = {
+      const contractDataPayload: Omit<Contract, 'id'> = {
           ...values,
           startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId,
+          tenantId: tenantId, // Will be null if tenant is new
           tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -125,22 +126,26 @@ export default function ContractsPage() {
           signedByLandlord: false,
       };
 
-      if (selectedContract) {
+      if (selectedContract) { // Editing existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, { ...contractDataPayload });
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
-      } else {
+      } else { // Creating a new contract
+        // 1. Create the contract document first to get an ID
         const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
         
+        // 2. If tenant does not exist, create or update the temporary user document
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
             if (tempUserSnap.exists()) {
+                 // If doc exists, just add the new contract ID to the array
                  await updateDoc(tempUserRef, {
                     pendingContracts: arrayUnion(newContractRef.id)
                 });
             } else {
+                // If doc does not exist, create it with the new contract ID in the array
                 await setDoc(tempUserRef, {
                     pendingContracts: [newContractRef.id]
                 });
@@ -388,3 +393,5 @@ export default function ContractsPage() {
     </div>
   );
 }
+
+    

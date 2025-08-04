@@ -61,17 +61,19 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
 
     if (tempUserSnap.exists()) {
         const batch = writeBatch(db);
+        // The data should be an array of strings (contract IDs)
         const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
         
         console.log(`Found ${pendingContracts.length} pending contracts for ${userEmail}`);
 
         for (const contractId of pendingContracts) {
+            // Ensure we are working with a valid string ID
             if (typeof contractId === 'string' && contractId) {
                 console.log(`Assigning contract ${contractId} to user ${userId}`);
                 const contractRef = doc(db, 'contracts', contractId);
                 batch.update(contractRef, { 
                   tenantId: userId,
-                  tenantName: userName 
+                  tenantName: userName // Also update the tenant name for consistency
                 });
             }
         }
