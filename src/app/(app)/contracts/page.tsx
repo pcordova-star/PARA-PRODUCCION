@@ -41,13 +41,20 @@ export default function ContractsPage() {
     setLoading(true);
 
     try {
-      const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
       let contractsQuery;
       
       if (currentUser.role === 'Arrendador') {
-        contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid), where('status', '!=', 'Archivado'));
-      } else {
-        contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid), where('status', '!=', 'Archivado'));
+        contractsQuery = query(
+            collection(db, 'contracts'), 
+            where('landlordId', '==', currentUser.uid), 
+            where('status', '!=', 'Archivado')
+        );
+      } else { // Arrendatario
+        contractsQuery = query(
+            collection(db, 'contracts'), 
+            where('tenantId', '==', currentUser.uid), 
+            where('status', '!=', 'Archivado')
+        );
       }
 
       const contractsSnapshot = await getDocs(contractsQuery);
@@ -83,7 +90,6 @@ export default function ContractsPage() {
         return;
     }
     setIsSubmitting(true);
-    const appUrl = window.location.origin;
 
     try {
       const propertyRef = doc(db, 'properties', values.propertyId);
@@ -130,10 +136,10 @@ export default function ContractsPage() {
         await updateDoc(contractRef, contractDataPayload);
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
       } else {
-        const newContractRef = doc(collection(db, 'contracts'));
-        await setDoc(newContractRef, contractDataPayload);
+        const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
         
         if (!tenantId) {
+            // If tenant does not exist, create a pending reference for them
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
@@ -156,7 +162,7 @@ export default function ContractsPage() {
         tenantName: values.tenantName,
         landlordName: currentUser.name,
         propertyAddress: propertyData.address,
-        appUrl: appUrl,
+        appUrl: window.location.origin,
       });
 
       fetchContractsAndProperties();
@@ -369,7 +375,7 @@ export default function ContractsPage() {
       />
 
 
-      <AlertDialog open={isDeleteDialogOpen} onOpen-change={setIsDeleteDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de que desea archivar este contrato?</AlertDialogTitle>

@@ -50,11 +50,10 @@ interface ContractCreationEmailParams {
   tenantName: string;
   landlordName: string;
   propertyAddress: string;
-  appUrl: string; // Ensure appUrl is passed in
+  appUrl: string;
 }
 
 export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, appUrl }: ContractCreationEmailParams) {
-  // Use the provided appUrl, which should be the public URL
   const loginUrl = `${appUrl}/login`; 
 
   await sendEmail({
@@ -83,5 +82,3 @@ export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landl
     `,
   });
 }
-
-    
