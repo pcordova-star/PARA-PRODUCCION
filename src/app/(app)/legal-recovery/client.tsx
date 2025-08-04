@@ -10,7 +10,7 @@ import { ContractDisplay } from '@/components/legal/ContractDisplay';
 import { IncidentHistory } from '@/components/legal/IncidentHistory';
 import { PriorNotice } from '@/components/legal/PriorNotice';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { FileWarning, Download, Send, Loader2 } from 'lucide-react';
+import { FileWarning, Download, Send, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -161,10 +161,10 @@ export default function LegalRecoveryClient() {
             <TabsContent value="prior_notice" className="print:block">
                <PriorNotice contract={selectedContract} />
             </TabsContent>
-            <TabsContent value="incident_history" className="print:block hidden print:mt-8">
+            <TabsContent value="incident_history" className="print:block print:mt-8">
               <IncidentHistory contract={selectedContract} />
             </TabsContent>
-            <TabsContent value="contract_display" className="print:block hidden print:mt-8">
+            <TabsContent value="contract_display" className="print:block print:mt-8">
               <ContractDisplay contract={selectedContract} property={selectedProperty} />
             </TabsContent>
           </Tabs>
@@ -211,5 +211,3 @@ export default function LegalRecoveryClient() {
     </div>
   );
 }
-
-    

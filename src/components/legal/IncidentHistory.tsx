@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 interface IncidentHistoryProps {
@@ -25,9 +25,13 @@ export function IncidentHistory({ contract }: IncidentHistoryProps) {
     if (!currentUser) return;
     setIsLoading(true);
     try {
-      const incidentsQuery = query(collection(db, 'incidents'), where('contractId', '==', contract.id));
+      const incidentsQuery = query(
+        collection(db, 'incidents'), 
+        where('contractId', '==', contract.id),
+        orderBy('createdAt', 'desc')
+      );
       const incidentsSnapshot = await getDocs(incidentsQuery);
-      const incidentsList = incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const incidentsList = incidentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident));
       setIncidents(incidentsList);
     } catch (error) {
       console.error("Error fetching incidents:", error);
@@ -139,5 +143,3 @@ export function IncidentHistory({ contract }: IncidentHistoryProps) {
     </div>
   );
 }
-
-    
