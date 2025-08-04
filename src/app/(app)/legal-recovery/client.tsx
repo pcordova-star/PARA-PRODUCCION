@@ -149,28 +149,28 @@ export default function LegalRecoveryClient() {
       </Card>
       
       {selectedContract && selectedProperty ? (
-        <div className="printable-area">
-          <Tabs defaultValue="prior_notice" className="w-full">
+        <Tabs defaultValue="prior_notice" className="w-full">
             <TabsList className="grid w-full grid-cols-3 print:hidden">
               <TabsTrigger value="prior_notice">Notificación Previa</TabsTrigger>
               <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
               <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
             </TabsList>
-            <div className="print:block hidden text-center my-4">
-              <h2 className="text-2xl font-bold">Documentación Legal - Contrato {selectedContract.id}</h2>
-              <p>Generado el {new Date().toLocaleDateString('es-CL')}</p>
+            <div className="printable-area">
+                <div className="print:block hidden text-center my-4">
+                  <h2 className="text-2xl font-bold">Documentación Legal - Contrato {selectedContract.id}</h2>
+                  <p>Generado el {new Date().toLocaleDateString('es-CL')}</p>
+                </div>
+                <TabsContent value="prior_notice" forceMount className="print:block data-[state=inactive]:hidden">
+                   <PriorNotice contract={selectedContract} />
+                </TabsContent>
+                <TabsContent value="legal_dossier" forceMount className="print:block data-[state=inactive]:hidden">
+                  <LegalDossier contract={selectedContract} />
+                </TabsContent>
+                <TabsContent value="contract_display" forceMount className="print:block data-[state=inactive]:hidden">
+                  <ContractDisplay contract={selectedContract} property={selectedProperty} />
+                </TabsContent>
             </div>
-            <TabsContent value="prior_notice" className="print:block">
-               <PriorNotice contract={selectedContract} />
-            </TabsContent>
-            <TabsContent value="legal_dossier" className="print:block print:mt-8">
-              <LegalDossier contract={selectedContract} />
-            </TabsContent>
-            <TabsContent value="contract_display" className="print:block print:mt-8">
-              <ContractDisplay contract={selectedContract} property={selectedProperty} />
-            </TabsContent>
-          </Tabs>
-        </div>
+        </Tabs>
       ) : (
          <Alert variant="default" className="mt-6 border-dashed print:hidden">
             <FileWarning className="h-4 w-4" />
@@ -201,11 +201,10 @@ export default function LegalRecoveryClient() {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
           .print\\:block { display: block !important; }
-          .print\\:mt-8 { margin-top: 2rem !important; }
           .printable-area .print\\:block {
              page-break-before: always;
           }
-           .printable-area > div > div:first-child {
+           .printable-area > div:first-child {
             page-break-before: auto;
           }
         }
