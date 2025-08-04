@@ -52,6 +52,13 @@ export interface Contract {
 
 export type UserRole = "Arrendador" | "Arrendatario";
 
+export interface PendingContract {
+  contractId: string;
+  landlordName: string;
+  propertyAddress: string;
+  addedAt: string;
+}
+
 export interface UserProfile {
   uid: string;
   role: UserRole;
@@ -59,6 +66,7 @@ export interface UserProfile {
   email: string;
   createdAt?: string;
   mobilePhone?: string;
+  pendingContracts?: PendingContract[];
 }
 
 export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "otro";
@@ -203,3 +211,5 @@ export interface TenantCertificateData {
   generationDate: string;
   certificateId: string;
 }
+
+    

@@ -12,11 +12,11 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { sendEmail } from '@/lib/notifications';
+import { sendCreationEmailToTenant } from '@/lib/notifications';
 import { ContractDetailsDialog } from '@/components/contracts/contract-details-dialog';
 
 export default function ContractsPage() {
@@ -80,24 +80,21 @@ export default function ContractsPage() {
       if (!propertySnap.exists()) {
           throw new Error("Property not found");
       }
-      const propertyData = propertySnap.data();
+      const propertyData = propertySnap.data() as Property;
 
-      // Find tenant by email to get their UID
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", values.tenantEmail), where("role", "==", "Arrendatario"));
       const querySnapshot = await getDocs(q);
       
       let tenantId: string | null = null;
       let tenantData: UserProfile | null = null;
+      let tenantDocRef;
+
       if (!querySnapshot.empty) {
-          tenantId = querySnapshot.docs[0].id;
-          tenantData = querySnapshot.docs[0].data() as UserProfile;
-      } else {
-          toast({
-              title: "Arrendatario no encontrado",
-              description: `El usuario con email ${values.tenantEmail} no está registrado. Se enviará la invitación, pero deberá registrarse para ver el contrato.`,
-              variant: "default"
-          });
+          const tenantDoc = querySnapshot.docs[0];
+          tenantId = tenantDoc.id;
+          tenantData = tenantDoc.data() as UserProfile;
+          tenantDocRef = tenantDoc.ref;
       }
       
       const contractDataPayload = {
@@ -107,7 +104,6 @@ export default function ContractsPage() {
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
           tenantId: tenantId,
-          // Ensure tenantName and tenantRut from form are used, even if tenant exists
           tenantName: values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -116,41 +112,44 @@ export default function ContractsPage() {
       };
 
       if (selectedContract) {
-        // Edit existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
-        await updateDoc(contractRef, {
-            ...contractDataPayload,
-        });
+        await updateDoc(contractRef, { ...contractDataPayload });
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado con éxito.' });
       } else {
-        // Create new contract
-        await addDoc(collection(db, 'contracts'), contractDataPayload);
+        const batch = writeBatch(db);
+
+        const newContractRef = doc(collection(db, 'contracts'));
+        batch.set(newContractRef, contractDataPayload);
+
+        const pendingContractData = {
+            contractId: newContractRef.id,
+            landlordName: currentUser.name,
+            propertyAddress: propertyData.address,
+            addedAt: new Date().toISOString()
+        };
+
+        if (tenantDocRef && tenantData) {
+            const updatedPendingContracts = [...(tenantData.pendingContracts || []), pendingContractData];
+            batch.update(tenantDocRef, { pendingContracts: updatedPendingContracts });
+        } else {
+            const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
+            const tempUserSnap = await getDoc(tempUserRef);
+            if (tempUserSnap.exists()) {
+                const existingData = tempUserSnap.data();
+                const updatedPendingContracts = [...(existingData.pendingContracts || []), pendingContractData];
+                batch.update(tempUserRef, { pendingContracts: updatedPendingContracts });
+            } else {
+                batch.set(tempUserRef, { pendingContracts: [pendingContractData] });
+            }
+        }
         
-        // Send email notification
-        await sendEmail({
-          to: values.tenantEmail,
-          subject: `Nuevo Contrato de Arriendo de ${currentUser.name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-              <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                <h1 style="color: #2077c2; text-align: center;">¡Tienes un nuevo contrato de arriendo pendiente!</h1>
-                <p>Hola ${values.tenantName},</p>
-                <p><strong>${currentUser.name}</strong> te ha invitado a revisar y firmar un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyData.address}</strong> a través de S.A.R.A.</p>
-                <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
-                <ol style="padding-left: 20px;">
-                  <li><strong>Regístrate o Inicia Sesión</strong>: Si aún no tienes una cuenta, regístrate en S.A.R.A con el correo <strong>${values.tenantEmail}</strong>. Si ya tienes una, simplemente inicia sesión.</li>
-                  <li><strong>Revisa el Contrato</strong>: En tu panel principal (Dashboard), encontrarás el nuevo contrato pendiente de aprobación.</li>
-                  <li><strong>Aprueba el Contrato</strong>: Lee detenidamente los términos y, si estás de acuerdo, aprueba el contrato para activarlo.</li>
-                </ol>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
-                </div>
-                <p style="font-size: 0.9em; color: #777;">Si tienes alguna pregunta, por favor contacta directamente a ${currentUser.name}.</p>
-                <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
-                <p style="font-size: 0.8em; color: #aaa; text-align: center;">Enviado a través de S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
-              </div>
-            </div>
-          `,
+        await batch.commit();
+        
+        await sendCreationEmailToTenant({
+          tenantEmail: values.tenantEmail,
+          tenantName: values.tenantName,
+          landlordName: currentUser.name,
+          propertyAddress: propertyData.address,
         });
 
         toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });

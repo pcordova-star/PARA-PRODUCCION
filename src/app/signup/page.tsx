@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,9 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { UserRole } from "@/types";
-import { auth } from "@/lib/firebase";
-import { sendEmail } from "@/lib/notifications";
+import { auth, db } from "@/lib/firebase";
+import { sendWelcomeEmail } from "@/lib/notifications";
 import { useEffect } from "react";
+import { doc, getDoc, writeBatch, collection, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 
 
 const formSchema = z.object({
@@ -51,6 +53,28 @@ const formSchema = z.object({
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
+
+async function assignPendingContracts(userId: string, userEmail: string) {
+    const tempUserRef = doc(db, 'tempUsers', userEmail);
+    const tempUserSnap = await getDoc(tempUserRef);
+
+    if (tempUserSnap.exists()) {
+        const batch = writeBatch(db);
+        const pendingContracts = tempUserSnap.data().pendingContracts || [];
+
+        for (const pending of pendingContracts) {
+            const contractRef = doc(db, 'contracts', pending.contractId);
+            batch.update(contractRef, { tenantId: userId });
+        }
+        
+        const userRef = doc(db, 'users', userId);
+        batch.update(userRef, { pendingContracts: [] });
+        batch.delete(tempUserRef);
+        
+        await batch.commit();
+    }
+}
+
 
 function RegisterForm() {
   const { toast } = useToast();
@@ -84,25 +108,21 @@ function RegisterForm() {
           values.mobilePhone
         );
       }
+      
+      if (values.role === 'Arrendatario') {
+          await assignPendingContracts(user.uid, values.email);
+      }
 
-      // Send welcome email
-      await sendEmail({
-        to: values.email,
-        subject: "¡Bienvenido a S.A.R.A!",
-        html: `
-          <h1>Hola ${values.displayName},</h1>
-          <p>Te damos la bienvenida a S.A.R.A - Sistema de Administración Responsable de Arriendos.</p>
-          <p>Tu cuenta como <strong>${values.role}</strong> ha sido creada exitosamente. Ya puedes iniciar sesión y comenzar a gestionar tus arriendos de forma fácil y segura.</p>
-          <p>Gracias por unirte a nuestra comunidad.</p>
-          <p>El equipo de S.A.R.A</p>
-        `,
+      await sendWelcomeEmail({
+        email: values.email,
+        name: values.displayName,
+        role: values.role
       });
 
       toast({
         title: "Registro Exitoso",
         description: "Tu cuenta ha sido creada. Serás redirigido al dashboard.",
       });
-      // The redirect will be handled by the parent component's useEffect
     } catch (error: any) {
       console.error("Error during registration:", error);
       toast({
@@ -253,3 +273,5 @@ export default function SignupPage() {
         </div>
     )
 }
+
+    
