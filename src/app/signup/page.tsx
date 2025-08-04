@@ -64,17 +64,24 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
         const pendingContracts = tempUserSnap.data().pendingContracts || [];
 
         for (const pending of pendingContracts) {
-            const contractRef = doc(db, 'contracts', pending.contractId);
-            batch.update(contractRef, { 
-              tenantId: userId,
-              tenantName: userName // Also update the tenant name in the contract
-            });
+            if (pending.contractId) {
+                const contractRef = doc(db, 'contracts', pending.contractId);
+                batch.update(contractRef, { 
+                  tenantId: userId,
+                  tenantName: userName // Also update the tenant name in the contract
+                });
+            }
         }
         
-        // Remove the temporary user document
+        // Remove the temporary user document after assigning all contracts
         batch.delete(tempUserRef);
         
-        await batch.commit();
+        try {
+            await batch.commit();
+            console.log(`Assigned ${pendingContracts.length} contract(s) to new user ${userName} (${userId})`);
+        } catch (error) {
+            console.error("Error committing batch to assign pending contracts:", error);
+        }
     }
 }
 
@@ -278,5 +285,3 @@ export default function SignupPage() {
         </div>
     )
 }
-
-    
