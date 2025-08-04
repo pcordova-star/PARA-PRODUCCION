@@ -97,13 +97,11 @@ export default function ContractsPage() {
       
       let tenantId: string | null = null;
       let tenantData: UserProfile | null = null;
-      let tenantDocRef;
 
       if (!querySnapshot.empty) {
           const tenantDoc = querySnapshot.docs[0];
           tenantId = tenantDoc.id;
           tenantData = tenantDoc.data() as UserProfile;
-          tenantDocRef = tenantDoc.ref;
       }
       
       const signatureToken = selectedContract?.signatureToken || uuidv4();
@@ -115,7 +113,7 @@ export default function ContractsPage() {
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
           tenantId: tenantId,
-          tenantName: values.tenantName,
+          tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
@@ -142,10 +140,11 @@ export default function ContractsPage() {
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
       } else {
         const batch = writeBatch(db);
-
         const newContractRef = doc(collection(db, 'contracts'));
+        
         batch.set(newContractRef, { ...contractDataPayload, status: 'Borrador' });
 
+        // If the tenant does not exist, create a pending contract reference
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
@@ -155,6 +154,7 @@ export default function ContractsPage() {
                 propertyAddress: propertyData.address,
                 addedAt: new Date().toISOString()
             };
+
             if (tempUserSnap.exists()) {
                 const existingData = tempUserSnap.data();
                 const updatedPendingContracts = [...(existingData.pendingContracts || []), pendingContractData];

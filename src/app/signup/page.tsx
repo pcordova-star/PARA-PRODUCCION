@@ -54,7 +54,8 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 });
 
-async function assignPendingContracts(userId: string, userEmail: string) {
+// This function finds pending contracts for a new tenant and assigns them.
+async function assignPendingContracts(userId: string, userEmail: string, userName: string) {
     const tempUserRef = doc(db, 'tempUsers', userEmail);
     const tempUserSnap = await getDoc(tempUserRef);
 
@@ -64,11 +65,13 @@ async function assignPendingContracts(userId: string, userEmail: string) {
 
         for (const pending of pendingContracts) {
             const contractRef = doc(db, 'contracts', pending.contractId);
-            batch.update(contractRef, { tenantId: userId });
+            batch.update(contractRef, { 
+              tenantId: userId,
+              tenantName: userName // Also update the tenant name in the contract
+            });
         }
         
-        const userRef = doc(db, 'users', userId);
-        batch.update(userRef, { pendingContracts: [] });
+        // Remove the temporary user document
         batch.delete(tempUserRef);
         
         await batch.commit();
@@ -109,8 +112,9 @@ function RegisterForm() {
         );
       }
       
+      // If the new user is a tenant, check for and assign any pending contracts.
       if (values.role === 'Arrendatario') {
-          await assignPendingContracts(user.uid, values.email);
+          await assignPendingContracts(user.uid, values.email, values.displayName);
       }
 
       await sendWelcomeEmail({
@@ -123,6 +127,7 @@ function RegisterForm() {
         title: "Registro Exitoso",
         description: "Tu cuenta ha sido creada. Serás redirigido al dashboard.",
       });
+      // The redirect is handled by the useEffect in the main component
     } catch (error: any) {
       console.error("Error during registration:", error);
       toast({
