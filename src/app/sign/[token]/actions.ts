@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import type { Contract } from '@/types';
 
 interface SignContractParams {
@@ -21,6 +21,8 @@ export async function signContractAction({ contractId }: SignContractParams): Pr
     if (!sessionCookie) {
         return { success: false, error: 'No has iniciado sesión.' };
     }
+
+    const { auth: adminAuth, db: adminDb } = getFirebaseAdmin();
 
     let decodedClaims;
     try {
@@ -56,6 +58,9 @@ export async function signContractAction({ contractId }: SignContractParams): Pr
                 updatedData.tenantSignedAt = new Date().toISOString();
                 isTenantSigning = true;
             } else if (userId === contract.landlordId) {
+                if (!contract.signedByTenant) {
+                    throw new Error('El arrendatario debe firmar el contrato antes que el arrendador.');
+                }
                 if (contract.signedByLandlord) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByLandlord = true;
                 updatedData.landlordSignedAt = new Date().toISOString();

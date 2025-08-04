@@ -66,17 +66,17 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
         let text = "";
         let colorClass = "";
 
-        if (landlordSigned && tenantSigned) {
+        if (landlordSigned && tenantSigned) { // This case should not happen if status becomes Active
             text = "Ambos han firmado";
             colorClass = "text-green-600";
-        } else if (landlordSigned) {
+        } else if (landlordSigned) { // This case should not happen based on new flow
             text = "Esperando firma del arrendatario";
             colorClass = "text-yellow-600";
         } else if (tenantSigned) {
-            text = "Esperando tu firma";
-             colorClass = "text-yellow-600";
+            text = userRole === 'Arrendador' ? "Listo para tu firma" : "Esperando firma del arrendador";
+            colorClass = "text-blue-600";
         } else {
-            text = "Pendiente de firmas";
+            text = "Pendiente de firma del arrendatario";
             colorClass = "text-muted-foreground";
         }
 
@@ -127,9 +127,9 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                         <Button variant="outline" size="sm" onClick={onViewDetails}>
                            <Eye className="mr-2 h-4 w-4" /> Ver
                         </Button>
-                        {contract.status === 'Borrador' && !contract.signedByLandlord && (
+                        {contract.status === 'Borrador' && contract.signedByTenant && !contract.signedByLandlord && (
                             <Button size="sm" onClick={onSign}>
-                                <PenSquare className="mr-2 h-4 w-4" /> Firmar
+                                <PenSquare className="mr-2 h-4 w-4" /> Firmar para Activar
                             </Button>
                         )}
                         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>

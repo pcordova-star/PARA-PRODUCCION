@@ -132,9 +132,9 @@ export const columns = ({ onEdit, onDelete, userRole, onSign, onViewDetails }: C
                 <Eye className="mr-2 h-4 w-4" /> Ver Detalles
             </DropdownMenuItem>
             
-            {userRole === 'Arrendador' && contract.status === 'Borrador' && !contract.signedByLandlord && (
+            {userRole === 'Arrendador' && contract.status === 'Borrador' && contract.signedByTenant && !contract.signedByLandlord && (
               <DropdownMenuItem onClick={() => onSign(contract)}>
-                  <PenSquare className="mr-2 h-4 w-4" /> Firmar Contrato
+                  <PenSquare className="mr-2 h-4 w-4" /> Firmar para Activar
               </DropdownMenuItem>
             )}
 
