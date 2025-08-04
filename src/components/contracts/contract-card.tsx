@@ -33,21 +33,23 @@ const getStatusBadgeVariant = (status: Contract["status"]) => {
     }
 };
 
-const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "Fecha Indefinida";
+const formatDate = (dateInput: string | Date | undefined): string => {
+    if (!dateInput) return "Fecha Indefinida";
     try {
-        const date = parseISO(dateString);
-        return format(date, "d MMM yyyy", { locale: es });
-    } catch {
-        // Fallback for dates that might not be in ISO format
-        try {
-            const date = new Date(dateString);
-            return format(date, "d MMM yyyy", { locale: es });
-        } catch {
-            return "Fecha inválida";
+        const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            // Try a more general parsing if ISO parsing fails
+            const generalDate = new Date(dateInput);
+            if(isNaN(generalDate.getTime())) return "Fecha inválida";
+            return format(generalDate, "d MMM yyyy", { locale: es });
         }
+        return format(date, "d MMM yyyy", { locale: es });
+    } catch (error) {
+        return "Fecha inválida";
     }
 };
+
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-CL", {
