@@ -2,14 +2,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Contract, Payment, Incident, UserProfile } from "@/types";
+import type { Contract, Payment, Incident, UserProfile, Property } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ClipboardCopy, Loader2 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
 
 interface PriorNoticeProps {
   contract: Contract;
@@ -21,6 +24,7 @@ interface FetchedData {
   totalAmountDue: number;
   hasPendingPayments: boolean;
   hasRelevantIncidents: boolean;
+  property: Property | null;
 }
 
 export function PriorNotice({ contract }: PriorNoticeProps) {
@@ -35,11 +39,14 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
     month: "long",
     day: "numeric",
   });
-  const cityPlaceholder = contract.propertyAddress?.split(',').pop()?.trim() || "[Ciudad]";
 
-  const formatDate = (dateString: string | undefined) => {
+  const formatDate = (dateString: string | undefined, formatStr: string = 'P') => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString("es-CL");
+    try {
+        return format(new Date(dateString), formatStr, { locale: es });
+    } catch (e) {
+        return 'Fecha Inválida';
+    }
   };
 
   const fetchContractData = useCallback(async () => {
@@ -52,7 +59,14 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
       let totalAmountDue = 0;
       let hasPendingPayments = false;
       let hasRelevantIncidents = false;
+      let property: Property | null = null;
 
+      const propertyRef = doc(db, 'properties', contract.propertyId);
+      const propertySnap = await getDoc(propertyRef);
+      if (propertySnap.exists()) {
+          property = propertySnap.data() as Property;
+      }
+      
       const paymentsQuery = query(collection(db, 'payments'), where('contractId', '==', contract.id), where('status', '==', 'pendiente'));
       const paymentsSnapshot = await getDocs(paymentsQuery);
       const pendingPayments = paymentsSnapshot.docs.map(doc => doc.data() as Payment);
@@ -66,7 +80,7 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
         });
         pendingPaymentDetails += `TOTAL ADEUDADO: $${totalAmountDue.toLocaleString('es-CL')}\n\n`;
       } else {
-        pendingPaymentDetails = "No se encontraron pagos pendientes declarados.\n\n";
+        pendingPaymentDetails = "No se encontraron pagos pendientes declarados en la plataforma.\n\n";
       }
 
       const relevantIncidentTypes: Incident["type"][] = ["cuidado de la propiedad", "reparaciones necesarias", "incumplimiento de contrato"];
@@ -82,10 +96,10 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
         });
         relevantIncidentDetails += "\n";
       } else {
-        relevantIncidentDetails = "No se encontraron incidentes relevantes registrados.\n\n";
+        relevantIncidentDetails = "No se encontraron otros incidentes relevantes registrados en la plataforma.\n\n";
       }
       
-      setFetchedData({ pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents });
+      setFetchedData({ pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents, property });
     } catch (error) {
         console.error("Error fetching data for prior notice:", error);
         toast({
@@ -108,7 +122,11 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
       return;
     }
 
-    const { pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents } = fetchedData;
+    const { pendingPaymentDetails, relevantIncidentDetails, totalAmountDue, hasPendingPayments, hasRelevantIncidents, property } = fetchedData;
+    const cityPlaceholder = property?.comuna || contract.propertyAddress?.split(',').pop()?.trim() || "[Ciudad]";
+    const ownerRut = property?.ownerRut || "[SU RUT]";
+    const startDateFormatted = formatDate(contract.startDate, 'PPP');
+
 
     let actionRequired = "";
     if (hasPendingPayments) {
@@ -120,7 +138,12 @@ export function PriorNotice({ contract }: PriorNoticeProps) {
       actionRequired += "[Describa aquí las acciones específicas requeridas para los incidentes listados, ej: Reparar los daños X, cesar actividad Y, etc.]";
     }
     if (!hasPendingPayments && !hasRelevantIncidents) {
-        actionRequired = "[ESPECIFICAR AQUÍ LA ACCIÓN REQUERIDA POR EL INCUMPLIMIENTO PRINCIPAL]";
+        actionRequired = "Subsanar el o los incumplimientos descritos anteriormente.\n[ESPECIFICAR AQUÍ LA ACCIÓN REQUERIDA POR EL INCUMPLIMIENTO PRINCIPAL]";
+    }
+
+    let mainInfringement = "Adicionalmente, sírvase detallar cualquier otro incumplimiento no listado:\n[ESPECIFICAR AQUÍ CUALQUIER OTRO INCUMPLIMIENTO. EJ: No pago de la renta del mes XXXX, uso indebido de la propiedad, etc.]";
+    if (!hasPendingPayments && !hasRelevantIncidents) {
+        mainInfringement = "El motivo de esta notificación es el siguiente incumplimiento principal:\n[ESPECIFICAR AQUÍ EL INCUMPLIMIENTO PRINCIPAL QUE MOTIVA LA NOTIFICACIÓN.]";
     }
 
     const generatedText = `
@@ -133,12 +156,11 @@ PRESENTE
 
 De nuestra consideración:
 
-Junto con saludar, y en mi calidad de arrendador(a) del inmueble ubicado en ${contract.propertyAddress || "[DIRECCIÓN DE LA PROPIEDAD ARRENDADA]"}, según contrato de arriendo de fecha ${new Date(contract.startDate).toLocaleDateString("es-CL")}, vengo en notificarle formalmente lo siguiente:
+Junto con saludar, y en mi calidad de arrendador(a) del inmueble ubicado en ${contract.propertyAddress || "[DIRECCIÓN DE LA PROPIEDAD ARRENDADA]"}, según contrato de arriendo de fecha ${startDateFormatted}, vengo en notificarle formalmente lo siguiente:
 
-Con fecha de hoy, se constata un incumplimiento de las obligaciones contractuales por su parte. A continuación, se detallan los incumplimientos detectados:
+Con fecha de hoy, se constata un incumplimiento de las obligaciones contractuales por su parte. A continuación, se detallan los incumplimientos detectados en nuestra plataforma:
 
-${pendingPaymentDetails}${relevantIncidentDetails}Adicionalmente, sírvase detallar cualquier otro incumplimiento no listado:
-[ESPECIFICAR AQUÍ CUALQUIER OTRO INCUMPLIMIENTO. EJ: No pago de la renta del mes XXXX, uso indebido de la propiedad, etc.]
+${pendingPaymentDetails}${relevantIncidentDetails}${mainInfringement}
 
 En virtud de lo anterior, se le requiere para que en un plazo máximo e improrrogable de DIEZ (10) DÍAS HÁBILES, contados desde la recepción de la presente comunicación, proceda a:
 ${actionRequired}
@@ -152,13 +174,13 @@ Sin otro particular, le saluda atentamente,
 ____________________________________
 ${contract.landlordName?.toUpperCase() || "[NOMBRE DEL ARRENDADOR]"}
 Arrendador(a)
-RUT: [SU RUT]
+RUT: ${ownerRut}
 Correo Electrónico: ${currentUser?.email || '[SU CORREO ELECTRÓNICO]'}
 Teléfono: [SU TELÉFONO]
 `;
     setNoticeText(generatedText.trim());
 
-  }, [contract, isLoading, fetchedData, today, cityPlaceholder, currentUser]);
+  }, [contract, isLoading, fetchedData, today, currentUser]);
 
 
   const handleCopyToClipboard = () => {
@@ -214,5 +236,3 @@ Teléfono: [SU TELÉFONO]
     </div>
   );
 }
-
-    
