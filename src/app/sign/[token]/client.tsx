@@ -55,28 +55,28 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    // This now correctly checks for a non-null tenantId
-    if (!currentUser || currentUser.uid !== contract.tenantId) {
-        // If there's a tenantId but it doesn't match, it's a permissions error.
-        if (contract.tenantId) {
-             return (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Acceso Denegado</AlertTitle>
-                    <AlertDescription>
-                        No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto.
-                    </AlertDescription>
-                </Alert>
-            );
-        }
-        
-        // If tenantId is null, the user needs to log in/register first so assignPendingContracts can run.
+    // If the contract is for a new user, their tenantId will be null initially.
+    // We must guide them to log in or sign up first.
+    if (!contract.tenantId) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acción Requerida: Inicia Sesión</AlertTitle>
                 <AlertDescription>
                     Debes <Link href={`/login?redirect=/sign/${contract.signatureToken}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato. Si no tienes una cuenta, por favor <Link href="/signup" className="font-bold underline">regístrate</Link> con ese correo.
+                </AlertDescription>
+            </Alert>
+        );
+    }
+    
+    // After the user logs in, if they are not the correct tenant, show an error.
+    if (!currentUser || currentUser.uid !== contract.tenantId) {
+        return (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Acceso Denegado</AlertTitle>
+                <AlertDescription>
+                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto.
                 </AlertDescription>
             </Alert>
         );
