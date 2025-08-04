@@ -6,7 +6,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -31,6 +31,7 @@ import {
 import type { UserRole } from "@/types";
 import { auth } from "@/lib/firebase";
 import { sendEmail } from "@/lib/notifications";
+import { useEffect } from "react";
 
 
 const formSchema = z.object({
@@ -101,8 +102,7 @@ function RegisterForm() {
         title: "Registro Exitoso",
         description: "Tu cuenta ha sido creada. Serás redirigido al dashboard.",
       });
-
-      router.push("/dashboard");
+      // The redirect will be handled by the parent component's useEffect
     } catch (error: any) {
       console.error("Error during registration:", error);
       toast({
@@ -207,6 +207,26 @@ function RegisterForm() {
 
 
 export default function SignupPage() {
+    const router = useRouter();
+    const { currentUser, loading } = useAuth();
+
+    useEffect(() => {
+        if (!loading && currentUser) {
+            router.push('/dashboard');
+        }
+    }, [currentUser, loading, router]);
+
+    if (loading || (!loading && currentUser)) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background p-4">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Verificando sesión...</p>
+                </div>
+            </div>
+        );
+    }
+    
     return (
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <div className="absolute top-6 left-6">
