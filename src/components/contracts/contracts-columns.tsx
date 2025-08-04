@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, CheckCircle, XCircle, Pencil, Trash2 } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, CheckCircle, XCircle, Pencil, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ type ColumnsConfig = {
     onDelete: (contract: Contract) => void;
     userRole: UserRole;
     onUpdateStatus: (contractId: string, status: 'Activo' | 'Cancelado') => void;
+    onViewDetails: (contract: Contract) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -42,7 +43,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus }: ColumnsConfig): ColumnDef<Contract>[] => [
+export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDetails }: ColumnsConfig): ColumnDef<Contract>[] => [
   {
     accessorKey: "propertyAddress",
     header: "Propiedad",
@@ -119,7 +120,9 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus }: ColumnsC
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem>Ver Contrato</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onViewDetails(contract)}>
+                <Eye className="mr-2 h-4 w-4" /> Ver Detalles
+            </DropdownMenuItem>
 
             {userRole === 'Arrendador' && (
               <>

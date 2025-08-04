@@ -5,10 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign } from "lucide-react";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
 
 interface ContractCardProps {
     contract: Contract;
@@ -16,6 +15,7 @@ interface ContractCardProps {
     onEdit: () => void;
     onDelete: () => void;
     onUpdateStatus: (status: 'Activo' | 'Cancelado') => void;
+    onViewDetails: () => void;
 }
 
 const getStatusBadgeVariant = (status: Contract["status"]) => {
@@ -54,15 +54,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateStatus }: ContractCardProps) {
-    const { toast } = useToast();
-
-    const handleViewClick = () => {
-        toast({
-            title: "Función en Desarrollo",
-            description: "La vista detallada del contrato estará disponible próximamente.",
-        });
-    };
+export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateStatus, onViewDetails }: ContractCardProps) {
 
     return (
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
@@ -123,7 +115,9 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                 )}
                  {userRole === 'Arrendador' && contract.status !== 'Finalizado' && (
                     <>
-                        <Button variant="outline" size="sm" onClick={handleViewClick}>Ver</Button>
+                        <Button variant="outline" size="sm" onClick={onViewDetails}>
+                           <Eye className="mr-2 h-4 w-4" /> Ver
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -132,6 +126,11 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                         </Button>
                     </>
                 )}
+                 {userRole === 'Arrendatario' && contract.status !== 'Borrador' && (
+                     <Button variant="outline" size="sm" onClick={onViewDetails}>
+                        <Eye className="mr-2 h-4 w-4" /> Ver Detalles
+                     </Button>
+                 )}
             </CardFooter>
         </Card>
     );

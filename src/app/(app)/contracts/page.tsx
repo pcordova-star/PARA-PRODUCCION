@@ -17,12 +17,14 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { sendEmail } from '@/lib/notifications';
+import { ContractDetailsDialog } from '@/components/contracts/contract-details-dialog';
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [userProperties, setUserProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -179,6 +181,11 @@ export default function ContractsPage() {
     setIsFormOpen(true);
   };
 
+  const handleViewDetails = (contract: Contract) => {
+    setSelectedContract(contract);
+    setIsDetailsOpen(true);
+  };
+
   const openDeleteDialog = (contract: Contract) => {
     setContractToDelete(contract);
     setIsDeleteDialogOpen(true);
@@ -247,7 +254,7 @@ export default function ContractsPage() {
     toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
   };
 
-  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role, onUpdateStatus: (id, status) => handleUpdateStatus(contracts.find(c => c.id === id)!, status) });
+  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role, onUpdateStatus: (id, status) => handleUpdateStatus(contracts.find(c => c.id === id)!, status), onViewDetails: handleViewDetails });
 
   if (loading) {
     return (
@@ -306,6 +313,7 @@ export default function ContractsPage() {
                     onEdit={() => handleEdit(contract)} 
                     onDelete={() => openDeleteDialog(contract)}
                     onUpdateStatus={(status) => handleUpdateStatus(contract, status)}
+                    onViewDetails={() => handleViewDetails(contract)}
                   />
               ))}
           </div>
@@ -324,6 +332,13 @@ export default function ContractsPage() {
         userProperties={userProperties.filter(p => p.status !== 'Arrendada' || p.id === selectedContract?.propertyId)}
         isSubmitting={isSubmitting}
       />
+      
+      <ContractDetailsDialog
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        contract={selectedContract}
+      />
+
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
