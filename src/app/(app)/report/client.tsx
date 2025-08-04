@@ -25,7 +25,7 @@ const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.Dat
   }
 };
 
-async function fetchTenantCertificateData(tenantUid: string): Promise<TenantCertificateData | null> {
+async function fetchTenantReportData(tenantUid: string): Promise<TenantCertificateData | null> {
   try {
     const userDocRef = doc(db, 'users', tenantUid);
     const userDoc = await getDoc(userDocRef);
@@ -122,29 +122,29 @@ async function fetchTenantCertificateData(tenantUid: string): Promise<TenantCert
     };
 
   } catch (error) {
-    console.error("Error fetching tenant certificate data from Firestore:", error);
+    console.error("Error fetching tenant report data from Firestore:", error);
     return null;
   }
 }
 
 export default function TenantReportClient() {
-  const [certificateData, setCertificateData] = useState<TenantCertificateData | null>(null);
+  const [reportData, setReportData] = useState<TenantCertificateData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useAuth();
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'Arrendatario') {
-      fetchTenantCertificateData(currentUser.uid)
+      fetchTenantReportData(currentUser.uid)
         .then(data => {
           if (data) {
-            setCertificateData(data);
+            setReportData(data);
           } else {
             setError("No se pudieron cargar los datos del informe. Verifica que tu perfil esté completo.");
           }
         })
         .catch(err => {
-          console.error("Error fetching certificate data:", err);
+          console.error("Error fetching report data:", err);
           setError("Ocurrió un error al generar el informe.");
         })
         .finally(() => setIsLoading(false));
@@ -177,14 +177,14 @@ export default function TenantReportClient() {
     );
   }
 
-  if (!certificateData) {
+  if (!reportData) {
     return <p className="py-10 text-center text-muted-foreground">No hay datos disponibles para generar el informe.</p>;
   }
 
   const { 
     tenantProfile, rentalHistory, evaluationsSummary, paymentsSummary, incidentsSummary, 
     globalScore, generationDate, certificateId 
-  } = certificateData;
+  } = reportData;
 
   const renderStars = (score: number | null, maxStars = 5) => {
     if (score === null || isNaN(score)) return <span className="text-muted-foreground">N/A</span>;
