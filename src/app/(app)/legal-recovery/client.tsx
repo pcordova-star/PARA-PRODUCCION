@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 
 export default function LegalRecoveryClient() {
   const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
@@ -160,13 +161,13 @@ export default function LegalRecoveryClient() {
                   <h2 className="text-2xl font-bold">Documentación Legal - Contrato {selectedContract.id}</h2>
                   <p>Generado el {new Date().toLocaleDateString('es-CL')}</p>
                 </div>
-                <TabsContent value="prior_notice" forceMount className="print:block data-[state=inactive]:hidden">
+                <TabsContent value="prior_notice" forceMount className="print:block print-section data-[state=inactive]:hidden">
                    <PriorNotice contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="legal_dossier" forceMount className="print:block data-[state=inactive]:hidden">
+                <TabsContent value="legal_dossier" forceMount className="print:block print-section data-[state=inactive]:hidden">
                   <LegalDossier contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="contract_display" forceMount className="print:block data-[state=inactive]:hidden">
+                <TabsContent value="contract_display" forceMount className="print:block print-section data-[state=inactive]:hidden">
                   <ContractDisplay contract={selectedContract} property={selectedProperty} />
                 </TabsContent>
             </div>
@@ -198,14 +199,17 @@ export default function LegalRecoveryClient() {
 
       <style jsx global>{`
         @media print {
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print\\:hidden { display: none !important; }
-          .print\\:block { display: block !important; }
-          .printable-area .print\\:block {
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background-color: white;
+          }
+          .print-section {
+             display: block !important;
              page-break-before: always;
           }
-           .printable-area > div:first-child {
-            page-break-before: auto;
+          .printable-area > div:first-child.print-section {
+            page-break-before: auto; /* Evita un salto de página antes del primer elemento */
           }
         }
       `}</style>
