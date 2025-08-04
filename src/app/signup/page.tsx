@@ -56,18 +56,21 @@ const formSchema = z.object({
 
 // This function finds pending contracts for a new tenant and assigns them.
 async function assignPendingContracts(userId: string, userEmail: string, userName: string) {
-    const tempUserRef = doc(db, 'tempUsers', userEmail);
+    const normalizedEmail = userEmail.toLowerCase();
+    const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
+    console.log(`[DEBUG] Buscando contratos pendientes para: ${normalizedEmail}`);
+
     const tempUserSnap = await getDoc(tempUserRef);
 
     if (tempUserSnap.exists()) {
         const batch = writeBatch(db);
         const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
         
-        console.log(`Found ${pendingContracts.length} pending contracts for ${userEmail}`);
+        console.log(`[DEBUG] Contratos pendientes encontrados: ${pendingContracts.join(', ')}`);
 
         for (const contractId of pendingContracts) {
             if (typeof contractId === 'string' && contractId) {
-                console.log(`Assigning contract ${contractId} to user ${userId}`);
+                console.log(`[DEBUG] Asignando contrato ${contractId} a usuario ${userId}`);
                 const contractRef = doc(db, 'contracts', contractId);
                 batch.update(contractRef, { 
                   tenantId: userId,
@@ -81,12 +84,12 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
         
         try {
             await batch.commit();
-            console.log(`Successfully assigned ${pendingContracts.length} contract(s) to new user ${userName} (${userId})`);
+            console.log(`[SUCCESS] Batch ejecutado. Se asignaron ${pendingContracts.length} contrato(s) al nuevo usuario ${userName} (${userId})`);
         } catch (error) {
-            console.error("Error committing batch to assign pending contracts:", error);
+            console.error("[ERROR] Error en batch commit al asignar contratos pendientes:", error);
         }
     } else {
-        console.log(`No pending contracts found for ${userEmail}`);
+        console.log(`[INFO] No se encontraron contratos pendientes para ${normalizedEmail}`);
     }
 }
 

@@ -51,10 +51,11 @@ interface ContractCreationEmailParams {
   landlordName: string;
   propertyAddress: string;
   appUrl: string;
+  signatureToken: string;
 }
 
-export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, appUrl }: ContractCreationEmailParams) {
-  const loginUrl = `${appUrl}/login`; 
+export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, appUrl, signatureToken }: ContractCreationEmailParams) {
+  const signUrl = `${appUrl}/sign/${signatureToken}`; 
 
   await sendEmail({
     to: tenantEmail,
@@ -67,12 +68,12 @@ export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landl
           <p><strong>${landlordName}</strong> te ha enviado un contrato de arriendo para la propiedad en <strong>${propertyAddress}</strong> a través de S.A.R.A.</p>
           <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
           <ol style="padding-left: 20px;">
-            <li><strong>Ingresa a S.A.R.A</strong>: Haz clic en el botón de abajo para registrarte usando tu correo <strong>${tenantEmail}</strong>. Si ya tienes una cuenta, simplemente inicia sesión.</li>
-            <li><strong>Encuentra tu Contrato</strong>: Una vez dentro, ve a la sección "Contratos" en tu panel principal. Allí encontrarás el documento pendiente.</li>
-            <li><strong>Revisa y Firma</strong>: Podrás revisar y firmar tu nuevo contrato directamente desde la plataforma.</li>
+            <li><strong>Revisa y Firma</strong>: Haz clic en el botón de abajo para ir directamente a la página de firma.</li>
+            <li><strong>Regístrate o Inicia Sesión</strong>: La página de firma te pedirá que inicies sesión o te registres usando tu correo <strong>${tenantEmail}</strong> para poder firmar.</li>
+            <li><strong>Encuentra tu Contrato</strong>: Si ya tienes una cuenta, también puedes encontrar el documento en la sección "Contratos" de tu panel principal.</li>
           </ol>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${loginUrl}" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+            <a href="${signUrl}" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Revisar y Firmar Contrato</a>
           </div>
           <p style="font-size: 0.9em; color: #777;">Si tienes alguna pregunta sobre el contrato, por favor contacta directamente a ${landlordName}.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />

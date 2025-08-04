@@ -50,7 +50,6 @@ export default function ContractsPage() {
             where('status', '!=', 'Archivado')
         );
       } else { // Arrendatario
-        // CORRECTED QUERY: Search by tenantId, not landlordId
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('tenantId', '==', currentUser.uid), 
@@ -141,10 +140,10 @@ export default function ContractsPage() {
         
         if (!tenantId) {
             // If tenant does not exist, create a pending reference for them
-            const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
+            const normalizedEmail = values.tenantEmail.toLowerCase();
+            const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
-            // ROBUST LOGIC: Create doc if not exists, update if it does
             if (tempUserSnap.exists()) {
                  await updateDoc(tempUserRef, {
                     pendingContracts: arrayUnion(newContractRef.id)
@@ -165,6 +164,7 @@ export default function ContractsPage() {
         landlordName: currentUser.name,
         propertyAddress: propertyData.address,
         appUrl: window.location.origin,
+        signatureToken: signatureToken
       });
 
       fetchContractsAndProperties();
@@ -208,6 +208,7 @@ export default function ContractsPage() {
             landlordName: currentUser.name,
             propertyAddress: contract.propertyAddress,
             appUrl: window.location.origin,
+            signatureToken: contract.signatureToken,
         });
         toast({ title: 'Notificación Reenviada', description: 'Se ha enviado un nuevo correo al arrendatario.' });
     } catch (error) {
