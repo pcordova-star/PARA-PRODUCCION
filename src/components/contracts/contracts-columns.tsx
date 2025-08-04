@@ -25,16 +25,20 @@ type ColumnsConfig = {
     onViewDetails: (contract: Contract) => void;
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateInput: string | Date | undefined): string => {
+    if (!dateInput) return "N/A";
     try {
-      if (!dateString) return "N/A";
-      const date = parseISO(dateString);
-      return format(date, "d MMM yyyy", { locale: es });
+        const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+         if (isNaN(date.getTime())) {
+            return "Fecha Inválida";
+        }
+        return format(date, "d MMM yyyy", { locale: es });
     } catch (error) {
-        console.error("Error formatting date:", dateString, error);
+        console.error("Error formatting date:", dateInput, error);
         return "Fecha inválida";
     }
 };
+
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-CL", {
