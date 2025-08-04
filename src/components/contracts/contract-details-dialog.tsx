@@ -41,7 +41,7 @@ const formatCurrency = (amount?: number) => {
 const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div>
     <p className="text-sm font-semibold text-gray-500">{label}</p>
-    <p className="text-base text-gray-800">{value ?? "No especificado"}</p>
+    <div className="text-base text-gray-800">{value ?? "No especificado"}</div>
   </div>
 );
 
