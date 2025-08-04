@@ -106,7 +106,7 @@ export default function ContractsPage() {
           tenantDocRef = tenantDoc.ref;
       }
       
-      const signatureToken = uuidv4();
+      const signatureToken = selectedContract?.signatureToken || uuidv4();
 
       const contractDataPayload = {
           ...values,
@@ -119,23 +119,33 @@ export default function ContractsPage() {
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
-          status: 'Borrador' as const,
+          status: selectedContract?.status || 'Borrador' as const,
           signatureToken: signatureToken,
-          signedByTenant: false,
-          signedByLandlord: false,
+          signedByTenant: selectedContract?.signedByTenant || false,
+          signedByLandlord: selectedContract?.signedByLandlord || false,
       };
+
+      const signUrl = `${window.location.origin}/sign/${signatureToken}`;
 
       if (selectedContract) {
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, { ...contractDataPayload });
-        toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado con éxito.' });
+
+        await sendCreationEmailToTenant({
+          tenantEmail: values.tenantEmail,
+          tenantName: values.tenantName,
+          landlordName: currentUser.name,
+          propertyAddress: propertyData.address,
+          signUrl: signUrl,
+        });
+        
+        toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
       } else {
         const batch = writeBatch(db);
 
         const newContractRef = doc(collection(db, 'contracts'));
-        batch.set(newContractRef, contractDataPayload);
+        batch.set(newContractRef, { ...contractDataPayload, status: 'Borrador' });
 
-        // This pending logic is for users who haven't signed up yet
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
@@ -155,8 +165,6 @@ export default function ContractsPage() {
         }
         
         await batch.commit();
-        
-        const signUrl = `${window.location.origin}/sign/${signatureToken}`;
 
         await sendCreationEmailToTenant({
           tenantEmail: values.tenantEmail,
@@ -197,6 +205,28 @@ export default function ContractsPage() {
   const handleViewDetails = (contract: Contract) => {
     setSelectedContract(contract);
     setIsDetailsOpen(true);
+  };
+  
+  const handleResendNotification = async (contract: Contract) => {
+    if (!currentUser || currentUser.role !== 'Arrendador' || !contract.signatureToken) return;
+
+    setIsSubmitting(true);
+    try {
+        const signUrl = `${window.location.origin}/sign/${contract.signatureToken}`;
+        await sendCreationEmailToTenant({
+            tenantEmail: contract.tenantEmail,
+            tenantName: contract.tenantName,
+            landlordName: currentUser.name,
+            propertyAddress: contract.propertyAddress,
+            signUrl: signUrl,
+        });
+        toast({ title: 'Notificación Reenviada', description: 'Se ha enviado un nuevo correo al arrendatario.' });
+    } catch (error) {
+        console.error("Error resending notification:", error);
+        toast({ title: 'Error', description: 'No se pudo reenviar la notificación.', variant: 'destructive' });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const openDeleteDialog = (contract: Contract) => {
@@ -331,6 +361,7 @@ export default function ContractsPage() {
                     onDelete={() => openDeleteDialog(contract)}
                     onSign={() => handleSignContract(contract)}
                     onViewDetails={() => handleViewDetails(contract)}
+                    onResend={() => handleResendNotification(contract)}
                   />
               ))}
           </div>

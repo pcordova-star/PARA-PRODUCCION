@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare } from "lucide-react";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare, Send } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -16,6 +16,7 @@ interface ContractCardProps {
     onDelete: () => void;
     onSign: () => void;
     onViewDetails: () => void;
+    onResend: () => void;
 }
 
 const getStatusBadgeVariant = (status: Contract["status"]) => {
@@ -56,7 +57,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onViewDetails }: ContractCardProps) {
+export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onViewDetails, onResend }: ContractCardProps) {
 
     const SignatureStatus = () => {
         if (contract.status !== 'Borrador') return null;
@@ -130,6 +131,11 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                         {contract.status === 'Borrador' && contract.signedByTenant && !contract.signedByLandlord && (
                             <Button size="sm" onClick={onSign}>
                                 <PenSquare className="mr-2 h-4 w-4" /> Firmar para Activar
+                            </Button>
+                        )}
+                         {contract.status === 'Borrador' && (
+                            <Button variant="outline" size="sm" onClick={onResend}>
+                                <Send className="mr-2 h-4 w-4" /> Reenviar
                             </Button>
                         )}
                         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>
