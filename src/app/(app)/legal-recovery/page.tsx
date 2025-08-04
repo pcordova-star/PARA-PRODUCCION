@@ -1,14 +1,22 @@
 
+'use client';
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AlertCircle } from "lucide-react";
 import LegalRecoveryClient from "./client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LegalRecoveryPageContent() {
     const { currentUser, loading } = useAuth();
     
     if (loading) {
-        return <div>Cargando...</div>; 
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-64 w-full" />
+            </div>
+        );
     }
 
     if (currentUser?.role !== 'Arrendador') {
