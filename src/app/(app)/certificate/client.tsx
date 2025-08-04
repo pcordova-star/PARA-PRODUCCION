@@ -140,12 +140,12 @@ export default function TenantCertificateClient() {
           if (data) {
             setCertificateData(data);
           } else {
-            setError("No se pudieron cargar los datos del certificado. Verifica que tu perfil esté completo.");
+            setError("No se pudieron cargar los datos del informe. Verifica que tu perfil esté completo.");
           }
         })
         .catch(err => {
           console.error("Error fetching certificate data:", err);
-          setError("Ocurrió un error al generar el certificado.");
+          setError("Ocurrió un error al generar el informe.");
         })
         .finally(() => setIsLoading(false));
     } else if (currentUser && currentUser.role !== 'Arrendatario') {
@@ -153,7 +153,7 @@ export default function TenantCertificateClient() {
         setIsLoading(false);
     } else if (!currentUser) {
         // This case is handled by the AppLayout, but good to have a fallback.
-        setError("Debes iniciar sesión para generar tu certificado.");
+        setError("Debes iniciar sesión para generar tu informe.");
         setIsLoading(false);
     }
   }, [currentUser]);
@@ -162,7 +162,7 @@ export default function TenantCertificateClient() {
     return (
       <div className="flex flex-col items-center justify-center py-10">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Generando tu certificado...</p>
+        <p className="text-lg text-muted-foreground">Generando tu informe...</p>
       </div>
     );
   }
@@ -171,14 +171,14 @@ export default function TenantCertificateClient() {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-destructive">
         <AlertCircle className="h-12 w-12 mb-4" />
-        <p className="text-lg font-semibold">Error al generar certificado</p>
+        <p className="text-lg font-semibold">Error al generar informe</p>
         <p>{error}</p>
       </div>
     );
   }
 
   if (!certificateData) {
-    return <p className="py-10 text-center text-muted-foreground">No hay datos disponibles para generar el certificado.</p>;
+    return <p className="py-10 text-center text-muted-foreground">No hay datos disponibles para generar el informe.</p>;
   }
 
   const { 
@@ -203,7 +203,7 @@ export default function TenantCertificateClient() {
     <div className="bg-white p-6 md:p-10 rounded-lg shadow-xl mt-6 printable-certificate">
       <header className="flex flex-col items-center justify-between border-b-2 border-primary pb-6 mb-8 sm:flex-row">
         <div className='text-center sm:text-left'>
-          <h1 className="text-3xl font-bold text-primary font-headline">Certificado de Comportamiento</h1>
+          <h1 className="text-3xl font-bold text-primary font-headline">Informe de Comportamiento</h1>
           <p className="text-lg text-muted-foreground">S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="h-24 w-24 text-primary mt-4 sm:mt-0"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
@@ -211,7 +211,7 @@ export default function TenantCertificateClient() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 text-sm">
         <p><strong>Fecha de Emisión:</strong> {generationDate}</p>
-        <p><strong>ID del Certificado:</strong> <span className="font-mono">{certificateId}</span></p>
+        <p><strong>ID del Informe:</strong> <span className="font-mono">{certificateId}</span></p>
       </div>
 
       <section className="mb-8">
@@ -316,7 +316,7 @@ export default function TenantCertificateClient() {
 
       <footer className="mt-12 pt-6 border-t text-center">
         <p className="text-xs text-muted-foreground">
-          Este certificado es generado automáticamente por S.A.R.A y se basa en la información registrada en la plataforma hasta la fecha de emisión.
+          Este informe es generado automáticamente por S.A.R.A y se basa en la información registrada en la plataforma hasta la fecha de emisión.
           S.A.R.A no se hace responsable por la veracidad de la información ingresada por los usuarios.
         </p>
         <p className="text-xs text-primary mt-1">contacto@sara-app.com | www.sara-app.com (Sitio ficticio)</p>
@@ -338,5 +338,3 @@ export default function TenantCertificateClient() {
     </div>
   );
 }
-
-    
