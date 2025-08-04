@@ -55,13 +55,28 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    if (!currentUser) {
+    // This now correctly checks for a non-null tenantId
+    if (!currentUser || currentUser.uid !== contract.tenantId) {
+        // If there's a tenantId but it doesn't match, it's a permissions error.
+        if (contract.tenantId) {
+             return (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Acceso Denegado</AlertTitle>
+                    <AlertDescription>
+                        No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto.
+                    </AlertDescription>
+                </Alert>
+            );
+        }
+        
+        // If tenantId is null, the user needs to log in/register first so assignPendingContracts can run.
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acción Requerida: Inicia Sesión</AlertTitle>
                 <AlertDescription>
-                    Debes <Link href={`/login?redirect=/sign/${contract.signatureToken}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato.
+                    Debes <Link href={`/login?redirect=/sign/${contract.signatureToken}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato. Si no tienes una cuenta, por favor <Link href="/signup" className="font-bold underline">regístrate</Link> con ese correo.
                 </AlertDescription>
             </Alert>
         );
@@ -69,18 +84,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
 
     const isTenant = currentUser?.uid === contract.tenantId;
     const isLandlord = currentUser?.uid === contract.landlordId;
-
-    if (!isTenant && !isLandlord) {
-        return (
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Acceso Denegado</AlertTitle>
-                <AlertDescription>
-                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendador o el arrendatario ({contract.tenantEmail}).
-                </AlertDescription>
-            </Alert>
-        );
-    }
     
      if (contract.status !== 'Borrador') {
         return (
