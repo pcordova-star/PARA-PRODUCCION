@@ -321,7 +321,7 @@ export function PaymentFormDialog({
             <FormField
               control={form.control}
               name="attachment"
-              render={({ field: { onChange, ...fieldProps } }) => (
+              render={({ field: { value, onChange, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>Adjuntar Comprobante (Opcional)</FormLabel>
                   <FormControl>
