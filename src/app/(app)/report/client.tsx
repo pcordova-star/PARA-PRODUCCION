@@ -47,7 +47,7 @@ async function fetchTenantCertificateData(tenantUid: string): Promise<TenantCert
         paymentsSummary: { compliancePercentage: null, overduePaymentsPercentage: null, totalAmountAccepted: 0, totalOverduePayments: 0, totalPaymentsAccepted: 0, totalPaymentsDeclared: 0 },
         incidentsSummary: { incidentsReceivedByTenant: 0, incidentsReportedByTenant: 0, incidentsResolved: 0, totalIncidentsInvolved: 0 },
         globalScore: null, generationDate: formatDateSafe(new Date()),
-        certificateId: `SARA-CERT-${tenantUid.substring(0,5)}-${Date.now().toString().slice(-5)}`,
+        certificateId: `SARA-INF-${tenantUid.substring(0,5)}-${Date.now().toString().slice(-5)}`,
       };
     }
 
