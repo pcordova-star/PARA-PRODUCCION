@@ -2,11 +2,9 @@
 'use client';
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, Loader2 } from "lucide-react";
 import TenantCertificateClient from "./client";
-import { Skeleton } from "@/components/ui/skeleton";
-
 
 function CertificatePageContent() {
     const { currentUser, loading } = useAuth();
@@ -20,7 +18,16 @@ function CertificatePageContent() {
         );
     }
 
-    if (currentUser?.role !== 'Arrendatario') {
+    if (!currentUser) {
+         return (
+            <div className="flex flex-col items-center justify-center py-10">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-lg text-muted-foreground">Cargando datos de usuario...</p>
+            </div>
+        );
+    }
+
+    if (currentUser.role !== 'Arrendatario') {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -39,8 +46,6 @@ function CertificatePageContent() {
 
 export default function TenantCertificatePage() {
     return (
-        <AuthProvider>
-            <CertificatePageContent />
-        </AuthProvider>
+        <CertificatePageContent />
     );
 }
