@@ -154,12 +154,12 @@ export function TenantDashboard() {
         <Card>
           <CardHeader><CardTitle>Acciones Rápidas</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Mis Contratos</span></Link></Button>
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Declarar Pago</span></Link></Button>
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button>
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Award className="mr-2" /><span>Mis Evaluaciones</span></Link></Button>
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button>
-            <Button asChild size="lg" className="h-auto py-3"><Link href="/certificate"><Download className="mr-2" /><span>Certificado</span></Link></Button>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Mis Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa tus contratos de arriendo, actuales e históricos.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Declarar Pago</span></Link></Button></TooltipTrigger><TooltipContent><p>Declara tus pagos de arriendo y otros gastos.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button></TooltipTrigger><TooltipContent><p>Comunica cualquier problema o incidente en tu propiedad.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Award className="mr-2" /><span>Mis Evaluaciones</span></Link></Button></TooltipTrigger><TooltipContent><p>Consulta las evaluaciones que has recibido de tus arrendadores.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa tus fechas de pago y vencimientos importantes.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/certificate"><Download className="mr-2" /><span>Certificado</span></Link></Button></TooltipTrigger><TooltipContent><p>Descarga tu certificado de comportamiento como arrendatario.</p></TooltipContent></Tooltip>
           </CardContent>
         </Card>
 
@@ -196,3 +196,5 @@ export function TenantDashboard() {
     </TooltipProvider>
   );
 }
+
+    

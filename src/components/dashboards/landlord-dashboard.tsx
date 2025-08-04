@@ -251,12 +251,12 @@ export function LandlordDashboard() {
             <Card className="shadow-lg">
               <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button>
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button>
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button>
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button>
-                  <Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button>
-                  <Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button></TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Visualiza fechas importantes de pagos y contratos.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button></TooltipTrigger><TooltipContent><p>Añade múltiples propiedades a la vez usando un archivo.</p></TooltipContent></Tooltip>
               </CardContent>
             </Card>
         </div>
