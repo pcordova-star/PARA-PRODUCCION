@@ -8,9 +8,10 @@ import { ContractDisplay } from '@/components/legal/ContractDisplay';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, FileWarning } from 'lucide-react';
 import { SignContractClient } from './client';
+import { adminDb } from '@/lib/firebase-admin';
 
 async function getContractByToken(token: string): Promise<Contract | null> {
-    const q = query(collection(db, "contracts"), where("signatureToken", "==", token));
+    const q = query(adminDb.collection("contracts"), where("signatureToken", "==", token));
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
