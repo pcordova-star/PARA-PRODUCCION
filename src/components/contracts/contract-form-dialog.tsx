@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -91,6 +92,17 @@ interface ContractFormDialogProps {
   isSubmitting: boolean;
 }
 
+const safeCreateDate = (dateValue: any): Date | undefined => {
+    if (!dateValue) return undefined;
+    try {
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return undefined;
+        return date;
+    } catch {
+        return undefined;
+    }
+}
+
 export function ContractFormDialog({ open, onOpenChange, onSave, contract, userProperties, isSubmitting }: ContractFormDialogProps) {
     const { toast } = useToast();
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
@@ -113,8 +125,8 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         if (open) {
           const defaultValues = contract ? {
             ...contract,
-            startDate: new Date(contract.startDate),
-            endDate: new Date(contract.endDate),
+            startDate: safeCreateDate(contract.startDate),
+            endDate: safeCreateDate(contract.endDate),
             securityDepositAmount: contract.securityDepositAmount ?? undefined,
             propertyCBRAno: contract.propertyCBRAno ?? undefined,
             propertyUsage: contract.propertyUsage || "Habitacional",
@@ -357,3 +369,5 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         </Dialog>
     );
 }
+
+    
