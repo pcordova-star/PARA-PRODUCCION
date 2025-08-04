@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import type { Contract } from '@/types';
 
 interface SignContractParams {
@@ -17,12 +17,10 @@ interface ActionResult {
 }
 
 export async function signContractAction({ contractId }: SignContractParams): Promise<ActionResult> {
-    const sessionCookie = cookies().get('session')?.value || '';
+    const sessionCookie = cookies().get('__session')?.value || '';
     if (!sessionCookie) {
         return { success: false, error: 'No has iniciado sesión.' };
     }
-
-    const { auth: adminAuth, db: adminDb } = getFirebaseAdmin();
 
     let decodedClaims;
     try {
