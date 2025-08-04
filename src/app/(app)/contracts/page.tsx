@@ -50,6 +50,7 @@ export default function ContractsPage() {
             where('status', '!=', 'Archivado')
         );
       } else { // Arrendatario
+        // CORRECTED QUERY: Search by tenantId, not landlordId
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('tenantId', '==', currentUser.uid), 
@@ -143,6 +144,7 @@ export default function ContractsPage() {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
+            // ROBUST LOGIC: Create doc if not exists, update if it does
             if (tempUserSnap.exists()) {
                  await updateDoc(tempUserRef, {
                     pendingContracts: arrayUnion(newContractRef.id)
