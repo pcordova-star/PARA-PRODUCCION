@@ -1,10 +1,11 @@
 // src/app/api/auth/session/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const { auth: adminAuth } = getFirebaseAdmin();
     const { idToken } = await request.json();
     if (!idToken) {
       return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
