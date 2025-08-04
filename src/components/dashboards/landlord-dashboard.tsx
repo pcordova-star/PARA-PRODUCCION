@@ -169,7 +169,6 @@ export function LandlordDashboard() {
                 <div>
                   <p className="font-bold text-lg text-yellow-700 dark:text-yellow-300">¡Atención Requerida!</p>
                   <ul className="list-disc list-inside text-sm text-yellow-600 dark:text-yellow-400">
-                    {pendingContractsCount > 0 && <li><Link href="/contracts" className="underline">Tienes {pendingContractsCount} contrato(s) en borrador.</Link></li>}
                     {pendingPaymentsCount > 0 && <li><Link href="/payments" className="underline">Hay {pendingPaymentsCount} pago(s) pendiente(s) de aprobación.</Link></li>}
                     {openIncidentsCount > 0 && <li><Link href="/incidents" className="underline">Hay {openIncidentsCount} incidente(s) abierto(s) que requieren tu atención.</Link></li>}
                     {expiringContractsCount > 0 && <li><Link href="/contracts" className="underline">Tienes {expiringContractsCount} contrato(s) próximos a vencer.</Link></li>}
