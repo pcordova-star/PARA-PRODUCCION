@@ -19,7 +19,7 @@ interface ActionResult {
 export async function signContractAction({ contractId }: SignContractParams): Promise<ActionResult> {
     const sessionCookie = cookies().get('__session')?.value || '';
     if (!sessionCookie) {
-        return { success: false, error: 'No has iniciado sesión.' };
+        return { success: false, error: 'No has iniciado sesión. Por favor, inicia sesión para firmar.' };
     }
 
     let decodedClaims;
