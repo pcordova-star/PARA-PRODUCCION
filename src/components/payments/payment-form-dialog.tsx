@@ -94,6 +94,16 @@ export function PaymentFormDialog({
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      contractId: "",
+      type: "arriendo",
+      amount: 0,
+      paymentDate: new Date().toISOString().split('T')[0],
+      notes: "",
+      attachment: undefined,
+      serviceType: undefined,
+      otherTypeDescription: ""
+    }
   });
   
   const paymentType = form.watch("type");
@@ -106,7 +116,9 @@ export function PaymentFormDialog({
         amount: 0,
         paymentDate: new Date().toISOString().split('T')[0], 
         notes: "",
-        attachment: undefined, 
+        attachment: undefined,
+        serviceType: undefined,
+        otherTypeDescription: ""
       });
       setSelectedFileName(null);
     }
