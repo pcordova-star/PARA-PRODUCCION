@@ -19,7 +19,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function LegalRecoveryClient() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
@@ -34,10 +34,15 @@ export default function LegalRecoveryClient() {
     }
     setLoading(true);
     try {
-      const contractsQuery = query(collection(db, 'contracts'), where('landlordId', '==', currentUser.uid));
+      // Fetch only active contracts
+      const contractsQuery = query(
+        collection(db, 'contracts'), 
+        where('landlordId', '==', currentUser.uid),
+        where('status', '==', 'Activo')
+      );
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
-      setContracts(contractsList);
+      setActiveContracts(contractsList);
 
       const propertyIds = [...new Set(contractsList.map(c => c.propertyId))];
       if (propertyIds.length > 0) {
@@ -47,6 +52,7 @@ export default function LegalRecoveryClient() {
           setProperties(propertiesList);
       }
       
+      // Set the first active contract as selected by default
       if (contractsList.length > 0 && !selectedContractId) {
         setSelectedContractId(contractsList[0].id);
       }
@@ -67,13 +73,9 @@ export default function LegalRecoveryClient() {
     fetchData();
   }, [fetchData]);
 
-  const activeContracts = useMemo(() => {
-    return contracts.filter(c => c.status === 'Activo');
-  }, [contracts]);
-
   const selectedContract = useMemo(() => {
-    return contracts.find(c => c.id === selectedContractId) || null;
-  }, [selectedContractId, contracts]);
+    return activeContracts.find(c => c.id === selectedContractId) || null;
+  }, [selectedContractId, activeContracts]);
 
   const selectedProperty = useMemo(() => {
     if (!selectedContract) return null;
@@ -174,7 +176,7 @@ export default function LegalRecoveryClient() {
             <FileWarning className="h-4 w-4" />
             <AlertTitle>Seleccione un Contrato</AlertTitle>
             <AlertDescription>
-                Por favor, elija un contrato de la lista superior para generar y visualizar los documentos legales asociados.
+                Por favor, elija un contrato de la lista superior para generar y visualizar los documentos legales asociados. Si no hay contratos, significa que no tiene contratos en estado "Activo".
             </AlertDescription>
         </Alert>
       )}
