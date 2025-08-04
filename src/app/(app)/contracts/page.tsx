@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -82,6 +82,7 @@ export default function ContractsPage() {
         return;
     }
     setIsSubmitting(true);
+    const appUrl = window.location.origin;
 
     try {
       const propertyRef = doc(db, 'properties', values.propertyId);
@@ -112,7 +113,7 @@ export default function ContractsPage() {
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId, // Will be null if tenant doesn't exist
+          tenantId: tenantId, // Will be null if tenant doesn't exist yet
           tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -123,22 +124,11 @@ export default function ContractsPage() {
           signedByLandlord: selectedContract?.signedByLandlord || false,
       };
 
-      const appUrl = window.location.origin;
-
       if (selectedContract) {
         // This is an edit of an existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, { ...contractDataPayload });
-
-        await sendCreationEmailToTenant({
-          tenantEmail: values.tenantEmail,
-          tenantName: values.tenantName,
-          landlordName: currentUser.name,
-          propertyAddress: propertyData.address,
-          appUrl: appUrl,
-        });
-        
-        toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
+        toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
       } else {
         // This is a new contract
         const batch = writeBatch(db);
@@ -151,27 +141,29 @@ export default function ContractsPage() {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
+            // Store only the contract ID as a string in an array
             if (tempUserSnap.exists()) {
-                const existingData = tempUserSnap.data();
-                const updatedPendingContracts = [...(existingData.pendingContracts || []), newContractRef.id];
-                batch.update(tempUserRef, { pendingContracts: updatedPendingContracts });
+                 batch.update(tempUserRef, {
+                    pendingContracts: arrayUnion(newContractRef.id)
+                });
             } else {
-                batch.set(tempUserRef, { pendingContracts: [newContractRef.id] });
+                batch.set(tempUserRef, {
+                    pendingContracts: [newContractRef.id]
+                });
             }
         }
         
         await batch.commit();
-
-        await sendCreationEmailToTenant({
-          tenantEmail: values.tenantEmail,
-          tenantName: values.tenantName,
-          landlordName: currentUser.name,
-          propertyAddress: propertyData.address,
-          appUrl: appUrl,
-        });
-
-        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario para que lo revise y firme.' });
+        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
       }
+
+      await sendCreationEmailToTenant({
+        tenantEmail: values.tenantEmail,
+        tenantName: values.tenantName,
+        landlordName: currentUser.name,
+        propertyAddress: propertyData.address,
+        appUrl: appUrl,
+      });
 
       fetchContractsAndProperties();
       setIsFormOpen(false);
