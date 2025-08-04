@@ -50,9 +50,10 @@ interface ContractCreationEmailParams {
   tenantName: string;
   landlordName: string;
   propertyAddress: string;
+  signUrl: string;
 }
 
-export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress }: ContractCreationEmailParams) {
+export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, signUrl }: ContractCreationEmailParams) {
   await sendEmail({
     to: tenantEmail,
     subject: `Nuevo Contrato de Arriendo de ${landlordName}`,
@@ -64,12 +65,12 @@ export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landl
           <p><strong>${landlordName}</strong> te ha invitado a revisar y firmar un nuevo contrato de arriendo para la propiedad ubicada en <strong>${propertyAddress}</strong> a través de S.A.R.A.</p>
           <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
           <ol style="padding-left: 20px;">
-            <li><strong>Regístrate o Inicia Sesión</strong>: Si aún no tienes una cuenta, regístrate en S.A.R.A con el correo <strong>${tenantEmail}</strong>. Si ya tienes una, simplemente inicia sesión.</li>
-            <li><strong>Revisa el Contrato</strong>: En tu panel principal (Dashboard), encontrarás el nuevo contrato pendiente de aprobación.</li>
-            <li><strong>Aprueba el Contrato</strong>: Lee detenidamente los términos y, si estás de acuerdo, aprueba el contrato para activarlo.</li>
+            <li><strong>Revisa el Contrato</strong>: Haz clic en el botón de abajo para revisar los términos del contrato en un enlace seguro.</li>
+            <li><strong>Regístrate o Inicia Sesión</strong>: Para firmar, deberás registrarte en S.A.R.A con el correo <strong>${tenantEmail}</strong> o iniciar sesión si ya tienes una cuenta.</li>
+            <li><strong>Firma Digitalmente</strong>: Una vez que hayas iniciado sesión y estés de acuerdo con los términos, podrás firmar el contrato con un solo clic.</li>
           </ol>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+            <a href="${signUrl}" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Revisar y Firmar Contrato</a>
           </div>
           <p style="font-size: 0.9em; color: #777;">Si tienes alguna pregunta, por favor contacta directamente a ${landlordName}.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />

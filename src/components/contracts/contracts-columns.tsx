@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, CheckCircle, XCircle, Pencil, Trash2, Eye } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, CheckCircle, XCircle, Pencil, Trash2, Eye, PenSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,7 +21,7 @@ type ColumnsConfig = {
     onEdit: (contract: Contract) => void;
     onDelete: (contract: Contract) => void;
     userRole: UserRole;
-    onUpdateStatus: (contractId: string, status: 'Activo' | 'Cancelado') => void;
+    onSign: (contract: Contract) => void;
     onViewDetails: (contract: Contract) => void;
 }
 
@@ -47,7 +47,7 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDetails }: ColumnsConfig): ColumnDef<Contract>[] => [
+export const columns = ({ onEdit, onDelete, userRole, onSign, onViewDetails }: ColumnsConfig): ColumnDef<Contract>[] => [
   {
     accessorKey: "propertyAddress",
     header: "Propiedad",
@@ -131,6 +131,12 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
             <DropdownMenuItem onClick={() => onViewDetails(contract)}>
                 <Eye className="mr-2 h-4 w-4" /> Ver Detalles
             </DropdownMenuItem>
+            
+            {userRole === 'Arrendador' && contract.status === 'Borrador' && !contract.signedByLandlord && (
+              <DropdownMenuItem onClick={() => onSign(contract)}>
+                  <PenSquare className="mr-2 h-4 w-4" /> Firmar Contrato
+              </DropdownMenuItem>
+            )}
 
             {userRole === 'Arrendador' && contract.status !== 'Archivado' && (
               <>
@@ -143,18 +149,7 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
                 </DropdownMenuItem>
               </>
             )}
-            
-            {userRole === 'Arrendatario' && contract.status === 'Borrador' && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-green-600" onClick={() => onUpdateStatus(contract.id, 'Activo')}>
-                  <CheckCircle className="mr-2 h-4 w-4" /> Aprobar Contrato
-                </DropdownMenuItem>
-                 <DropdownMenuItem className="text-destructive" onClick={() => onUpdateStatus(contract.id, 'Cancelado')}>
-                  <XCircle className="mr-2 h-4 w-4" /> Rechazar Contrato
-                </DropdownMenuItem>
-              </>
-            )}
+
           </DropdownMenuContent>
         </DropdownMenu>
       )

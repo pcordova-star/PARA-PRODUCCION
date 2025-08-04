@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye } from "lucide-react";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -14,7 +14,7 @@ interface ContractCardProps {
     userRole: UserRole;
     onEdit: () => void;
     onDelete: () => void;
-    onUpdateStatus: (status: 'Activo' | 'Cancelado') => void;
+    onSign: () => void;
     onViewDetails: () => void;
 }
 
@@ -56,7 +56,32 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
-export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateStatus, onViewDetails }: ContractCardProps) {
+export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onViewDetails }: ContractCardProps) {
+
+    const SignatureStatus = () => {
+        if (contract.status !== 'Borrador') return null;
+
+        const landlordSigned = contract.signedByLandlord;
+        const tenantSigned = contract.signedByTenant;
+        let text = "";
+        let colorClass = "";
+
+        if (landlordSigned && tenantSigned) {
+            text = "Ambos han firmado";
+            colorClass = "text-green-600";
+        } else if (landlordSigned) {
+            text = "Esperando firma del arrendatario";
+            colorClass = "text-yellow-600";
+        } else if (tenantSigned) {
+            text = "Esperando tu firma";
+             colorClass = "text-yellow-600";
+        } else {
+            text = "Pendiente de firmas";
+            colorClass = "text-muted-foreground";
+        }
+
+        return <p className={`text-xs font-medium mt-2 ${colorClass}`}>{text}</p>;
+    };
 
     return (
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
@@ -65,9 +90,10 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                     <CardTitle className="text-lg">Contrato {contract.propertyName}</CardTitle>
                     <Badge className={`${getStatusBadgeVariant(contract.status)} capitalize text-xs font-semibold`}>{contract.status}</Badge>
                 </div>
-                <CardDescription className="pt-1 text-2xl font-bold text-primary">
+                 <CardDescription className="pt-1 text-2xl font-bold text-primary">
                     {formatCurrency(contract.rentAmount)}
                 </CardDescription>
+                <SignatureStatus />
             </CardHeader>
             <CardContent className="flex-grow space-y-3 text-sm">
                 <div className="flex items-center gap-3 text-muted-foreground">
@@ -89,37 +115,23 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                         <span>{formatDate(contract.endDate)}</span>
                     </div>
                 </div>
-                 <div className="pt-2 border-t mt-3 space-y-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <Building className="h-3.5 w-3.5" />
-                        <span>Uso: {contract.propertyUsage}</span>
-                    </div>
-                     <div className="flex items-center gap-2">
-                        <CircleDollarSign className="h-3.5 w-3.5" />
-                        <span>Día de pago: {contract.rentPaymentDay || 'No especificado'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <FileSliders className="h-3.5 w-3.5" />
-                        <span>Ajuste IPC: {contract.ipcAdjustment ? `Sí (${contract.ipcAdjustmentFrequency || 'N/A'})` : 'No'}</span>
-                    </div>
-                </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                {userRole === 'Arrendatario' && contract.status === 'Borrador' && (
-                    <div className="flex w-full justify-between gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 border-red-500 text-red-500 hover:bg-red-50" onClick={() => onUpdateStatus('Cancelado')}>
-                            <XCircle className="mr-2 h-4 w-4" /> Rechazar
-                        </Button>
-                        <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => onUpdateStatus('Activo')}>
-                            <CheckCircle className="mr-2 h-4 w-4" /> Aprobar
-                        </Button>
-                    </div>
+                {userRole === 'Arrendatario' && contract.status === 'Borrador' && !contract.signedByTenant && (
+                    <Button asChild size="sm" className="flex-1">
+                        <a href={`/sign/${contract.signatureToken}`} target="_blank">Revisar y Firmar</a>
+                    </Button>
                 )}
                  {userRole === 'Arrendador' && contract.status !== 'Finalizado' && contract.status !== 'Archivado' && (
                     <>
                         <Button variant="outline" size="sm" onClick={onViewDetails}>
                            <Eye className="mr-2 h-4 w-4" /> Ver
                         </Button>
+                        {contract.status === 'Borrador' && !contract.signedByLandlord && (
+                            <Button size="sm" onClick={onSign}>
+                                <PenSquare className="mr-2 h-4 w-4" /> Firmar
+                            </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>
                             <Pencil className="h-4 w-4" />
                         </Button>

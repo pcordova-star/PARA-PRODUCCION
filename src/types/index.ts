@@ -1,4 +1,5 @@
 
+
 export interface Property {
   id: string;
   code: string;
@@ -49,6 +50,12 @@ export interface Contract {
   tenantProfession?: string;
   prohibitionToSublet?: boolean;
   specialClauses?: string;
+  // Signature fields
+  signatureToken?: string;
+  signedByTenant?: boolean;
+  tenantSignedAt?: string;
+  signedByLandlord?: boolean;
+  landlordSignedAt?: string;
 }
 
 export type UserRole = "Arrendador" | "Arrendatario";

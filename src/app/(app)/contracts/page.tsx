@@ -18,6 +18,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { sendCreationEmailToTenant } from '@/lib/notifications';
 import { ContractDetailsDialog } from '@/components/contracts/contract-details-dialog';
+import { v4 as uuidv4 } from 'uuid';
+import { signContractAction } from '@/app/sign/[token]/actions';
+
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -103,6 +106,8 @@ export default function ContractsPage() {
           tenantDocRef = tenantDoc.ref;
       }
       
+      const signatureToken = uuidv4();
+
       const contractDataPayload = {
           ...values,
           startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
@@ -115,6 +120,9 @@ export default function ContractsPage() {
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
           status: 'Borrador' as const,
+          signatureToken: signatureToken,
+          signedByTenant: false,
+          signedByLandlord: false,
       };
 
       if (selectedContract) {
@@ -127,19 +135,16 @@ export default function ContractsPage() {
         const newContractRef = doc(collection(db, 'contracts'));
         batch.set(newContractRef, contractDataPayload);
 
-        const pendingContractData = {
-            contractId: newContractRef.id,
-            landlordName: currentUser.name,
-            propertyAddress: propertyData.address,
-            addedAt: new Date().toISOString()
-        };
-
-        if (tenantDocRef && tenantData) {
-            const updatedPendingContracts = [...(tenantData.pendingContracts || []), pendingContractData];
-            batch.update(tenantDocRef, { pendingContracts: updatedPendingContracts });
-        } else {
+        // This pending logic is for users who haven't signed up yet
+        if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
+            const pendingContractData = {
+                contractId: newContractRef.id,
+                landlordName: currentUser.name,
+                propertyAddress: propertyData.address,
+                addedAt: new Date().toISOString()
+            };
             if (tempUserSnap.exists()) {
                 const existingData = tempUserSnap.data();
                 const updatedPendingContracts = [...(existingData.pendingContracts || []), pendingContractData];
@@ -151,14 +156,17 @@ export default function ContractsPage() {
         
         await batch.commit();
         
+        const signUrl = `${window.location.origin}/sign/${signatureToken}`;
+
         await sendCreationEmailToTenant({
           tenantEmail: values.tenantEmail,
           tenantName: values.tenantName,
           landlordName: currentUser.name,
           propertyAddress: propertyData.address,
+          signUrl: signUrl,
         });
 
-        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
+        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario para que lo revise y firme.' });
       }
 
       fetchContractsAndProperties();
@@ -222,22 +230,18 @@ export default function ContractsPage() {
     }
   };
 
-  const handleUpdateStatus = async (contract: Contract, status: Contract['status']) => {
-    try {
-      const contractRef = doc(db, 'contracts', contract.id);
-      await updateDoc(contractRef, { status });
-      toast({
-        title: `Contrato ${status === 'Activo' ? 'Aprobado' : 'Rechazado'}`,
-        description: `El estado del contrato ha sido actualizado.`,
-      });
+  const handleSignContract = async (contract: Contract) => {
+    if (!currentUser || currentUser.uid !== contract.landlordId) return;
+
+    setIsSubmitting(true);
+    const result = await signContractAction({ contractId: contract.id });
+    setIsSubmitting(false);
+
+    if (result.error) {
+      toast({ title: "Error al firmar", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Firma registrada", description: "El contrato ha sido firmado exitosamente." });
       fetchContractsAndProperties();
-    } catch (error) {
-      console.error("Error updating contract status:", error);
-      toast({
-        title: 'Error al actualizar',
-        description: 'No se pudo cambiar el estado del contrato.',
-        variant: 'destructive',
-      });
     }
   };
   
@@ -267,7 +271,7 @@ export default function ContractsPage() {
     toast({ title: 'Exportación exitosa', description: 'El archivo de contratos ha sido descargado.' });
   };
 
-  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role, onUpdateStatus: (id, status) => handleUpdateStatus(contracts.find(c => c.id === id)!, status), onViewDetails: handleViewDetails });
+  const columns = createColumns({ onEdit: handleEdit, onDelete: openDeleteDialog, userRole: currentUser!.role, onSign: handleSignContract, onViewDetails: handleViewDetails });
 
   if (loading) {
     return (
@@ -325,7 +329,7 @@ export default function ContractsPage() {
                     userRole={currentUser!.role}
                     onEdit={() => handleEdit(contract)} 
                     onDelete={() => openDeleteDialog(contract)}
-                    onUpdateStatus={(status) => handleUpdateStatus(contract, status)}
+                    onSign={() => handleSignContract(contract)}
                     onViewDetails={() => handleViewDetails(contract)}
                   />
               ))}
