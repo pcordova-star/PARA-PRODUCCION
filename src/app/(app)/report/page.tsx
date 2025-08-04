@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, Loader2 } from "lucide-react";
 import TenantReportClient from "./client";
 
-function ReportPageContent() {
+export default function TenantReportPage() {
     const { currentUser, loading } = useAuth();
     
     if (loading) {
@@ -41,11 +41,5 @@ function ReportPageContent() {
         <div className="container mx-auto">
             <TenantReportClient />
         </div>
-    );
-}
-
-export default function TenantReportPage() {
-    return (
-        <ReportPageContent />
     );
 }
