@@ -108,6 +108,8 @@ function RegisterForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
+      // Crucial change: Update profile in Firestore *before* assigning contracts.
+      // This ensures the user exists with the correct role when other functions are called.
       if(updateUserProfileInFirestore) {
         await updateUserProfileInFirestore(
           user.uid,
