@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Home, Wallet, Award, Download, Calendar, AlertTriangle } from "lucide-react"; 
-import type { Contract, Evaluation, UserProfile } from "@/types";
+import type { Contract, Evaluation, UserProfile, Incident } from "@/types";
 import { Badge } from "@/components/ui/badge"; 
 import { AnnouncementsSection } from "./announcements-section";
 import React, { useState, useEffect, useCallback } from 'react';
@@ -51,6 +51,8 @@ export function TenantDashboard() {
   const [globalScore, setGlobalScore] = useState<number | null>(null);
   const [activeContract, setActiveContract] = useState<Contract | null>(null);
   const [pendingContract, setPendingContract] = useState<Contract | null>(null);
+  const [pendingEvaluationsCount, setPendingEvaluationsCount] = useState(0);
+  const [openIncidentsCount, setOpenIncidentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -67,22 +69,39 @@ export function TenantDashboard() {
       setActiveContract(active || null);
       setPendingContract(pending || null);
 
-      // Fetch Evaluations
-      const evaluationsQuery = query(collection(db, 'evaluations'), where('tenantId', '==', currentUser.uid));
-      const evaluationsSnapshot = await getDocs(evaluationsQuery);
-      const evaluationsList = evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation));
+      const contractIds = contractsList.map(c => c.id);
 
-      if (evaluationsList.length > 0) {
-        const numEvals = evaluationsList.length;
-        const totalScore = evaluationsList.reduce((sum, e) => {
-            const criteria = e.criteria;
-            const avgCrit = (criteria.paymentPunctuality + criteria.propertyCare + criteria.communication + criteria.generalBehavior) / 4;
-            return sum + avgCrit;
-        }, 0);
-        setGlobalScore(parseFloat((totalScore / numEvals).toFixed(1)));
+      if (contractIds.length > 0) {
+        // Fetch Evaluations
+        const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', 'in', contractIds));
+        const evaluationsSnapshot = await getDocs(evaluationsQuery);
+        const evaluationsList = evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation));
+        
+        setPendingEvaluationsCount(evaluationsList.filter(e => e.status === 'pendiente de confirmacion').length);
+
+        if (evaluationsList.length > 0) {
+          const numEvals = evaluationsList.length;
+          const totalScore = evaluationsList.reduce((sum, e) => {
+              const criteria = e.criteria;
+              const avgCrit = (criteria.paymentPunctuality + criteria.propertyCare + criteria.communication + criteria.generalBehavior) / 4;
+              return sum + avgCrit;
+          }, 0);
+          setGlobalScore(parseFloat((totalScore / numEvals).toFixed(1)));
+        } else {
+          setGlobalScore(null);
+        }
+
+        // Fetch Incidents
+        const incidentsQuery = query(collection(db, 'incidents'), where('contractId', 'in', contractIds));
+        const incidentsSnapshot = await getDocs(incidentsQuery);
+        const incidentsList = incidentsSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Incident));
+        setOpenIncidentsCount(incidentsList.filter(i => i.status !== 'cerrado').length);
       } else {
-        setGlobalScore(null);
+         setGlobalScore(null);
+         setPendingEvaluationsCount(0);
+         setOpenIncidentsCount(0);
       }
+
     } catch (error) {
       console.error("Error fetching tenant dashboard data:", error);
     } finally {
@@ -104,6 +123,8 @@ export function TenantDashboard() {
     );
   }
 
+  const hasPendingActions = pendingContract || pendingEvaluationsCount > 0 || openIncidentsCount > 0;
+
   return (
     <TooltipProvider>
     <div className="space-y-6">
@@ -112,19 +133,21 @@ export function TenantDashboard() {
           <CardTitle className="text-3xl font-headline">Panel de Arrendatario</CardTitle>
           <CardDescription>Bienvenido a tu espacio en S.A.R.A.</CardDescription>
         </CardHeader>
-        {pendingContract && (
-          <CardContent>
-            <Link href="/contracts">
-              <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-4 hover:bg-yellow-200/50 transition-colors">
+        {hasPendingActions && (
+            <CardContent>
+              <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-4">
                 <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 <div>
-                  <p className="font-semibold text-yellow-800 dark:text-yellow-200">¡Tienes un contrato pendiente!</p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">Un arrendador te ha enviado un nuevo contrato para su revisión y aprobación.</p>
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-200">¡Atención Requerida!</p>
+                  <ul className="list-disc list-inside text-sm text-yellow-700 dark:text-yellow-300">
+                    {pendingContract && <li><Link href="/contracts" className="underline">Tienes un contrato pendiente de aprobación.</Link></li>}
+                    {pendingEvaluationsCount > 0 && <li><Link href="/evaluations" className="underline">Tienes {pendingEvaluationsCount} evaluación(es) por confirmar.</Link></li>}
+                    {openIncidentsCount > 0 && <li><Link href="/incidents" className="underline">Hay {openIncidentsCount} incidente(s) abierto(s).</Link></li>}
+                  </ul>
                 </div>
               </div>
-            </Link>
-          </CardContent>
-        )}
+            </CardContent>
+          )}
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -173,5 +196,3 @@ export function TenantDashboard() {
     </TooltipProvider>
   );
 }
-
-    
