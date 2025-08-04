@@ -55,10 +55,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    const isTenant = currentUser?.uid === contract.tenantId;
-    const canSign = isTenant && !contract.signedByTenant;
-    const isSigned = contract.signedByTenant;
-
     if (!currentUser) {
         return (
             <Alert variant="destructive">
@@ -71,13 +67,16 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
 
-    if (!isTenant) {
+    const isTenant = currentUser?.uid === contract.tenantId;
+    const isLandlord = currentUser?.uid === contract.landlordId;
+
+    if (!isTenant && !isLandlord) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acceso Denegado</AlertTitle>
                 <AlertDescription>
-                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario ({contract.tenantEmail}).
+                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendador o el arrendatario ({contract.tenantEmail}).
                 </AlertDescription>
             </Alert>
         );
@@ -95,30 +94,78 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
             </Alert>
         );
     }
-
-    return (
-        <div className="space-y-4 p-6 bg-muted rounded-lg border">
-            {isSigned ? (
-                <div className="text-center">
+    
+    // Logic for Tenant
+    if (isTenant) {
+        if (contract.signedByTenant) {
+             return (
+                <div className="text-center p-6 bg-muted rounded-lg border">
                     <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
                     <h2 className="text-xl font-bold">¡Gracias por firmar!</h2>
                     <p className="text-muted-foreground">Tu firma fue registrada el {new Date(contract.tenantSignedAt!).toLocaleString('es-CL')}.</p>
                     <p className="mt-2">El contrato se activará una vez que el arrendador también lo haya firmado.</p>
                     <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
                 </div>
-            ) : (
-                <div className="text-center">
-                    <h2 className="text-xl font-bold">Confirmación de Firma</h2>
-                    <p className="text-muted-foreground mt-1">
-                        Al presionar "Firmar Contrato", confirmas que has leído, entendido y aceptado todos los términos y condiciones del documento a continuación.
-                    </p>
-                    <Button onClick={handleSign} disabled={isLoading || !canSign} size="lg" className="mt-4">
-                        {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                        {isLoading ? 'Firmando...' : 'Firmar Contrato'}
-                    </Button>
-                    {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+            );
+        } else {
+             return (
+                <div className="space-y-4 p-6 bg-muted rounded-lg border">
+                    <div className="text-center">
+                        <h2 className="text-xl font-bold">Confirmación de Firma (Arrendatario)</h2>
+                        <p className="text-muted-foreground mt-1">
+                            Al presionar "Firmar Contrato", confirmas que has leído, entendido y aceptado todos los términos y condiciones del documento a continuación.
+                        </p>
+                        <Button onClick={handleSign} disabled={isLoading} size="lg" className="mt-4">
+                            {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                            {isLoading ? 'Firmando...' : 'Firmar Contrato'}
+                        </Button>
+                        {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+                    </div>
                 </div>
-            )}
-        </div>
-    );
+            );
+        }
+    }
+
+    // Logic for Landlord
+    if (isLandlord) {
+        if (contract.signedByLandlord) {
+            return (
+                 <div className="text-center p-6 bg-muted rounded-lg border">
+                    <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                    <h2 className="text-xl font-bold">Firma Registrada</h2>
+                    <p className="text-muted-foreground">Ya has firmado este contrato. Esperando la activación final.</p>
+                    <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
+                </div>
+            )
+        }
+        if (!contract.signedByTenant) {
+            return (
+                <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Esperando al Arrendatario</AlertTitle>
+                    <AlertDescription>
+                       El contrato aún no ha sido firmado por el arrendatario. Recibirás una notificación cuando esté listo para tu firma.
+                    </AlertDescription>
+                </Alert>
+            )
+        } else {
+             return (
+                <div className="space-y-4 p-6 bg-muted rounded-lg border">
+                    <div className="text-center">
+                        <h2 className="text-xl font-bold">Confirmación de Firma (Arrendador)</h2>
+                        <p className="text-muted-foreground mt-1">
+                           El arrendatario ha firmado. Al firmar, el contrato pasará a estado "Activo".
+                        </p>
+                        <Button onClick={handleSign} disabled={isLoading} size="lg" className="mt-4">
+                            {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                            {isLoading ? 'Activando...' : 'Firmar y Activar Contrato'}
+                        </Button>
+                        {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    return null; // Should not be reached
 }
