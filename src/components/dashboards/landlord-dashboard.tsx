@@ -180,36 +180,7 @@ export function LandlordDashboard() {
           )}
         </Card>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="shadow-md">
-                <CardHeader><CardTitle className="flex items-center"><FileText className="mr-2"/>Contratos Activos</CardTitle></CardHeader>
-                <CardContent>
-                    {activeContracts.length > 0 ? (
-                        <ul className="space-y-3">
-                            {activeContracts.slice(0, 4).map(contract => (
-                                <li key={contract.id} className="flex items-center justify-between text-sm">
-                                    <div>
-                                        <p className="font-semibold truncate">{contract.propertyName}</p>
-                                        <p className="text-muted-foreground truncate">Arrendatario: {contract.tenantName}</p>
-                                        <p className="text-muted-foreground text-xs">Fin: {formatDate(contract.endDate)}</p>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <p className="font-bold text-primary">${contract.rentAmount.toLocaleString('es-CL')}</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">No tienes contratos activos.</p>
-                    )}
-                    {activeContracts.length > 4 && (
-                        <Button variant="link" asChild className="p-0 h-auto mt-2">
-                           <Link href="/contracts">Ver todos los contratos <ArrowRight className="ml-1 h-4 w-4"/></Link>
-                        </Button>
-                    )}
-                </CardContent>
-            </Card>
-
+        <div className="grid gap-6 md:grid-cols-2">
             <Card className="shadow-md">
               <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
