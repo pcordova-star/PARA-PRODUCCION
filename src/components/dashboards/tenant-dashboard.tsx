@@ -159,7 +159,7 @@ export function TenantDashboard() {
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button></TooltipTrigger><TooltipContent><p>Comunica cualquier problema o incidente en tu propiedad.</p></TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Award className="mr-2" /><span>Mis Evaluaciones</span></Link></Button></TooltipTrigger><TooltipContent><p>Consulta las evaluaciones que has recibido de tus arrendadores.</p></TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa tus fechas de pago y vencimientos importantes.</p></TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/certificate"><Download className="mr-2" /><span>Informe</span></Link></Button></TooltipTrigger><TooltipContent><p>Descarga tu informe de comportamiento como arrendatario.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/report"><Download className="mr-2" /><span>Informe</span></Link></Button></TooltipTrigger><TooltipContent><p>Descarga tu informe de comportamiento como arrendatario.</p></TooltipContent></Tooltip>
           </CardContent>
         </Card>
 

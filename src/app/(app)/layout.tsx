@@ -59,7 +59,7 @@ export default function AppLayout({
   ];
 
   const tenantItems = [
-     { href: "/certificate", label: "Informe", icon: <FileBadge /> },
+     { href: "/report", label: "Informe", icon: <FileBadge /> },
   ];
 
   const menuItems = currentUser?.role === 'Arrendador' 
