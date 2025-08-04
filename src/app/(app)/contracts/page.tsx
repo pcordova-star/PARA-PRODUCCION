@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';

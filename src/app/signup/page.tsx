@@ -33,7 +33,7 @@ import type { UserRole } from "@/types";
 import { auth, db } from "@/lib/firebase";
 import { sendWelcomeEmail } from "@/lib/notifications";
 import { useEffect } from "react";
-import { doc, getDoc, writeBatch, collection, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 
 
 const formSchema = z.object({
