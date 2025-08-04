@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import type { Contract, UserRole } from "@/types"
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type ColumnsConfig = {
@@ -27,8 +27,8 @@ type ColumnsConfig = {
 
 const formatDate = (dateString: string) => {
     try {
-      if (!dateString) return "Fecha inválida";
-      const date = new Date(dateString);
+      if (!dateString) return "N/A";
+      const date = parseISO(dateString);
       return format(date, "d MMM yyyy", { locale: es });
     } catch (error) {
         console.error("Error formatting date:", dateString, error);
@@ -153,3 +153,5 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
     },
   },
 ]
+
+    

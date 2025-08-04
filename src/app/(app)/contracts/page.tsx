@@ -235,8 +235,8 @@ export default function ContractsPage() {
       Arrendatario: c.tenantName,
       RUT_Arrendatario: c.tenantRut,
       Email_Arrendatario: c.tenantEmail,
-      Fecha_Inicio: c.startDate ? c.startDate.split('T')[0] : '',
-      Fecha_Fin: c.endDate ? c.endDate.split('T')[0] : '',
+      Fecha_Inicio: c.startDate ? new Date(c.startDate).toLocaleDateString('es-CL') : '',
+      Fecha_Fin: c.endDate ? new Date(c.endDate).toLocaleDateString('es-CL') : '',
       Monto_Arriendo: c.rentAmount,
       Estado: c.status,
       Uso_Propiedad: c.propertyUsage,
@@ -360,3 +360,5 @@ export default function ContractsPage() {
     </div>
   );
 }
+
+    
