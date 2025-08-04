@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,7 +47,6 @@ export default function ContractsPage() {
       if (currentUser.role === 'Arrendador') {
         contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid), where('status', '!=', 'Archivado'));
       } else {
-        // Corrected query for Tenant: only needs to match their tenantId
         contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid));
       }
 
@@ -115,7 +114,7 @@ export default function ContractsPage() {
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId, // Will be null if tenant doesn't exist yet
+          tenantId: tenantId,
           tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -127,15 +126,12 @@ export default function ContractsPage() {
       };
 
       if (selectedContract) {
-        // This is an edit of an existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, { ...contractDataPayload });
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
       } else {
-        // This is a new contract
         const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
         
-        // If tenant doesn't exist, create a pending reference
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
@@ -392,5 +388,3 @@ export default function ContractsPage() {
     </div>
   );
 }
-
-    
