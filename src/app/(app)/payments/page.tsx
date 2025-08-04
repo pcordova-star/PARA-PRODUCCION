@@ -82,8 +82,10 @@ export default function PaymentsPage() {
     const landlordEmail = landlordDoc.exists() ? landlordDoc.data().email : 'landlord-email-not-found@example.com';
 
     try {
+        const { attachment, ...restOfData } = data;
+
         const newPaymentData: Omit<Payment, 'id'> = {
-          ...data,
+          ...restOfData,
           propertyName: contract.propertyName,
           landlordId: contract.landlordId,
           landlordName: contract.landlordName,
