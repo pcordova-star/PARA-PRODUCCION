@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -34,19 +34,15 @@ const getStatusBadgeVariant = (status: Contract["status"]) => {
 };
 
 const formatDate = (dateInput: string | Date | undefined): string => {
-    if (!dateInput) return "Fecha Indefinida";
+    if (!dateInput) return "N/A";
     try {
-        const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-        // Check if the date is valid
+        const date = typeof dateInput === 'string' ? parseISO(dateInput) : new Date(dateInput);
         if (isNaN(date.getTime())) {
-            // Try a more general parsing if ISO parsing fails
-            const generalDate = new Date(dateInput);
-            if(isNaN(generalDate.getTime())) return "Fecha inválida";
-            return format(generalDate, "d MMM yyyy", { locale: es });
+            return "Fecha Inválida";
         }
         return format(date, "d MMM yyyy", { locale: es });
     } catch (error) {
-        return "Fecha inválida";
+        return "Fecha Inválida";
     }
 };
 
@@ -79,16 +75,16 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                     {formatCurrency(contract.rentAmount)}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <CardContent className="flex-grow space-y-3 text-sm">
+                <div className="flex items-center gap-3 text-muted-foreground">
                     <Home className="h-5 w-5 shrink-0" />
                     <span className="truncate">{contract.propertyAddress}</span>
                 </div>
-                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                 <div className="flex items-center gap-3 text-muted-foreground">
                     <User className="h-5 w-5 shrink-0" />
                     <span className="truncate">{userRole === 'Arrendador' ? `Arrendatario: ${contract.tenantName}` : `Arrendador: ${contract.landlordName}`}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+                <div className="flex items-center justify-between text-muted-foreground pt-2">
                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>{formatDate(contract.startDate)}</span>
@@ -97,6 +93,20 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>{formatDate(contract.endDate)}</span>
+                    </div>
+                </div>
+                 <div className="pt-2 border-t mt-3 space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                        <Building className="h-3.5 w-3.5" />
+                        <span>Uso: {contract.propertyUsage}</span>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <CircleDollarSign className="h-3.5 w-3.5" />
+                        <span>Día de pago: {contract.rentPaymentDay || 'No especificado'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <FileSliders className="h-3.5 w-3.5" />
+                        <span>Ajuste IPC: {contract.ipcAdjustment ? `Sí (${contract.ipcAdjustmentFrequency || 'N/A'})` : 'No'}</span>
                     </div>
                 </div>
             </CardContent>
