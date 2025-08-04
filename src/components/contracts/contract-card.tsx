@@ -28,6 +28,8 @@ const getStatusBadgeVariant = (status: Contract["status"]) => {
             return 'bg-gray-100 text-gray-800 border-gray-200';
         case 'Cancelado':
             return 'bg-red-100 text-red-800 border-red-200';
+        case 'Archivado':
+            return 'bg-orange-100 text-orange-800 border-orange-200';
         default:
             return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -113,7 +115,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                         </Button>
                     </div>
                 )}
-                 {userRole === 'Arrendador' && contract.status !== 'Finalizado' && (
+                 {userRole === 'Arrendador' && contract.status !== 'Finalizado' && contract.status !== 'Archivado' && (
                     <>
                         <Button variant="outline" size="sm" onClick={onViewDetails}>
                            <Eye className="mr-2 h-4 w-4" /> Ver

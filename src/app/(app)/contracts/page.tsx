@@ -39,7 +39,13 @@ export default function ContractsPage() {
 
     try {
       const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
-      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      let contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      
+      // Landlords should not see archived contracts
+      if (currentUser.role === 'Arrendador') {
+        contractsQuery = query(contractsQuery, where('status', '!=', 'Archivado'));
+      }
+
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
@@ -193,16 +199,24 @@ export default function ContractsPage() {
   const confirmDelete = async () => {
     if (!contractToDelete) return;
     try {
-        await deleteDoc(doc(db, 'contracts', contractToDelete.id));
-        toast({ title: 'Contrato eliminado', description: `El contrato con ${contractToDelete.tenantName} ha sido eliminado.`, variant: 'destructive' });
+        const contractRef = doc(db, 'contracts', contractToDelete.id);
+        await updateDoc(contractRef, {
+            status: 'Archivado',
+            archivedAt: new Date().toISOString(),
+        });
+        toast({ 
+            title: 'Contrato Archivado', 
+            description: `El contrato con ${contractToDelete.tenantName} ha sido archivado y se eliminará en 15 días.`,
+            variant: 'default' 
+        });
         fetchContractsAndProperties();
         setIsDeleteDialogOpen(false);
         setContractToDelete(null);
     } catch (error) {
-        console.error("Error deleting contract:", error);
+        console.error("Error archiving contract:", error);
         toast({
-            title: 'Error al eliminar',
-            description: 'No se pudo eliminar el contrato.',
+            title: 'Error al archivar',
+            description: 'No se pudo archivar el contrato.',
             variant: 'destructive',
         });
     }
@@ -342,15 +356,15 @@ export default function ContractsPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Está seguro de que desea eliminar este contrato?</AlertDialogTitle>
+            <AlertDialogTitle>¿Está seguro de que desea archivar este contrato?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el contrato de sus registros.
+              Esta acción archivará el contrato. El arrendatario aún podrá verlo por un período de 15 días antes de que sea eliminado permanentemente de la plataforma.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Sí, eliminar
+              Sí, archivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -359,5 +373,3 @@ export default function ContractsPage() {
     </div>
   );
 }
-
-    

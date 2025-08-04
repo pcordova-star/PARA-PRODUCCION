@@ -28,8 +28,7 @@ type ColumnsConfig = {
 const formatDate = (dateInput: string | Date | undefined): string => {
     if (!dateInput) return "N/A";
     try {
-        const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-        // Check if date is a valid Date object before calling getTime
+        const date = typeof dateInput === 'string' ? parseISO(dateInput) : new Date(dateInput);
         if (date instanceof Date && !isNaN(date.getTime())) {
             return format(date, "d MMM yyyy", { locale: es });
         }
@@ -106,6 +105,10 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
                 variant = 'destructive';
                 className = 'bg-red-100 text-red-800 border-red-200';
                 break;
+            case 'Archivado':
+                variant = 'outline';
+                className = 'bg-orange-100 text-orange-800 border-orange-200';
+                break;
         }
         return <Badge variant={variant} className={`${className} capitalize`}>{status}</Badge>;
     }
@@ -129,14 +132,14 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
                 <Eye className="mr-2 h-4 w-4" /> Ver Detalles
             </DropdownMenuItem>
 
-            {userRole === 'Arrendador' && (
+            {userRole === 'Arrendador' && contract.status !== 'Archivado' && (
               <>
                 <DropdownMenuItem onClick={() => onEdit(contract)} disabled={contract.status !== 'Borrador'}>
                   <Pencil className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(contract)}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                  <Trash2 className="mr-2 h-4 w-4" /> Archivar
                 </DropdownMenuItem>
               </>
             )}
@@ -158,5 +161,3 @@ export const columns = ({ onEdit, onDelete, userRole, onUpdateStatus, onViewDeta
     },
   },
 ]
-
-    

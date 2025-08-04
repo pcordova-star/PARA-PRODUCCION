@@ -30,7 +30,8 @@ export interface Contract {
   startDate: string; 
   endDate: string; 
   rentAmount: number;
-  status: "Borrador" | "Activo" | "Finalizado" | "Cancelado";
+  status: "Borrador" | "Activo" | "Finalizado" | "Cancelado" | "Archivado";
+  archivedAt?: string;
   propertyUsage: "Habitacional" | "Comercial";
   securityDepositAmount?: number;
   rentPaymentDay?: number;
@@ -211,5 +212,3 @@ export interface TenantCertificateData {
   generationDate: string;
   certificateId: string;
 }
-
-    
