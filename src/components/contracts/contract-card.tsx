@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
 import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContractCardProps {
     contract: Contract;
@@ -35,12 +36,16 @@ const getStatusBadgeVariant = (status: Contract["status"]) => {
 const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Fecha Indefinida";
     try {
-        // Assuming dateString is in ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
-        const date = new Date(dateString);
-        // Correct for timezone offset if necessary, but format should handle it
+        const date = parseISO(dateString);
         return format(date, "d MMM yyyy", { locale: es });
     } catch {
-        return "Fecha inválida";
+        // Fallback for dates that might not be in ISO format
+        try {
+            const date = new Date(dateString);
+            return format(date, "d MMM yyyy", { locale: es });
+        } catch {
+            return "Fecha inválida";
+        }
     }
 };
 
@@ -52,6 +57,15 @@ const formatCurrency = (amount: number) => {
 };
 
 export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateStatus }: ContractCardProps) {
+    const { toast } = useToast();
+
+    const handleViewClick = () => {
+        toast({
+            title: "Función en Desarrollo",
+            description: "La vista detallada del contrato estará disponible próximamente.",
+        });
+    };
+
     return (
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
             <CardHeader className="pb-4">
@@ -97,7 +111,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onUpdateSta
                 )}
                  {userRole === 'Arrendador' && contract.status !== 'Finalizado' && (
                     <>
-                        <Button variant="outline" size="sm">Ver</Button>
+                        <Button variant="outline" size="sm" onClick={handleViewClick}>Ver</Button>
                         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar" disabled={contract.status !== 'Borrador'}>
                             <Pencil className="h-4 w-4" />
                         </Button>
