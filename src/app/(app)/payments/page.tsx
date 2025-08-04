@@ -92,7 +92,13 @@ export default function PaymentsPage() {
           declaredAt: new Date().toISOString(),
           status: 'pendiente',
         };
-        await addDoc(collection(db, 'payments'), newPaymentData);
+
+        // Sanitize data: Firestore does not accept 'undefined'
+        const sanitizedPaymentData = Object.fromEntries(
+            Object.entries(newPaymentData).map(([key, value]) => [key, value === undefined ? null : value])
+        );
+
+        await addDoc(collection(db, 'payments'), sanitizedPaymentData);
 
         // Send notification email to landlord
         await sendEmail({
