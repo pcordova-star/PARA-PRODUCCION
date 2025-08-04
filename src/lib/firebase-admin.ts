@@ -1,17 +1,16 @@
-import * as admin from 'firebase-admin';
-import { getApps } from 'firebase-admin/app';
 
-// This function ensures that Firebase Admin is initialized only once.
-export function getFirebaseAdmin() {
-  if (!getApps().length) {
-    admin.initializeApp();
-  }
-  return {
-    auth: admin.auth(),
-    db: admin.firestore(),
-  };
+import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { getAuth, Auth } from 'firebase-admin/auth';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
+
+let app: App;
+if (!getApps().length) {
+  app = initializeApp();
+} else {
+  app = getApps()[0];
 }
 
-// You can still export them for convenience, but they will be initialized lazily.
-export const adminAuth = getFirebaseAdmin().auth;
-export const adminDb = getFirebaseAdmin().db;
+const adminDb: Firestore = getFirestore(app);
+const adminAuth: Auth = getAuth(app);
+
+export { adminDb, adminAuth };
