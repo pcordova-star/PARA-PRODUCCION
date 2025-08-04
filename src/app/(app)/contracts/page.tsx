@@ -100,8 +100,8 @@ export default function ContractsPage() {
       
       const contractDataPayload = {
           ...values,
-          startDate: values.startDate.toISOString(),
-          endDate: values.endDate.toISOString(),
+          startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
+          endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
           tenantId: tenantId,

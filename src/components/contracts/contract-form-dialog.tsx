@@ -95,7 +95,8 @@ interface ContractFormDialogProps {
 const safeCreateDate = (dateValue: any): Date | undefined => {
     if (!dateValue) return undefined;
     try {
-        const date = new Date(dateValue);
+        // Handle both string and Date objects
+        const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
         if (isNaN(date.getTime())) return undefined;
         return date;
     } catch {
@@ -369,5 +370,3 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         </Dialog>
     );
 }
-
-    
