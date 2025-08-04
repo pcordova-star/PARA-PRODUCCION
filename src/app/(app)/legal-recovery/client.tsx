@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
-import { IncidentHistory } from '@/components/legal/IncidentHistory';
+import { LegalDossier } from '@/components/legal/LegalDossier';
 import { PriorNotice } from '@/components/legal/PriorNotice';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FileWarning, Download, Send, Loader2, AlertCircle } from 'lucide-react';
@@ -153,7 +153,7 @@ export default function LegalRecoveryClient() {
           <Tabs defaultValue="prior_notice" className="w-full">
             <TabsList className="grid w-full grid-cols-3 print:hidden">
               <TabsTrigger value="prior_notice">Notificación Previa</TabsTrigger>
-              <TabsTrigger value="incident_history">Historial de Incidentes</TabsTrigger>
+              <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
               <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
             </TabsList>
             <div className="print:block hidden text-center my-4">
@@ -163,8 +163,8 @@ export default function LegalRecoveryClient() {
             <TabsContent value="prior_notice" className="print:block">
                <PriorNotice contract={selectedContract} />
             </TabsContent>
-            <TabsContent value="incident_history" className="print:block print:mt-8">
-              <IncidentHistory contract={selectedContract} />
+            <TabsContent value="legal_dossier" className="print:block print:mt-8">
+              <LegalDossier contract={selectedContract} />
             </TabsContent>
             <TabsContent value="contract_display" className="print:block print:mt-8">
               <ContractDisplay contract={selectedContract} property={selectedProperty} />
