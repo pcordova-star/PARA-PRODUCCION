@@ -9,12 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { parseISO } from 'date-fns';
 
 // Helper to safely format dates, defaulting to 'N/A'
 const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.DateTimeFormatOptions): string => {
   if (!dateInput) return 'N/A';
   try {
-    const date = new Date(dateInput);
+    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+     if (isNaN(date.getTime())) {
+      return "Fecha Inválida";
+    }
     return date.toLocaleDateString('es-CL', options || { year: 'numeric', month: 'long', day: 'numeric' });
   } catch (error) {
     return 'Fecha Inválida';
@@ -220,7 +224,7 @@ export default function TenantCertificateClient() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Historial de Arriendos</h2>
+        <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Historial de Arriendos en la Plataforma</h2>
         {rentalHistory.length > 0 ? (
           <div className="space-y-4">
             {rentalHistory.map((item, index) => (
@@ -301,7 +305,7 @@ export default function TenantCertificateClient() {
                 ) : (
                     <p className="text-lg text-muted-foreground">Puntuación global no disponible.</p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Basado en el promedio de evaluaciones recibidas.</p>
+                <p className="text-xs text-muted-foreground mt-1">Basado en el promedio de todas las evaluaciones recibidas en la plataforma.</p>
             </div>
             <div className="flex flex-col items-center">
                  <img src="https://placehold.co/100x100.png" alt="QR Code de Verificación" width={100} height={100} data-ai-hint="qr code verification" />
