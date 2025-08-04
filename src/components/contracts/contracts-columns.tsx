@@ -29,10 +29,11 @@ const formatDate = (dateInput: string | Date | undefined): string => {
     if (!dateInput) return "N/A";
     try {
         const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-         if (isNaN(date.getTime())) {
-            return "Fecha Inválida";
+        // Check if date is a valid Date object before calling getTime
+        if (date instanceof Date && !isNaN(date.getTime())) {
+            return format(date, "d MMM yyyy", { locale: es });
         }
-        return format(date, "d MMM yyyy", { locale: es });
+        return "Fecha Inválida";
     } catch (error) {
         console.error("Error formatting date:", dateInput, error);
         return "Fecha inválida";
