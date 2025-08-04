@@ -1,5 +1,5 @@
 
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 interface EmailParams {
@@ -10,8 +10,8 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams) {
   try {
-    const mailCollection = collection(db, 'mail');
-    await addDoc(mailCollection, {
+    // Using setDoc with a new doc ref to ensure we get an ID for logging if needed
+    await addDoc(collection(db, 'mail'), {
       to: Array.isArray(params.to) ? params.to : [params.to],
       message: {
         subject: params.subject,
@@ -50,11 +50,12 @@ interface ContractCreationEmailParams {
   tenantName: string;
   landlordName: string;
   propertyAddress: string;
-  appUrl: string;
+  appUrl: string; // Ensure appUrl is passed in
 }
 
 export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, appUrl }: ContractCreationEmailParams) {
-  const loginUrl = `${appUrl}/login`;
+  // Use the provided appUrl, which should be the public URL
+  const loginUrl = `${appUrl}/login`; 
 
   await sendEmail({
     to: tenantEmail,

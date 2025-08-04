@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,11 +42,13 @@ export default function ContractsPage() {
 
     try {
       const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
-      let contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      let contractsQuery;
       
-      // Landlords should not see archived contracts
       if (currentUser.role === 'Arrendador') {
-        contractsQuery = query(contractsQuery, where('status', '!=', 'Archivado'));
+        contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid), where('status', '!=', 'Archivado'));
+      } else {
+        // Corrected query for Tenant: only needs to match their tenantId
+        contractsQuery = query(collection(db, 'contracts'), where('tenantId', '==', currentUser.uid));
       }
 
       const contractsSnapshot = await getDocs(contractsQuery);
@@ -118,10 +120,10 @@ export default function ContractsPage() {
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
-          status: selectedContract?.status || 'Borrador' as const,
+          status: 'Borrador' as const,
           signatureToken: signatureToken,
-          signedByTenant: selectedContract?.signedByTenant || false,
-          signedByLandlord: selectedContract?.signedByLandlord || false,
+          signedByTenant: false,
+          signedByLandlord: false,
       };
 
       if (selectedContract) {
@@ -131,29 +133,24 @@ export default function ContractsPage() {
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
       } else {
         // This is a new contract
-        const batch = writeBatch(db);
-        const newContractRef = doc(collection(db, 'contracts'));
+        const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
         
-        batch.set(newContractRef, { ...contractDataPayload, status: 'Borrador' });
-
         // If tenant doesn't exist, create a pending reference
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
             
-            // Store only the contract ID as a string in an array
             if (tempUserSnap.exists()) {
-                 batch.update(tempUserRef, {
+                 await updateDoc(tempUserRef, {
                     pendingContracts: arrayUnion(newContractRef.id)
                 });
             } else {
-                batch.set(tempUserRef, {
+                await setDoc(tempUserRef, {
                     pendingContracts: [newContractRef.id]
                 });
             }
         }
         
-        await batch.commit();
         toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
       }
 

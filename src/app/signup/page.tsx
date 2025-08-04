@@ -62,9 +62,12 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
     if (tempUserSnap.exists()) {
         const batch = writeBatch(db);
         const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
+        
+        console.log(`Found ${pendingContracts.length} pending contracts for ${userEmail}`);
 
         for (const contractId of pendingContracts) {
-            if (contractId) {
+            if (typeof contractId === 'string' && contractId) {
+                console.log(`Assigning contract ${contractId} to user ${userId}`);
                 const contractRef = doc(db, 'contracts', contractId);
                 batch.update(contractRef, { 
                   tenantId: userId,
@@ -78,10 +81,12 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
         
         try {
             await batch.commit();
-            console.log(`Assigned ${pendingContracts.length} contract(s) to new user ${userName} (${userId})`);
+            console.log(`Successfully assigned ${pendingContracts.length} contract(s) to new user ${userName} (${userId})`);
         } catch (error) {
             console.error("Error committing batch to assign pending contracts:", error);
         }
+    } else {
+        console.log(`No pending contracts found for ${userEmail}`);
     }
 }
 
