@@ -73,6 +73,7 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
             }
         }
         
+        // After assigning, delete the temporary document
         batch.delete(tempUserRef);
         
         try {
@@ -108,8 +109,7 @@ function RegisterForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Crucial change: Update profile in Firestore *before* assigning contracts.
-      // This ensures the user exists with the correct role when other functions are called.
+      // Crucial: Create the user profile in Firestore FIRST.
       if(updateUserProfileInFirestore) {
         await updateUserProfileInFirestore(
           user.uid,
@@ -120,7 +120,7 @@ function RegisterForm() {
         );
       }
       
-      // If the new user is a tenant, check for and assign any pending contracts.
+      // THEN, check for and assign any pending contracts.
       if (values.role === 'Arrendatario') {
           await assignPendingContracts(user.uid, values.email, values.displayName);
       }
@@ -286,3 +286,5 @@ export default function SignupPage() {
         </div>
     )
 }
+
+    

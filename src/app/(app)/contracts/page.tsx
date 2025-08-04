@@ -112,7 +112,7 @@ export default function ContractsPage() {
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId,
+          tenantId: tenantId, // Will be null if tenant doesn't exist
           tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -126,6 +126,7 @@ export default function ContractsPage() {
       const appUrl = window.location.origin;
 
       if (selectedContract) {
+        // This is an edit of an existing contract
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, { ...contractDataPayload });
 
@@ -139,11 +140,13 @@ export default function ContractsPage() {
         
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
       } else {
+        // This is a new contract
         const batch = writeBatch(db);
         const newContractRef = doc(collection(db, 'contracts'));
         
         batch.set(newContractRef, { ...contractDataPayload, status: 'Borrador' });
 
+        // If tenant doesn't exist, create a pending reference
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
@@ -400,3 +403,5 @@ export default function ContractsPage() {
     </div>
   );
 }
+
+    
