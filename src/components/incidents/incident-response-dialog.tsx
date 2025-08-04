@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -28,6 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Paperclip, MessageSquare } from "lucide-react";
 import type { Incident, UserRole } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useAuth } from "@/contexts/AuthContext";
 
 const incidentResponseFormSchema = z.object({
   responseText: z.string().min(10, {message: "La respuesta debe tener al menos 10 caracteres."}),
@@ -57,6 +61,7 @@ export function IncidentResponseDialog({
   currentUserRole,
 }: IncidentResponseDialogProps) {
   const { toast } = useToast();
+  const { currentUser } = useAuth();
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   const form = useForm<IncidentResponseFormValues>({
@@ -71,28 +76,36 @@ export function IncidentResponseDialog({
   }, [open, form]);
 
   async function onSubmit(values: IncidentResponseFormValues) {
-    if (!currentUserRole || !incident) {
+    if (!currentUserRole || !incident || !currentUser) {
       toast({ title: "Error", description: "No permitido.", variant: "destructive" });
       return;
     }
+    
+    const dataToSave: { 
+        responseText: string;
+        responseAttachmentUrl?: string;
+        responseAttachmentName?: string;
+     } = {
+        responseText: values.responseText,
+    };
 
-    let attachmentUrl: string | undefined;
-    let attachmentName: string | undefined;
     if (values.responseAttachment?.length) {
       const file = values.responseAttachment[0];
-      attachmentName = file.name;
-      // MOCK UPLOAD
-      toast({ title: "Subiendo archivo...", description: `Simulando subida de ${file.name}.` });
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      attachmentUrl = `https://mockstorage.com/incidents/responses/${Date.now()}_${attachmentName}`;
-      toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente (simulado)." });
+      dataToSave.responseAttachmentName = file.name;
+      const storageRef = ref(storage, `incident-attachments/${currentUser.uid}/responses/${Date.now()}-${file.name}`);
+      try {
+        toast({ title: "Subiendo archivo...", description: "Por favor espera." });
+        const snapshot = await uploadBytes(storageRef, file);
+        dataToSave.responseAttachmentUrl = await getDownloadURL(snapshot.ref);
+        toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente." });
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        toast({ title: "Error de Subida", description: "No se pudo subir el archivo.", variant: "destructive" });
+        return;
+      }
     }
 
-    await onSave(incident.id, { 
-        responseText: values.responseText,
-        responseAttachmentUrl: attachmentUrl,
-        responseAttachmentName: attachmentName,
-     });
+    await onSave(incident.id, dataToSave);
   }
 
   if (!incident) return null;
