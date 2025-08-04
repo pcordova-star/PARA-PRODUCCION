@@ -1,7 +1,7 @@
 
 "use server";
 
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
