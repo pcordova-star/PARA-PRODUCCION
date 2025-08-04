@@ -50,10 +50,10 @@ interface ContractCreationEmailParams {
   tenantName: string;
   landlordName: string;
   propertyAddress: string;
+  appUrl: string;
 }
 
-export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress }: ContractCreationEmailParams) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, appUrl }: ContractCreationEmailParams) {
   const loginUrl = `${appUrl}/login`;
 
   await sendEmail({

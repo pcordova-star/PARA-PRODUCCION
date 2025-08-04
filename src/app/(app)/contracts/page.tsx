@@ -123,7 +123,7 @@ export default function ContractsPage() {
           signedByLandlord: selectedContract?.signedByLandlord || false,
       };
 
-      const signUrl = `${window.location.origin}/sign/${signatureToken}`;
+      const appUrl = window.location.origin;
 
       if (selectedContract) {
         const contractRef = doc(db, 'contracts', selectedContract.id);
@@ -134,6 +134,7 @@ export default function ContractsPage() {
           tenantName: values.tenantName,
           landlordName: currentUser.name,
           propertyAddress: propertyData.address,
+          appUrl: appUrl,
         });
         
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
@@ -143,7 +144,6 @@ export default function ContractsPage() {
         
         batch.set(newContractRef, { ...contractDataPayload, status: 'Borrador' });
 
-        // If the tenant does not exist, create a pending contract reference
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
@@ -164,6 +164,7 @@ export default function ContractsPage() {
           tenantName: values.tenantName,
           landlordName: currentUser.name,
           propertyAddress: propertyData.address,
+          appUrl: appUrl,
         });
 
         toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario para que lo revise y firme.' });
@@ -209,6 +210,7 @@ export default function ContractsPage() {
             tenantName: contract.tenantName,
             landlordName: currentUser.name,
             propertyAddress: contract.propertyAddress,
+            appUrl: window.location.origin,
         });
         toast({ title: 'Notificación Reenviada', description: 'Se ha enviado un nuevo correo al arrendatario.' });
     } catch (error) {
