@@ -70,6 +70,8 @@ export async function signContractAction({ contractId }: SignContractParams): Pr
 
             if (landlordHasSigned && tenantHasSigned) {
                 updatedData.status = 'Activo';
+                const propertyRef = adminDb.collection('properties').doc(contract.propertyId);
+                transaction.update(propertyRef, { status: 'Arrendada' });
             }
             
             transaction.update(contractRef, updatedData);

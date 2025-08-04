@@ -1,14 +1,17 @@
-
 import * as admin from 'firebase-admin';
+import { getApps } from 'firebase-admin/app';
 
-if (!admin.apps.length) {
-  try {
-    // Use applicationDefault() to automatically find credentials in a Firebase environment.
+// This function ensures that Firebase Admin is initialized only once.
+export function getFirebaseAdmin() {
+  if (!getApps().length) {
     admin.initializeApp();
-  } catch (error: any) {
-    console.error('Firebase admin initialization error', error.stack);
   }
+  return {
+    auth: admin.auth(),
+    db: admin.firestore(),
+  };
 }
 
-export const adminDb = admin.firestore();
-export const adminAuth = admin.auth();
+// You can still export them for convenience, but they will be initialized lazily.
+export const adminAuth = getFirebaseAdmin().auth;
+export const adminDb = getFirebaseAdmin().db;
