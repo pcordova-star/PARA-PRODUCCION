@@ -33,12 +33,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Paperclip, AlertTriangle } from "lucide-react";
+import { Paperclip, AlertTriangle, Loader2 } from "lucide-react";
 import type {
   Contract,
   IncidentType,
   UserRole,
-  IncidentFormValues,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { incidentTypes } from "@/types";
@@ -62,7 +61,7 @@ export type IncidentFormDialogValues = z.infer<typeof incidentFormSchema>;
 interface IncidentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: any, contract: Contract) => Promise<void>;
+  onSave: (data: IncidentFormDialogValues, contract: Contract) => Promise<void>;
   userContracts: Contract[];
   currentUserRole: UserRole | null;
 }
@@ -75,8 +74,7 @@ export function IncidentFormDialog({
   currentUserRole,
 }: IncidentFormDialogProps) {
   const { toast } = useToast();
-  const [selectedInitialFileName, setSelectedInitialFileName] =
-    useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<IncidentFormDialogValues>({
     resolver: zodResolver(incidentFormSchema),
@@ -90,7 +88,6 @@ export function IncidentFormDialog({
         description: "",
         initialAttachment: undefined,
       });
-      setSelectedInitialFileName(null);
     }
   }, [open, userContracts, form]);
   
@@ -115,27 +112,9 @@ export function IncidentFormDialog({
       return;
     }
 
-
-    let attachmentUrl: string | null = null;
-    let attachmentName: string | null = null;
-
-    if (values.initialAttachment && values.initialAttachment.length > 0) {
-      const file = values.initialAttachment[0];
-      attachmentName = file.name;
-
-      // MOCK UPLOAD
-      toast({ title: "Subiendo archivo...", description: `Simulando subida de ${file.name}.` });
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      attachmentUrl = `https://mockstorage.com/incidents/${Date.now()}_${attachmentName}`;
-      toast({ title: "Archivo Adjunto", description: "Comprobante subido exitosamente (simulado)." });
-    }
-
-    await onSave({ 
-      ...values, 
-      initialAttachmentUrl: attachmentUrl, 
-      initialAttachmentName: attachmentName 
-    }, selectedContract);
-
+    setIsSubmitting(true);
+    await onSave(values, selectedContract);
+    setIsSubmitting(false);
     form.reset();
   }
 
@@ -244,12 +223,10 @@ export function IncidentFormDialog({
                   <FormControl>
                     <Input
                       type="file"
-                      onChange={(event) => {
-                        const files = event.target.files;
-                        setSelectedInitialFileName(files?.[0]?.name || null);
-                        onChange(files);
-                      }}
                       {...rest}
+                      onChange={(event) => {
+                        onChange(event.target.files);
+                      }}
                     />
                   </FormControl>
                    <UiFormDescription>
@@ -262,12 +239,13 @@ export function IncidentFormDialog({
 
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={form.formState.isSubmitting}>
+                <Button type="button" variant="outline" disabled={isSubmitting}>
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Creando..." : "Crear Incidente"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isSubmitting ? "Creando..." : "Crear Incidente"}
               </Button>
             </DialogFooter>
           </form>

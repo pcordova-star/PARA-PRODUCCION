@@ -13,8 +13,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { IncidentsDataTable } from '@/components/incidents/incidents-data-table';
 import { columns as createColumns } from '@/components/incidents/incidents-columns';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { sendEmail } from '@/lib/notifications';
@@ -73,8 +74,26 @@ export default function IncidentsPage() {
     setProcessingId('new-incident');
     
     try {
+        let initialAttachmentUrl: string | null = null;
+        let initialAttachmentName: string | null = null;
+
+        if (data.initialAttachment && data.initialAttachment.length > 0) {
+            const file = data.initialAttachment[0];
+            initialAttachmentName = file.name;
+            const storageRef = ref(storage, `incident-attachments/${currentUser.uid}/${Date.now()}-${file.name}`);
+            toast({ title: "Subiendo archivo...", description: "Por favor espera." });
+            const snapshot = await uploadBytes(storageRef, file);
+            initialAttachmentUrl = await getDownloadURL(snapshot.ref);
+            toast({ title: "Archivo subido", description: "El adjunto se ha subido correctamente." });
+        }
+        
+        // Remove FileList from data before saving to Firestore
+        const { initialAttachment, ...restOfData } = data;
+
         const newIncidentData: Omit<Incident, 'id'> = {
-          ...data,
+          ...restOfData,
+          initialAttachmentUrl,
+          initialAttachmentName,
           propertyId: contract.propertyId,
           propertyName: contract.propertyName,
           landlordId: contract.landlordId,
@@ -84,6 +103,7 @@ export default function IncidentsPage() {
           createdAt: new Date().toISOString(),
           createdBy: currentUser.uid,
           status: 'pendiente',
+          responses: [],
         };
         await addDoc(collection(db, 'incidents'), newIncidentData);
 
