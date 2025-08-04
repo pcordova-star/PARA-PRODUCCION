@@ -49,7 +49,7 @@ const ScoreDisplay = ({ score }: { score: number | null }) => {
 export function TenantDashboard() {
   const { currentUser } = useAuth();
   const [globalScore, setGlobalScore] = useState<number | null>(null);
-  const [activeContract, setActiveContract] = useState<Contract | null>(null);
+  const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
   const [pendingContract, setPendingContract] = useState<Contract | null>(null);
   const [pendingEvaluationsCount, setPendingEvaluationsCount] = useState(0);
   const [openIncidentsCount, setOpenIncidentsCount] = useState(0);
@@ -64,9 +64,9 @@ export function TenantDashboard() {
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       
-      const active = contractsList.find(c => c.status === 'Activo');
+      const active = contractsList.filter(c => c.status === 'Activo');
       const pending = contractsList.find(c => c.status === 'Borrador');
-      setActiveContract(active || null);
+      setActiveContracts(active);
       setPendingContract(pending || null);
 
       const contractIds = contractsList.map(c => c.id);
@@ -166,20 +166,31 @@ export function TenantDashboard() {
         <AnnouncementsSection />
       </div>
       
-      {activeContract ? (
+      {activeContracts.length > 0 ? (
         <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle>Tu Arriendo Actual</CardTitle>
-              <CardDescription>{activeContract.propertyName}</CardDescription>
+              <CardTitle>Tus Arriendos Activos</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-6">
+            <CardContent className="grid md:grid-cols-2 gap-x-8 gap-y-6">
               <div className="rounded-lg mb-4"><ScoreDisplay score={globalScore} /></div>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center"><span className="font-semibold w-28">Estado:</span> <Badge className="bg-green-100 text-green-800 border-green-200">{activeContract.status}</Badge></div>
-                <p><span className="font-semibold w-28 inline-block">Propietario:</span> {activeContract.landlordName || "N/A"}</p>
-                <p className="flex items-center"><Wallet className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Renta:</span> ${activeContract.rentAmount.toLocaleString('es-CL')}</p>
-                <p className="flex items-center"><Calendar className="inline h-4 w-4 mr-2" /> <span className="font-semibold w-24">Fin de Contrato:</span> {new Date(activeContract.endDate).toLocaleDateString('es-CL')}</p>
-                <Button asChild className="w-full mt-4"><Link href={`/contracts`}><FileText className="mr-2 h-4 w-4" /> Ver Detalles del Contrato</Link></Button>
+              <div className="space-y-4">
+                 {activeContracts.map(contract => (
+                    <div key={contract.id} className="text-sm border-b pb-4 last:border-b-0 last:pb-0">
+                        <p className="font-semibold">{contract.propertyName}</p>
+                        <p className="text-muted-foreground">
+                          <span className="font-medium">Arrendador:</span> {contract.landlordName || "N/A"}
+                        </p>
+                        <div className="flex justify-between items-center mt-2">
+                           <div>
+                                <p><span className="font-semibold">Renta:</span> ${contract.rentAmount.toLocaleString('es-CL')}</p>
+                                <p><span className="font-semibold">Fin Contrato:</span> {new Date(contract.endDate).toLocaleDateString('es-CL')}</p>
+                           </div>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={`/contracts`}>Ver Detalles</Link>
+                            </Button>
+                        </div>
+                    </div>
+                 ))}
               </div>
             </CardContent>
         </Card>
@@ -196,5 +207,3 @@ export function TenantDashboard() {
     </TooltipProvider>
   );
 }
-
-    

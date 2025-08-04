@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import {
   Building2, FileText, PlusCircle, Upload, Calendar, Wallet, AlertTriangle,
-  BarChart, PieChart as PieChartIcon
+  BarChart, PieChart as PieChartIcon, ArrowRight
 } from "lucide-react";
 import type { Property, Contract, Payment, Incident, Evaluation, UserProfile } from "@/types";
 import { AnnouncementsSection } from "./announcements-section";
@@ -19,6 +19,15 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from 'firebase/firestore';
+
+const formatDate = (dateString: string) => {
+    try {
+        if (!dateString) return "N/A";
+        return new Date(dateString).toLocaleDateString('es-CL');
+    } catch {
+        return "Fecha Inválida";
+    }
+}
 
 export function LandlordDashboard() {
   const { currentUser } = useAuth();
@@ -81,8 +90,7 @@ export function LandlordDashboard() {
     fetchData(); 
   };
 
-  const totalProperties = properties.length;
-  const activeContractsCount = contracts.filter(c => c.status === "Activo").length;
+  const activeContracts = contracts.filter(c => c.status === "Activo");
   const pendingContractsCount = contracts.filter(c => c.status === "Borrador").length;
   const expiringContractsCount = contracts.filter(c => {
     const endDate = moment(c.endDate);
@@ -173,6 +181,70 @@ export function LandlordDashboard() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="shadow-md">
+                <CardHeader><CardTitle className="flex items-center"><FileText className="mr-2"/>Contratos Activos</CardTitle></CardHeader>
+                <CardContent>
+                    {activeContracts.length > 0 ? (
+                        <ul className="space-y-3">
+                            {activeContracts.slice(0, 4).map(contract => (
+                                <li key={contract.id} className="flex items-center justify-between text-sm">
+                                    <div>
+                                        <p className="font-semibold truncate">{contract.propertyName}</p>
+                                        <p className="text-muted-foreground truncate">Arrendatario: {contract.tenantName}</p>
+                                        <p className="text-muted-foreground text-xs">Fin: {formatDate(contract.endDate)}</p>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                        <p className="font-bold text-primary">${contract.rentAmount.toLocaleString('es-CL')}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No tienes contratos activos.</p>
+                    )}
+                    {activeContracts.length > 4 && (
+                        <Button variant="link" asChild className="p-0 h-auto mt-2">
+                           <Link href="/contracts">Ver todos los contratos <ArrowRight className="ml-1 h-4 w-4"/></Link>
+                        </Button>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="shadow-md">
+              <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button></TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Visualiza fechas importantes de pagos y contratos.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button></TooltipTrigger><TooltipContent><p>Añade múltiples propiedades a la vez usando un archivo.</p></TooltipContent></Tooltip>
+              </CardContent>
+            </Card>
+            <Card className="shadow-md">
+                <CardHeader><CardTitle className="flex items-center"><BarChart className="mr-2"/>Métricas Clave</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4 text-center">
+                    <div className="p-4 rounded-lg bg-muted">
+                        <p className="text-2xl font-bold">{properties.length}</p>
+                        <p className="text-sm text-muted-foreground">Propiedades Totales</p>
+                    </div>
+                     <div className="p-4 rounded-lg bg-muted">
+                        <p className="text-2xl font-bold">{activeContracts.length}</p>
+                        <p className="text-sm text-muted-foreground">Contratos Activos</p>
+                    </div>
+                     <div className="p-4 rounded-lg bg-muted">
+                        <p className="text-2xl font-bold">{`$${currentMonthPaymentsReceived.toLocaleString('es-CL')}`}</p>
+                        <p className="text-sm text-muted-foreground">Ingresos este Mes</p>
+                    </div>
+                     <div className="p-4 rounded-lg bg-muted">
+                        <p className="text-2xl font-bold">{overallTenantScore}</p>
+                        <p className="text-sm text-muted-foreground">Rating Prom. Arrendatarios</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="shadow-md">
             <CardHeader><CardTitle className="text-lg flex items-center"><PieChartIcon className="mr-2" />Estado de Propiedades</CardTitle></CardHeader>
             <CardContent className="h-[200px]">
@@ -224,42 +296,6 @@ export function LandlordDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="shadow-md">
-                <CardHeader><CardTitle className="flex items-center"><BarChart className="mr-2"/>Métricas Clave</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4 text-center">
-                    <div className="p-4 rounded-lg bg-muted">
-                        <p className="text-2xl font-bold">{totalProperties}</p>
-                        <p className="text-sm text-muted-foreground">Propiedades Totales</p>
-                    </div>
-                     <div className="p-4 rounded-lg bg-muted">
-                        <p className="text-2xl font-bold">{activeContractsCount}</p>
-                        <p className="text-sm text-muted-foreground">Contratos Activos</p>
-                    </div>
-                     <div className="p-4 rounded-lg bg-muted">
-                        <p className="text-2xl font-bold">{`$${currentMonthPaymentsReceived.toLocaleString('es-CL')}`}</p>
-                        <p className="text-sm text-muted-foreground">Ingresos este Mes</p>
-                    </div>
-                     <div className="p-4 rounded-lg bg-muted">
-                        <p className="text-2xl font-bold">{overallTenantScore}</p>
-                        <p className="text-sm text-muted-foreground">Rating Prom. Arrendatarios</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button></TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Visualiza fechas importantes de pagos y contratos.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button></TooltipTrigger><TooltipContent><p>Añade múltiples propiedades a la vez usando un archivo.</p></TooltipContent></Tooltip>
-              </CardContent>
-            </Card>
-        </div>
         
         <AnnouncementsSection />
         
@@ -268,5 +304,3 @@ export function LandlordDashboard() {
     </TooltipProvider>
   );
 }
-
-    
