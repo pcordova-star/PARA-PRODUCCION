@@ -50,12 +50,11 @@ interface ContractCreationEmailParams {
   tenantName: string;
   landlordName: string;
   propertyAddress: string;
-  signUrl: string;
 }
 
-export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress, signUrl }: ContractCreationEmailParams) {
-  const appUrl = new URL(signUrl).origin; // Get the base URL (e.g., http://localhost:9002 or your production domain)
-  const loginUrl = `${appUrl}/login`; // Always direct to login/signup page
+export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landlordName, propertyAddress }: ContractCreationEmailParams) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+  const loginUrl = `${appUrl}/login`;
 
   await sendEmail({
     to: tenantEmail,
@@ -69,7 +68,7 @@ export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landl
           <h3 style="color: #2077c2;">Siguientes Pasos:</h3>
           <ol style="padding-left: 20px;">
             <li><strong>Ingresa a S.A.R.A</strong>: Haz clic en el botón de abajo para registrarte usando tu correo <strong>${tenantEmail}</strong>. Si ya tienes una cuenta, simplemente inicia sesión.</li>
-            <li><strong>Encuentra tu Contrato</strong>: Una vez dentro, ve a la sección "Contratos" en tu panel principal.</li>
+            <li><strong>Encuentra tu Contrato</strong>: Una vez dentro, ve a la sección "Contratos" en tu panel principal. Allí encontrarás el documento pendiente.</li>
             <li><strong>Revisa y Firma</strong>: Podrás revisar y firmar tu nuevo contrato directamente desde la plataforma.</li>
           </ol>
           <div style="text-align: center; margin: 30px 0;">

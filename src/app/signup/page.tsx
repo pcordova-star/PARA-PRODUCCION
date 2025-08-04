@@ -61,19 +61,18 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
 
     if (tempUserSnap.exists()) {
         const batch = writeBatch(db);
-        const pendingContracts = tempUserSnap.data().pendingContracts || [];
+        const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
 
-        for (const pending of pendingContracts) {
-            if (pending.contractId) {
-                const contractRef = doc(db, 'contracts', pending.contractId);
+        for (const contractId of pendingContracts) {
+            if (contractId) {
+                const contractRef = doc(db, 'contracts', contractId);
                 batch.update(contractRef, { 
                   tenantId: userId,
-                  tenantName: userName // Also update the tenant name in the contract
+                  tenantName: userName 
                 });
             }
         }
         
-        // Remove the temporary user document after assigning all contracts
         batch.delete(tempUserRef);
         
         try {

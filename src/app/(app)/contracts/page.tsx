@@ -134,7 +134,6 @@ export default function ContractsPage() {
           tenantName: values.tenantName,
           landlordName: currentUser.name,
           propertyAddress: propertyData.address,
-          signUrl: signUrl,
         });
         
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado y la notificación ha sido reenviada.' });
@@ -148,19 +147,13 @@ export default function ContractsPage() {
         if (!tenantId) {
             const tempUserRef = doc(db, 'tempUsers', values.tenantEmail);
             const tempUserSnap = await getDoc(tempUserRef);
-            const pendingContractData = {
-                contractId: newContractRef.id,
-                landlordName: currentUser.name,
-                propertyAddress: propertyData.address,
-                addedAt: new Date().toISOString()
-            };
-
+            
             if (tempUserSnap.exists()) {
                 const existingData = tempUserSnap.data();
-                const updatedPendingContracts = [...(existingData.pendingContracts || []), pendingContractData];
+                const updatedPendingContracts = [...(existingData.pendingContracts || []), newContractRef.id];
                 batch.update(tempUserRef, { pendingContracts: updatedPendingContracts });
             } else {
-                batch.set(tempUserRef, { pendingContracts: [pendingContractData] });
+                batch.set(tempUserRef, { pendingContracts: [newContractRef.id] });
             }
         }
         
@@ -171,7 +164,6 @@ export default function ContractsPage() {
           tenantName: values.tenantName,
           landlordName: currentUser.name,
           propertyAddress: propertyData.address,
-          signUrl: signUrl,
         });
 
         toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario para que lo revise y firme.' });
@@ -212,13 +204,11 @@ export default function ContractsPage() {
 
     setIsSubmitting(true);
     try {
-        const signUrl = `${window.location.origin}/sign/${contract.signatureToken}`;
         await sendCreationEmailToTenant({
             tenantEmail: contract.tenantEmail,
             tenantName: contract.tenantName,
             landlordName: currentUser.name,
             propertyAddress: contract.propertyAddress,
-            signUrl: signUrl,
         });
         toast({ title: 'Notificación Reenviada', description: 'Se ha enviado un nuevo correo al arrendatario.' });
     } catch (error) {
