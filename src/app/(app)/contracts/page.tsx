@@ -70,7 +70,7 @@ export default function ContractsPage() {
         setUserProperties(propertiesList);
       }
 
-    } catch (error)_ {
+    } catch (error) {
       console.error("Error fetching data: ", error);
       toast({
         title: "Error al cargar datos",
