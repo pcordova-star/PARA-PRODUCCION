@@ -75,7 +75,7 @@ export function EvaluationFormDialog({ open, onOpenChange, onSave, landlordContr
   React.useEffect(() => {
     if (open) {
       form.reset({
-        contractId: landlordContracts.find(c => c.status === "Finalizado")?.id || "",
+        contractId: landlordContracts[0]?.id || "",
         criteria: {
           paymentPunctuality: 3,
           propertyCare: 3,
@@ -117,11 +117,11 @@ export function EvaluationFormDialog({ open, onOpenChange, onSave, landlordContr
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un contrato finalizado" />
+                        <SelectValue placeholder="Selecciona un contrato activo o finalizado" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {landlordContracts.filter(c => c.status === "Finalizado").map(contract => (
+                      {landlordContracts.map(contract => (
                         <SelectItem key={contract.id} value={contract.id}>
                           {contract.propertyName} (Arrendatario: {contract.tenantName})
                         </SelectItem>

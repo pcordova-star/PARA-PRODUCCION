@@ -153,9 +153,9 @@ export default function EvaluationsPage() {
     setIsConfirmationOpen(true);
   };
 
-  const finishedContractsForLandlord = useMemo(() => {
+  const evaluableContractsForLandlord = useMemo(() => {
     if (!currentUser || currentUser.role !== 'Arrendador') return [];
-    return contracts.filter(c => c.status === 'Finalizado');
+    return contracts.filter(c => c.status === 'Finalizado' || c.status === 'Activo');
   }, [contracts, currentUser]);
 
   const columns = createColumns({ userRole: currentUser!.role, onConfirm: openConfirmationDialog });
@@ -231,7 +231,7 @@ export default function EvaluationsPage() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSave={handleSaveEvaluation}
-        landlordContracts={finishedContractsForLandlord}
+        landlordContracts={evaluableContractsForLandlord}
       />
       
       <TenantEvaluationConfirmationDialog
