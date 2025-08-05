@@ -107,47 +107,47 @@ export default function IncidentsPage() {
         };
         await addDoc(collection(db, 'incidents'), newIncidentData);
 
-        const isCreatorLandlord = currentUser.role === 'Arrendador';
-        const recipientId = isCreatorLandlord ? contract.tenantId : contract.landlordId;
-        
-        if (!recipientId) {
-            console.warn("Recipient ID is missing, cannot send notification.");
-            toast({ title: 'Incidente Reportado', description: 'El incidente fue creado, pero no se pudo notificar a la otra parte (ID no encontrado).' });
-            fetchData();
-            setIsFormOpen(false);
-            setProcessingId(null);
-            return;
-        }
+        if (contract.managementType === 'collaborative') {
+            const isCreatorLandlord = currentUser.role === 'Arrendador';
+            const recipientId = isCreatorLandlord ? contract.tenantId : contract.landlordId;
+            
+            if (!recipientId) {
+                console.warn("Recipient ID is missing, cannot send notification.");
+                toast({ title: 'Incidente Reportado', description: 'El incidente fue creado, pero no se pudo notificar a la otra parte (ID no encontrado).' });
+            } else {
+                const recipientDoc = await getDoc(doc(db, 'users', recipientId));
+                const recipientEmail = recipientDoc.exists() ? recipientDoc.data().email : null;
+                const recipientName = isCreatorLandlord ? contract.tenantName : contract.landlordName;
 
-        const recipientDoc = await getDoc(doc(db, 'users', recipientId));
-        const recipientEmail = recipientDoc.exists() ? recipientDoc.data().email : null;
-        const recipientName = isCreatorLandlord ? contract.tenantName : contract.landlordName;
-
-        if (recipientEmail) {
-            await sendEmail({
-                to: recipientEmail,
-                subject: `Nuevo Incidente Reportado en ${contract.propertyName}`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                            <h1 style="color: #d9534f; text-align: center;">Nuevo Incidente Reportado</h1>
-                            <p>Hola ${recipientName},</p>
-                            <p><strong>${currentUser.name}</strong> ha reportado un nuevo incidente para la propiedad <strong>${contract.propertyName}</strong>.</p>
-                            <ul>
-                                <li><strong>Tipo:</strong> ${data.type}</li>
-                                <li><strong>Descripción:</strong> ${data.description}</li>
-                            </ul>
-                            <p>Por favor, inicia sesión en S.A.R.A para revisar y responder a este incidente.</p>
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                if (recipientEmail) {
+                    await sendEmail({
+                        to: recipientEmail,
+                        subject: `Nuevo Incidente Reportado en ${contract.propertyName}`,
+                        html: `
+                            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                                <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                                    <h1 style="color: #d9534f; text-align: center;">Nuevo Incidente Reportado</h1>
+                                    <p>Hola ${recipientName},</p>
+                                    <p><strong>${currentUser.name}</strong> ha reportado un nuevo incidente para la propiedad <strong>${contract.propertyName}</strong>.</p>
+                                    <ul>
+                                        <li><strong>Tipo:</strong> ${data.type}</li>
+                                        <li><strong>Descripción:</strong> ${data.description}</li>
+                                    </ul>
+                                    <p>Por favor, inicia sesión en S.A.R.A para revisar y responder a este incidente.</p>
+                                    <div style="text-align: center; margin: 30px 0;">
+                                        <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                `,
-            });
+                        `,
+                    });
+                     toast({ title: 'Incidente Reportado', description: 'La otra parte ha sido notificada.' });
+                }
+            }
+        } else {
+             toast({ title: 'Incidente Reportado', description: 'El incidente ha sido registrado para su gestión interna.' });
         }
-
-        toast({ title: 'Incidente Reportado', description: 'La otra parte será notificada.' });
+        
         fetchData();
         setIsFormOpen(false);
     } catch(error) {

@@ -88,30 +88,34 @@ export default function EvaluationsPage() {
         };
         await addDoc(collection(db, 'evaluations'), newEvaluationData);
         
-        const tenantDoc = await getDoc(doc(db, 'users', contract.tenantId!));
-        const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : null;
-        
-        if (tenantEmail) {
-            await sendEmail({
-                to: tenantEmail,
-                subject: `Has recibido una evaluación de ${currentUser.name}`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                            <h1 style="color: #2077c2; text-align: center;">¡Has sido evaluado!</h1>
-                            <p>Hola ${contract.tenantName},</p>
-                            <p><strong>${currentUser.name}</strong> ha completado tu evaluación para el arriendo de la propiedad <strong>${contract.propertyName}</strong>.</p>
-                            <p>Para mantener la transparencia y asegurar que estás de acuerdo con la evaluación, te pedimos que la revises y confirmes su recepción en la plataforma.</p>
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+        if (contract.managementType === 'collaborative') {
+            const tenantDoc = await getDoc(doc(db, 'users', contract.tenantId!));
+            const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : null;
+            
+            if (tenantEmail) {
+                await sendEmail({
+                    to: tenantEmail,
+                    subject: `Has recibido una evaluación de ${currentUser.name}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                                <h1 style="color: #2077c2; text-align: center;">¡Has sido evaluado!</h1>
+                                <p>Hola ${contract.tenantName},</p>
+                                <p><strong>${currentUser.name}</strong> ha completado tu evaluación para el arriendo de la propiedad <strong>${contract.propertyName}</strong>.</p>
+                                <p>Para mantener la transparencia y asegurar que estás de acuerdo con la evaluación, te pedimos que la revises y confirmes su recepción en la plataforma.</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `,
-            });
+                    `,
+                });
+                 toast({ title: 'Evaluación Creada', description: 'El arrendatario ha sido notificado para confirmar la recepción.' });
+            }
+        } else {
+             toast({ title: 'Evaluación Creada', description: 'La evaluación se guardó para su registro interno.' });
         }
         
-        toast({ title: 'Evaluación Creada', description: 'El arrendatario ha sido notificado para confirmar la recepción.' });
         fetchData();
         setIsFormOpen(false);
     } catch (error) {

@@ -159,37 +159,43 @@ export default function PaymentsPage() {
     setIsAcceptDialogOpen(false);
     
     try {
+        const contract = contracts.find(c => c.id === paymentToProcess.contractId);
+        
         const paymentRef = doc(db, 'payments', paymentToProcess.id);
         await updateDoc(paymentRef, {
             status: 'aceptado',
             acceptedAt: new Date().toISOString(),
         });
         
-        const tenantDoc = await getDoc(doc(db, 'users', paymentToProcess.tenantId!));
-        const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : 'tenant-email-not-found@example.com';
+        if (contract && contract.managementType === 'collaborative') {
+            const tenantDoc = await getDoc(doc(db, 'users', paymentToProcess.tenantId!));
+            const tenantEmail = tenantDoc.exists() ? tenantDoc.data().email : null;
 
-        await sendEmail({
-            to: tenantEmail,
-            subject: `Tu Pago ha sido Aceptado`,
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                        <h1 style="color: #28a745; text-align: center;">¡Pago Confirmado!</h1>
-                        <p>Hola ${paymentToProcess.tenantName},</p>
-                        <p>Tu pago para la propiedad <strong>${paymentToProcess.propertyName}</strong> ha sido aceptado por ${currentUser.name}.</p>
-                        <ul>
-                            <li><strong>Tipo:</strong> ${paymentToProcess.type}</li>
-                            <li><strong>Monto:</strong> $${paymentToProcess.amount.toLocaleString('es-CL')}</li>
-                            <li><strong>Fecha de Pago:</strong> ${new Date(paymentToProcess.paymentDate).toLocaleDateString('es-CL')}</li>
-                        </ul>
-                        <p>Este correo sirve como confirmación de tu pago. Puedes ver todos tus pagos en tu panel de S.A.R.A.</p>
-                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+            if (tenantEmail) {
+                await sendEmail({
+                    to: tenantEmail,
+                    subject: `Tu Pago ha sido Aceptado`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                                <h1 style="color: #28a745; text-align: center;">¡Pago Confirmado!</h1>
+                                <p>Hola ${paymentToProcess.tenantName},</p>
+                                <p>Tu pago para la propiedad <strong>${paymentToProcess.propertyName}</strong> ha sido aceptado por ${currentUser.name}.</p>
+                                <ul>
+                                    <li><strong>Tipo:</strong> ${paymentToProcess.type}</li>
+                                    <li><strong>Monto:</strong> $${paymentToProcess.amount.toLocaleString('es-CL')}</li>
+                                    <li><strong>Fecha de Pago:</strong> ${new Date(paymentToProcess.paymentDate).toLocaleDateString('es-CL')}</li>
+                                </ul>
+                                <p>Este correo sirve como confirmación de tu pago. Puedes ver todos tus pagos en tu panel de S.A.R.A.</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `,
-        });
+                    `,
+                });
+            }
+        }
 
         toast({ title: 'Pago Aceptado', description: 'El pago ha sido marcado como aceptado.', variant: 'default' });
         fetchData();
