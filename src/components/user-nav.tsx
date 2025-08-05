@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { deleteSessionCookie } from '@/app/actions';
 
 export function UserNav() {
   const { currentUser } = useAuth();
@@ -23,6 +25,7 @@ export function UserNav() {
 
   const handleLogout = async () => {
     await signOut(auth);
+    await deleteSessionCookie();
     router.push('/login');
   };
 

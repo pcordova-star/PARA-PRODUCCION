@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { createSessionCookie } from '@/app/actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,11 +37,14 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+      await createSessionCookie(idToken);
+      
       toast({ title: 'Inicio de sesión exitoso', description: 'Bienvenido de nuevo.' });
       // The useEffect hook will handle the redirect
     } catch (error: any) {
-      if (error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError('El correo electrónico o la contraseña son incorrectos. Por favor, inténtalo de nuevo.');
       } else {
         setError('Ocurrió un error inesperado al intentar iniciar sesión.');
