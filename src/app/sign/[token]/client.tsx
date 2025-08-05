@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface SignContractClientProps {
     contract: Contract;
@@ -22,6 +23,46 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     const [error, setError] = useState<string | null>(null);
     const { currentUser, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // State to handle the intermediate assignment step for new users
+    const [isAssigning, setIsAssigning] = useState(false);
+
+    useEffect(() => {
+        // This effect handles the race condition after a new user signs up.
+        // If the current user is the intended tenant but the contract isn't assigned yet,
+        // it means the backend function is still running. We show a loading state and poll.
+        if (currentUser && currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase() && !contract.tenantId) {
+            setIsAssigning(true);
+            const interval = setInterval(async () => {
+                try {
+                    // Re-fetch contract data from server to check if tenantId has been updated
+                    const res = await fetch(window.location.href, {
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
+                    if (res.ok) {
+                        // A simple page reload will get the fresh server-rendered props
+                        router.refresh(); 
+                    }
+                } catch (e) {
+                    console.error("Failed to re-fetch contract data:", e);
+                }
+            }, 2000); // Check every 2 seconds
+
+            // If the contract is assigned, the component will re-render with the new props
+            // and this effect's condition will no longer be met.
+            if (contract.tenantId) {
+                setIsAssigning(false);
+                clearInterval(interval);
+            }
+            
+            return () => clearInterval(interval);
+        } else {
+            setIsAssigning(false);
+        }
+    }, [currentUser, contract, router]);
+
 
     const handleSign = async () => {
         setIsLoading(true);
@@ -55,28 +96,38 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
+    // If a new user is signing up, this state will be true while the backend assigns the contract.
+    if (isAssigning) {
+        return (
+             <div className="flex items-center justify-center p-6 bg-blue-50 border border-blue-200 rounded-md text-blue-800">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="ml-3 font-medium">Asignando contrato a tu cuenta...</p>
+            </div>
+        )
+    }
+
     // If the contract is for a new user, their tenantId will be null initially.
     // We must guide them to log in or sign up first.
-    if (!contract.tenantId) {
+    if (!currentUser) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acción Requerida: Inicia Sesión</AlertTitle>
                 <AlertDescription>
-                    Debes <Link href={`/login?redirect=/sign/${contract.signatureToken}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato. Si no tienes una cuenta, por favor <Link href="/signup" className="font-bold underline">regístrate</Link> con ese correo.
+                    Debes <Link href={`/login?redirect=${pathname}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato. Si no tienes una cuenta, por favor <Link href={`/signup?redirect=${pathname}`} className="font-bold underline">regístrate</Link> con ese correo.
                 </AlertDescription>
             </Alert>
         );
     }
     
     // After the user logs in, if they are not the correct tenant, show an error.
-    if (!currentUser || currentUser.uid !== contract.tenantId) {
+    if (currentUser.uid !== contract.tenantId) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acceso Denegado</AlertTitle>
                 <AlertDescription>
-                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto.
+                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto ({contract.tenantEmail}).
                 </AlertDescription>
             </Alert>
         );

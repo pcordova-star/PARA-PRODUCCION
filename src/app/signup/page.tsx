@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserPlus, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,7 +58,7 @@ const formSchema = z.object({
 async function assignPendingContracts(userId: string, userEmail: string, userName: string) {
     const normalizedEmail = userEmail.toLowerCase();
     const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
-    console.log(`[DEBUG] Buscando contratos pendientes para: ${normalizedEmail}`);
+    console.log(`[ASSIGN] Buscando contratos pendientes para: ${normalizedEmail}`);
 
     const tempUserSnap = await getDoc(tempUserRef);
 
@@ -66,11 +66,11 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
         const batch = writeBatch(db);
         const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
         
-        console.log(`[DEBUG] Contratos pendientes encontrados: ${pendingContracts.join(', ')}`);
+        console.log(`[ASSIGN] Contratos pendientes encontrados: ${pendingContracts.join(', ')}`);
 
         for (const contractId of pendingContracts) {
             if (typeof contractId === 'string' && contractId) {
-                console.log(`[DEBUG] Asignando contrato ${contractId} a usuario ${userId}`);
+                console.log(`[ASSIGN] Asignando contrato ${contractId} a usuario ${userId}`);
                 const contractRef = doc(db, 'contracts', contractId);
                 batch.update(contractRef, { 
                   tenantId: userId,
@@ -84,12 +84,12 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
         
         try {
             await batch.commit();
-            console.log(`[SUCCESS] Batch ejecutado. Se asignaron ${pendingContracts.length} contrato(s) al nuevo usuario ${userName} (${userId})`);
+            console.log(`[ASSIGN][SUCCESS] Batch ejecutado. Se asignaron ${pendingContracts.length} contrato(s) al nuevo usuario ${userName} (${userId})`);
         } catch (error) {
-            console.error("[ERROR] Error en batch commit al asignar contratos pendientes:", error);
+            console.error("[ASSIGN][ERROR] Error en batch commit al asignar contratos pendientes:", error);
         }
     } else {
-        console.log(`[INFO] No se encontraron contratos pendientes para ${normalizedEmail}`);
+        console.log(`[ASSIGN] No se encontraron contratos pendientes para ${normalizedEmail}`);
     }
 }
 
@@ -97,6 +97,7 @@ async function assignPendingContracts(userId: string, userEmail: string, userNam
 function RegisterForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { updateUserProfileInFirestore } = useAuth(); 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -141,9 +142,12 @@ function RegisterForm() {
 
       toast({
         title: "Registro Exitoso",
-        description: "Tu cuenta ha sido creada. Serás redirigido al dashboard.",
+        description: "Tu cuenta ha sido creada. Serás redirigido.",
       });
-      // The redirect is handled by the useEffect in the main component
+
+      const redirectUrl = searchParams.get('redirect');
+      router.push(redirectUrl || '/dashboard');
+
     } catch (error: any) {
       console.error("Error during registration:", error);
       toast({
@@ -250,12 +254,14 @@ function RegisterForm() {
 export default function SignupPage() {
     const router = useRouter();
     const { currentUser, loading } = useAuth();
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         if (!loading && currentUser) {
-            router.push('/dashboard');
+            const redirectUrl = searchParams.get('redirect');
+            router.push(redirectUrl || '/dashboard');
         }
-    }, [currentUser, loading, router]);
+    }, [currentUser, loading, router, searchParams]);
 
     if (loading || (!loading && currentUser)) {
         return (
@@ -294,5 +300,3 @@ export default function SignupPage() {
         </div>
     )
 }
-
-    
