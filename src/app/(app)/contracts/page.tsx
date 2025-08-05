@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, LayoutGrid, List, FileDown, Loader2 } from 'lucide-react';
-import { ContractFormDialog } from '@/components/contracts/contract-form-dialog';
+import { ContractFormDialog, type ContractFormValues } from '@/components/contracts/contract-form-dialog';
 import type { Contract, Property, UserProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ContractsDataTable } from '@/components/contracts/contracts-data-table';
@@ -86,7 +86,7 @@ export default function ContractsPage() {
     fetchContractsAndProperties();
   }, [fetchContractsAndProperties]);
 
-  const handleSaveContract = async (values: any) => {
+  const handleSaveContract = async (values: ContractFormValues) => {
     if (!currentUser || currentUser.role !== 'Arrendador') {
         toast({ title: 'Acción no permitida', description: 'Solo los arrendadores pueden crear contratos.', variant: 'destructive' });
         return;
@@ -94,86 +94,115 @@ export default function ContractsPage() {
     setIsSubmitting(true);
 
     try {
-      const propertyRef = doc(db, 'properties', values.propertyId);
-      const propertySnap = await getDoc(propertyRef);
-      if (!propertySnap.exists()) {
-          throw new Error("Property not found");
-      }
-      const propertyData = propertySnap.data() as Property;
-      
-      const normalizedEmail = values.tenantEmail.toLowerCase();
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", normalizedEmail), limit(1));
-      const querySnapshot = await getDocs(q);
-      
-      let tenantId: string | null = null;
-      let tenantData: UserProfile | null = null;
-
-      if (!querySnapshot.empty) {
-          const tenantDoc = querySnapshot.docs[0];
-          tenantId = tenantDoc.id;
-          tenantData = tenantDoc.data() as UserProfile;
-          console.log(`Arrendatario existente encontrado: ${tenantId}`);
-      }
-      
-      const signatureToken = uuidv4();
-      const newContractRef = doc(collection(db, "contracts"));
-
-      const contractDataPayload: Omit<Contract, 'id'> = {
-          ...values,
-          id: newContractRef.id,
-          startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
-          endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
-          landlordId: currentUser.uid,
-          landlordName: currentUser.name,
-          tenantId: tenantId, // Será null si el usuario no existe
-          tenantName: tenantData?.name || values.tenantName, // Usa nombre existente o el nuevo
-          tenantEmail: normalizedEmail, // Guardar normalizado
-          tenantRut: values.tenantRut,
-          propertyAddress: propertyData.address,
-          propertyName: `${propertyData.type} en ${propertyData.comuna}`,
-          status: 'Borrador' as const,
-          signatureToken: signatureToken,
-          signedByTenant: false,
-          signedByLandlord: false,
-      };
-      
-      await setDoc(newContractRef, contractDataPayload);
-
-      if (!tenantId) {
-          // Si el arrendatario no existe, guardamos el contrato pendiente en tempUsers
-          console.log(`Arrendatario no existe. Guardando contrato pendiente para ${normalizedEmail}`);
-          const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
-          
-          // Usamos set con merge:true para crear o actualizar el array
-          await setDoc(tempUserRef, {
-              pendingContracts: arrayUnion(newContractRef.id)
-          }, { merge: true });
-      }
+        const propertyRef = doc(db, 'properties', values.propertyId);
+        const propertySnap = await getDoc(propertyRef);
+        if (!propertySnap.exists()) {
+            throw new Error("Property not found");
+        }
+        const propertyData = propertySnap.data() as Property;
         
-      toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
+        const isInternalManagement = values.managementType === 'internal';
 
-      await sendCreationEmailToTenant({
-        tenantEmail: values.tenantEmail,
-        tenantName: values.tenantName,
-        landlordName: currentUser.name,
-        propertyAddress: propertyData.address,
-        appUrl: window.location.origin,
-        signatureToken: signatureToken
-      });
+        const normalizedEmail = values.tenantEmail?.toLowerCase() || '';
+        let tenantId: string | null = null;
+        let tenantData: UserProfile | null = null;
 
-      fetchContractsAndProperties();
-      setIsFormOpen(false);
-      setSelectedContract(null);
+        if (normalizedEmail) {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", "==", normalizedEmail), limit(1));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const tenantDoc = querySnapshot.docs[0];
+                tenantId = tenantDoc.id;
+                tenantData = tenantDoc.data() as UserProfile;
+            }
+        }
+
+        const batch = writeBatch(db);
+        const newContractRef = doc(collection(db, "contracts"));
+        
+        if (isInternalManagement) {
+            // Activate contract and update property status immediately
+            const contractDataPayload: Omit<Contract, 'id'> = {
+                ...values,
+                id: newContractRef.id,
+                startDate: values.startDate.toISOString(),
+                endDate: values.endDate.toISOString(),
+                landlordId: currentUser.uid,
+                landlordName: currentUser.name,
+                tenantId: tenantId,
+                tenantName: tenantData?.name || values.tenantName,
+                tenantEmail: normalizedEmail,
+                tenantRut: values.tenantRut,
+                propertyAddress: propertyData.address,
+                propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+                status: 'Activo' as const, // Activate directly
+                managementType: 'internal',
+                signedByLandlord: true, // Mark as signed for consistency
+                landlordSignedAt: new Date().toISOString(),
+                signedByTenant: true,
+                tenantSignedAt: new Date().toISOString(),
+            };
+            batch.set(newContractRef, contractDataPayload);
+            batch.update(propertyRef, { status: 'Arrendada' });
+            
+            toast({ title: 'Contrato de Administración Creado', description: 'El contrato se ha activado para su gestión interna.' });
+
+        } else {
+            // Collaborative flow with tenant signature
+            const signatureToken = uuidv4();
+            const contractDataPayload: Omit<Contract, 'id'> = {
+                ...values,
+                id: newContractRef.id,
+                startDate: values.startDate.toISOString(),
+                endDate: values.endDate.toISOString(),
+                landlordId: currentUser.uid,
+                landlordName: currentUser.name,
+                tenantId: tenantId,
+                tenantName: tenantData?.name || values.tenantName,
+                tenantEmail: normalizedEmail,
+                tenantRut: values.tenantRut,
+                propertyAddress: propertyData.address,
+                propertyName: `${propertyData.type} en ${propertyData.comuna}`,
+                status: 'Borrador' as const,
+                managementType: 'collaborative',
+                signatureToken: signatureToken,
+                signedByTenant: false,
+                signedByLandlord: false,
+            };
+            batch.set(newContractRef, contractDataPayload);
+            
+            if (!tenantId && normalizedEmail) {
+                const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
+                batch.set(tempUserRef, { pendingContracts: arrayUnion(newContractRef.id) }, { merge: true });
+            }
+
+            await sendCreationEmailToTenant({
+                tenantEmail: values.tenantEmail!,
+                tenantName: values.tenantName,
+                landlordName: currentUser.name,
+                propertyAddress: propertyData.address,
+                appUrl: window.location.origin,
+                signatureToken: signatureToken
+            });
+
+            toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario para que lo firme.' });
+        }
+        
+        await batch.commit();
+        fetchContractsAndProperties();
+        setIsFormOpen(false);
+        setSelectedContract(null);
+
     } catch (error) {
-      console.error("Error saving contract:", error);
-      toast({
-        title: 'Error al guardar',
-        description: 'No se pudo guardar el contrato. Inténtalo de nuevo.',
-        variant: 'destructive',
-      });
+        console.error("Error saving contract:", error);
+        toast({
+            title: 'Error al guardar',
+            description: 'No se pudo guardar el contrato. Inténtalo de nuevo.',
+            variant: 'destructive',
+        });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
   

@@ -33,6 +33,7 @@ export interface Contract {
   rentAmount: number;
   status: "Borrador" | "Activo" | "Finalizado" | "Cancelado" | "Archivado";
   archivedAt?: string;
+  managementType?: "collaborative" | "internal";
   propertyUsage: "Habitacional" | "Comercial";
   securityDepositAmount?: number;
   rentPaymentDay?: number;

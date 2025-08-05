@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@zod/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -20,8 +20,8 @@ import { es } from "date-fns/locale";
 import type { Contract, Property } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { formatRut, validateRut } from "@/lib/rutUtils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-// --- Funciones auxiliares para formato de moneda ---
 const formatCurrency = (value: number | string | undefined): string => {
   if (value === undefined || value === null || value === '') return '';
   const num = typeof value === 'string' ? parseInt(value.replace(/\./g, ''), 10) : value;
@@ -36,8 +36,9 @@ const parseCurrency = (value: string): number | undefined => {
 };
 
 const formSchema = z.object({
+  managementType: z.enum(["collaborative", "internal"]),
   propertyId: z.string().min(1, "Debe seleccionar una propiedad."),
-  tenantEmail: z.string().email("Email de arrendatario inválido."),
+  tenantEmail: z.string().email("Email de arrendatario inválido.").optional().or(z.literal('')),
   tenantName: z.string().min(3, "Nombre de arrendatario requerido."),
   tenantRut: z.string().refine(validateRut, "RUT inválido"),
   
@@ -78,15 +79,23 @@ const formSchema = z.object({
 }).refine(data => data.endDate > data.startDate, {
     message: "La fecha de fin debe ser posterior a la fecha de inicio.",
     path: ["endDate"],
+}).refine(data => {
+    // If management is collaborative, tenant email is required.
+    if (data.managementType === 'collaborative') {
+        return !!data.tenantEmail && z.string().email().safeParse(data.tenantEmail).success;
+    }
+    return true;
+}, {
+    message: "El email del arrendatario es obligatorio para la gestión colaborativa.",
+    path: ["tenantEmail"],
 });
 
-
-type FormValues = z.infer<typeof formSchema>;
+export type ContractFormValues = z.infer<typeof formSchema>;
 
 interface ContractFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: FormValues) => void;
+  onSave: (values: ContractFormValues) => void;
   contract?: Contract | null;
   userProperties: Property[];
   isSubmitting: boolean;
@@ -95,7 +104,6 @@ interface ContractFormDialogProps {
 const safeCreateDate = (dateValue: any): Date | undefined => {
     if (!dateValue) return undefined;
     try {
-        // Handle both string and Date objects
         const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
         if (isNaN(date.getTime())) return undefined;
         return date;
@@ -109,9 +117,10 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
-    const form = useForm<FormValues>({
+    const form = useForm<ContractFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            managementType: "collaborative",
             ipcAdjustment: false,
             prohibitionToSublet: true,
             commonExpensesIncluded: "no aplica",
@@ -119,6 +128,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         },
     });
 
+    const managementType = form.watch("managementType");
     const ipcAdjustment = form.watch("ipcAdjustment");
     const commonExpensesIncluded = form.watch("commonExpensesIncluded");
 
@@ -126,6 +136,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         if (open) {
           const defaultValues = contract ? {
             ...contract,
+            managementType: contract.managementType || "collaborative",
             startDate: safeCreateDate(contract.startDate),
             endDate: safeCreateDate(contract.endDate),
             securityDepositAmount: contract.securityDepositAmount ?? undefined,
@@ -136,6 +147,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
             utilitiesPaymentDay: contract.utilitiesPaymentDay ?? undefined,
             ipcAdjustmentFrequency: contract.ipcAdjustmentFrequency ?? undefined,
           } : {
+            managementType: "collaborative",
             propertyId: "", tenantEmail: "", tenantName: "", tenantRut: "",
             commonExpensesIncluded: "no aplica",
             ipcAdjustment: false,
@@ -147,12 +159,11 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
         }
     }, [contract, open, form]);
 
-    const onSubmit = (values: FormValues) => {
-        // Sanitize data before saving to Firestore
+    const onSubmit = (values: ContractFormValues) => {
         const sanitizedValues = Object.fromEntries(
             Object.entries(values).map(([key, value]) => [key, value === undefined ? null : value])
         );
-        onSave(sanitizedValues as FormValues);
+        onSave(sanitizedValues as ContractFormValues);
     };
     
     return (
@@ -169,6 +180,40 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                         
                         <section>
                             <h3 className="text-lg font-semibold border-b pb-2 mb-4">Propiedad y Partes</h3>
+                             <FormField
+                                control={form.control}
+                                name="managementType"
+                                render={({ field }) => (
+                                <FormItem className="space-y-3 mb-6">
+                                    <FormLabel>Tipo de Gestión*</FormLabel>
+                                    <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex flex-col space-y-1 md:flex-row md:space-y-0 md:space-x-4"
+                                    >
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                        <FormControl>
+                                            <RadioGroupItem value="collaborative" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            Gestión Colaborativa (requiere firma del arrendatario)
+                                        </FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                        <FormControl>
+                                            <RadioGroupItem value="internal" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            Solo Administración Interna (activación inmediata)
+                                        </FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                             <div className="space-y-4">
                                 <FormField control={form.control} name="propertyId" render={({ field }) => (
                                     <FormItem>
@@ -181,7 +226,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                                     </FormItem>
                                 )}/>
                                 <div className="grid md:grid-cols-3 gap-4">
-                                    <FormField control={form.control} name="tenantEmail" render={({ field }) => (<FormItem><FormLabel>Email Arrendatario*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="tenantEmail" render={({ field }) => (<FormItem><FormLabel>Email Arrendatario{managementType === 'collaborative' && '*'}</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="tenantName" render={({ field }) => (<FormItem><FormLabel>Nombre Arrendatario*</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="tenantRut" render={({ field }) => (<FormItem><FormLabel>RUT Arrendatario*</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(formatRut(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
@@ -361,7 +406,7 @@ export function ContractFormDialog({ open, onOpenChange, onSave, contract, userP
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                             <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {contract ? "Guardar Cambios" : "Crear y Enviar a Arrendatario"}
+                                {contract ? "Guardar Cambios" : "Crear Contrato"}
                             </Button>
                         </DialogFooter>
                     </form>
