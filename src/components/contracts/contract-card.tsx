@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contract, UserRole } from "@/types";
-import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare, Send } from "lucide-react";
+import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare, Send, Users, UserCog } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -61,7 +61,7 @@ const formatCurrency = (amount: number) => {
 export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onViewDetails, onResend }: ContractCardProps) {
 
     const SignatureStatus = () => {
-        if (contract.status !== 'Borrador') return null;
+        if (contract.status !== 'Borrador' || contract.managementType !== 'collaborative') return null;
 
         const landlordSigned = contract.signedByLandlord;
         const tenantSigned = contract.signedByTenant;
@@ -106,6 +106,19 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                     <User className="h-5 w-5 shrink-0" />
                     <span className="truncate">{userRole === 'Arrendador' ? `Arrendatario: ${contract.tenantName}` : `Arrendador: ${contract.landlordName}`}</span>
                 </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                    {contract.managementType === 'collaborative' ? (
+                        <>
+                            <Users className="h-5 w-5 shrink-0 text-blue-500" />
+                            <span className="text-xs font-medium">Gestión Colaborativa</span>
+                        </>
+                    ) : (
+                        <>
+                            <UserCog className="h-5 w-5 shrink-0 text-gray-500" />
+                            <span className="text-xs font-medium">Administración Interna</span>
+                        </>
+                    )}
+                </div>
                 <div className="flex items-center justify-between text-muted-foreground pt-2">
                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
@@ -119,7 +132,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                {userRole === 'Arrendatario' && contract.status === 'Borrador' && !contract.signedByTenant && (
+                {userRole === 'Arrendatario' && contract.status === 'Borrador' && contract.managementType === 'collaborative' && !contract.signedByTenant && (
                     <Button asChild size="sm" className="flex-1">
                         <Link href={`/sign/${contract.signatureToken}`}>Revisar y Firmar</Link>
                     </Button>
@@ -129,12 +142,12 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                         <Button variant="outline" size="sm" onClick={onViewDetails}>
                            <Eye className="mr-2 h-4 w-4" /> Ver
                         </Button>
-                        {contract.status === 'Borrador' && contract.signedByTenant && !contract.signedByLandlord && (
+                        {contract.status === 'Borrador' && contract.managementType === 'collaborative' && contract.signedByTenant && !contract.signedByLandlord && (
                             <Button size="sm" onClick={onSign}>
                                 <PenSquare className="mr-2 h-4 w-4" /> Firmar para Activar
                             </Button>
                         )}
-                         {contract.status === 'Borrador' && !contract.signedByTenant && (
+                         {contract.status === 'Borrador' && contract.managementType === 'collaborative' && !contract.signedByTenant && (
                             <Button variant="outline" size="sm" onClick={onResend}>
                                 <Send className="mr-2 h-4 w-4" /> Reenviar
                             </Button>
