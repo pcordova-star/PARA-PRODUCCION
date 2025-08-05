@@ -1,77 +1,105 @@
 
-"use server";
+'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Contract, Property } from '@/types';
 import { ContractDisplay } from '@/components/legal/ContractDisplay';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignContractClient } from './client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
-async function getContractByToken(token: string): Promise<Contract | null> {
-    const contractsRef = collection(db, "contracts");
-    const q = query(contractsRef, where("signatureToken", "==", token), limit(1));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-        return null;
-    }
-    
-    const contractDoc = snapshot.docs[0];
-    return { ...contractDoc.data(), id: contractDoc.id } as Contract;
-}
-
-async function getPropertyById(propertyId: string): Promise<Property | null> {
-    const propertyDoc = await getDoc(doc(db, 'properties', propertyId));
-    if (propertyDoc.exists()) {
-        return { ...propertyDoc.data(), id: propertyDoc.id } as Property;
-    }
-    return null;
-}
-
-export default async function SignContractPage({ params }: { params: { token: string } }) {
+export default function SignContractPage({ params }: { params: { token: string } }) {
     const { token } = params;
+    const { currentUser, loading: authLoading } = useAuth();
+    const router = useRouter();
 
-    if (!token) {
+    const [contract, setContract] = useState<Contract | null>(null);
+    const [property, setProperty] = useState<Property | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        if (!token) {
+            setError("El enlace de firma es inválido o ha expirado.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const contractsRef = collection(db, "contracts");
+            const q = query(contractsRef, where("signatureToken", "==", token), limit(1));
+            const contractSnapshot = await getDocs(q);
+
+            if (contractSnapshot.empty) {
+                setError("No se pudo encontrar un contrato asociado a este enlace.");
+                setLoading(false);
+                return;
+            }
+
+            const contractDoc = contractSnapshot.docs[0];
+            const contractData = { ...contractDoc.data(), id: contractDoc.id } as Contract;
+            setContract(contractData);
+
+            const propertyDoc = await getDoc(doc(db, 'properties', contractData.propertyId));
+            if (propertyDoc.exists()) {
+                setProperty({ ...propertyDoc.data(), id: propertyDoc.id } as Property);
+            } else {
+                setError("No se pudo cargar la información de la propiedad asociada a este contrato.");
+            }
+        } catch (err) {
+            console.error("Error fetching contract data:", err);
+            setError("Ocurrió un error al cargar los datos del contrato.");
+        } finally {
+            setLoading(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        if (!authLoading && !currentUser) {
+            router.push(`/login?redirect=/sign/${token}`);
+        } else if (!authLoading && currentUser) {
+            fetchData();
+        }
+    }, [authLoading, currentUser, router, token, fetchData]);
+
+    if (authLoading || loading) {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
-                <Alert variant="destructive" className="max-w-md">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error: Token Inválido</AlertTitle>
-                    <AlertDescription>El enlace de firma es inválido o ha expirado.</AlertDescription>
-                </Alert>
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Cargando sesión y contrato...</p>
+                </div>
             </div>
         );
     }
-    
-    const contract = await getContractByToken(token);
 
-    if (!contract) {
-        return (
-            <div className="flex min-h-screen items-center justify-center p-4">
-                <Alert variant="destructive" className="max-w-md">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Contrato No Encontrado</AlertTitle>
-                    <AlertDescription>No se pudo encontrar un contrato asociado a este enlace. Puede que ya haya sido firmado o eliminado.</AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    const property = await getPropertyById(contract.propertyId);
-
-    if (!property) {
+    if (error) {
          return (
             <div className="flex min-h-screen items-center justify-center p-4">
                 <Alert variant="destructive" className="max-w-md">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error de Datos</AlertTitle>
-                    <AlertDescription>No se pudo cargar la información de la propiedad asociada a este contrato.</AlertDescription>
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
                 </Alert>
             </div>
         );
     }
+    
+    if (!contract || !property) {
+        return (
+             <div className="flex min-h-screen items-center justify-center p-4">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Cargando datos del contrato...</p>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="bg-muted min-h-screen p-4 md:p-8">
