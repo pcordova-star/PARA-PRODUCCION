@@ -2,13 +2,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import type { Contract, UserRole } from '@/types';
+import { adminDb } from '@/lib/firebase-admin';
+import type { Contract } from '@/types';
 
 interface SignContractParams {
     contractId: string;
-    signerRole: 'tenant' | 'landlord';
+    signerId: string;
 }
 
 interface ActionResult {
@@ -17,15 +16,11 @@ interface ActionResult {
     contract?: Contract;
 }
 
-export async function signContractAction({ contractId, signerRole }: SignContractParams): Promise<ActionResult> {
+export async function signContractAction({ contractId, signerId }: SignContractParams): Promise<ActionResult> {
     try {
-        const sessionCookie = cookies().get('__session')?.value;
-        if (!sessionCookie) {
-            return { success: false, error: 'Sesión no encontrada. Por favor, inicia sesión de nuevo.' };
+        if (!signerId) {
+            return { success: false, error: 'Usuario no identificado. Por favor, inicia sesión de nuevo.' };
         }
-
-        const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-        const userId = decodedClaims.uid;
         
         const contractRef = adminDb.collection('contracts').doc(contractId);
 
@@ -36,6 +31,7 @@ export async function signContractAction({ contractId, signerRole }: SignContrac
             }
 
             const contract = { ...contractDoc.data(), id: contractDoc.id } as Contract;
+            const signerRole = signerId === contract.landlordId ? 'landlord' : 'tenant';
 
             if (contract.status !== 'Borrador') {
                 throw new Error('Este contrato ya no está en estado de borrador y no puede ser firmado.');
@@ -43,11 +39,11 @@ export async function signContractAction({ contractId, signerRole }: SignContrac
 
             let updatedData: Partial<Contract> = {};
 
-            if (signerRole === 'tenant' && userId === contract.tenantId) {
+            if (signerRole === 'tenant' && signerId === contract.tenantId) {
                 if (contract.signedByTenant) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByTenant = true;
                 updatedData.tenantSignedAt = new Date().toISOString();
-            } else if (signerRole === 'landlord' && userId === contract.landlordId) {
+            } else if (signerRole === 'landlord' && signerId === contract.landlordId) {
                 if (!contract.signedByTenant) {
                     throw new Error('El arrendatario debe firmar el contrato antes que el arrendador.');
                 }
@@ -79,11 +75,6 @@ export async function signContractAction({ contractId, signerRole }: SignContrac
 
     } catch (error: any) {
         console.error('Error in signContractAction:', error);
-        
-        if (error.code === 'auth/session-cookie-expired' || error.code === 'auth/invalid-session-cookie') {
-             return { success: false, error: 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo para firmar.' };
-        }
-        
         return { success: false, error: error.message || 'Ocurrió un error al intentar firmar el contrato.' };
     }
 }

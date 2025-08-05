@@ -39,11 +39,9 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         setIsLoading(true);
         setError(null);
         
-        const signerRole = currentUser.uid === contract.landlordId ? 'landlord' : 'tenant';
-
         const result = await signContractAction({ 
             contractId: contract.id,
-            signerRole,
+            signerId: currentUser.uid,
         });
 
         if (result.error) {
