@@ -1,34 +1,14 @@
-import { initializeApp, getApps, App, cert, ServiceAccount } from 'firebase-admin/app';
+
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-
-// Function to safely parse the service account key
-const getServiceAccount = (): ServiceAccount => {
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-  if (!serviceAccountJson) {
-    throw new Error(
-      'Firebase Admin SDK service account credentials are not set in FIREBASE_SERVICE_ACCOUNT_KEY environment variable.'
-    );
-  }
-
-  try {
-    const parsedKey = JSON.parse(serviceAccountJson);
-    // Ensure private_key has correct newlines, as it might be escaped in the env var
-    parsedKey.private_key = parsedKey.private_key.replace(/\\n/g, '\n');
-    return parsedKey;
-  } catch (e) {
-    console.error('Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:', e);
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not a valid JSON object.');
-  }
-};
+import serviceAccount from '../../sara-produccion-c10b5-firebase-adminsdk-fbsvc-b5d82a042e.json';
 
 let app: App;
 let adminDb: Firestore;
 let adminAuth: Auth;
 
 try {
-  const serviceAccount = getServiceAccount();
   if (!getApps().length) {
     app = initializeApp({
       credential: cert(serviceAccount),
