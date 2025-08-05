@@ -7,6 +7,9 @@ import { adminAuth } from '@/lib/firebase-admin';
 export async function POST(request: NextRequest) {
   try {
     const idToken = await request.text();
+    if (!idToken) {
+        return NextResponse.json({ status: 'error', message: 'ID token is missing.' }, { status: 400 });
+    }
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
@@ -16,12 +19,12 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      sameSite: 'lax', // Added for better browser compatibility
+      sameSite: 'lax',
     });
     return response;
-  } catch (error) {
-    console.error('Error creating session cookie:', error);
-    return NextResponse.json({ status: 'error', message: 'Failed to create session' }, { status: 401 });
+  } catch (error: any) {
+    console.error('Error creating session cookie:', error.message);
+    return NextResponse.json({ status: 'error', message: 'Failed to create session', error: error.message }, { status: 401 });
   }
 }
 
@@ -29,7 +32,7 @@ export async function DELETE() {
   try {
     const response = NextResponse.json({ status: 'success' });
     response.cookies.set('__session', '', {
-      maxAge: -1, // Use -1 to expire the cookie immediately
+      maxAge: -1,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
