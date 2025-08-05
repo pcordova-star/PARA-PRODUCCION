@@ -6,31 +6,21 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 const getServiceAccount = (): ServiceAccount => {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-  if (serviceAccountJson) {
-    try {
-      return JSON.parse(serviceAccountJson);
-    } catch (e) {
-      console.error('Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:', e);
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not a valid JSON object.');
-    }
+  if (!serviceAccountJson) {
+    throw new Error(
+      'Firebase Admin SDK service account credentials are not set in FIREBASE_SERVICE_ACCOUNT_KEY environment variable.'
+    );
   }
 
-  // Fallback to individual environment variables if the JSON key is not provided
-  if (
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    return {
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-    };
+  try {
+    const parsedKey = JSON.parse(serviceAccountJson);
+    // Ensure private_key has correct newlines, as it might be escaped in the env var
+    parsedKey.private_key = parsedKey.private_key.replace(/\\n/g, '\n');
+    return parsedKey;
+  } catch (e) {
+    console.error('Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:', e);
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not a valid JSON object.');
   }
-
-  throw new Error(
-    'Firebase Admin SDK service account credentials are not set. Please set FIREBASE_SERVICE_ACCOUNT_KEY or the individual FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY environment variables.'
-  );
 };
 
 let app: App;
@@ -50,8 +40,7 @@ try {
   adminAuth = getAuth(app);
 } catch (error) {
   console.error('Failed to initialize Firebase Admin SDK:', error);
-  // We are re-throwing the error to make it visible during development.
-  // In a production environment, you might handle this differently.
+  // Re-throwing the error to make it visible during development or in logs.
   throw error;
 }
 
