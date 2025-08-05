@@ -29,12 +29,14 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     const [isAssigning, setIsAssigning] = useState(false);
 
     useEffect(() => {
+        // This effect detects when a new user has logged in and the contract needs assignment.
         if (currentUser && currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase() && !contract.tenantId) {
             setIsAssigning(true);
             const interval = setInterval(() => {
                 router.refresh(); 
             }, 2500); 
 
+            // Stop checking once the contract is assigned in the re-rendered props.
             if (contract.tenantId === currentUser.uid) {
                 setIsAssigning(false);
                 clearInterval(interval);
@@ -45,6 +47,11 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
             setIsAssigning(false);
         }
     }, [currentUser, contract, router]);
+
+    // Update local contract state when initialContract prop changes after a router.refresh()
+    useEffect(() => {
+        setContract(initialContract);
+    }, [initialContract]);
 
 
     const handleSign = async () => {
