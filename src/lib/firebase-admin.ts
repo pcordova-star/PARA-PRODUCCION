@@ -24,8 +24,7 @@ const getServiceAccount = (): ServiceAccount => {
     return {
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // The private key needs to have its escaped newlines replaced with actual newlines
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
     };
   }
 
@@ -34,16 +33,27 @@ const getServiceAccount = (): ServiceAccount => {
   );
 };
 
-const serviceAccount = getServiceAccount();
-
 let app: App;
-if (!getApps().length) {
-  app = initializeApp({
-    credential: cert(serviceAccount),
-  });
-} else {
-  app = getApps()[0];
+let adminDb: Firestore;
+let adminAuth: Auth;
+
+try {
+  const serviceAccount = getServiceAccount();
+  if (!getApps().length) {
+    app = initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } else {
+    app = getApps()[0];
+  }
+  adminDb = getFirestore(app);
+  adminAuth = getAuth(app);
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin SDK:', error);
+  // We are re-throwing the error to make it visible during development.
+  // In a production environment, you might handle this differently.
+  throw error;
 }
 
-export const adminDb: Firestore = getFirestore(app);
-export const adminAuth: Auth = getAuth(app);
+
+export { adminDb, adminAuth };
