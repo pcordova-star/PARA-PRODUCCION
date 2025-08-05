@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Property } from "@/types";
-import { BedDouble, Bath, Ruler, Pencil, Trash2 } from "lucide-react";
+import { BedDouble, Bath, Ruler, Pencil, Trash2, Eye } from "lucide-react";
 
 interface PropertyCardProps {
     property: Property;
     onEdit: () => void;
     onDelete: () => void;
+    onViewDetails: () => void;
 }
 
 const getStatusBadgeVariant = (status: Property["status"]) => {
@@ -34,7 +35,7 @@ const formatCurrency = (amount?: number) => {
     }).format(amount);
 };
 
-export function PropertyCard({ property, onEdit, onDelete }: PropertyCardProps) {
+export function PropertyCard({ property, onEdit, onDelete, onViewDetails }: PropertyCardProps) {
     return (
         <Card className="flex h-full flex-col shadow-md transition-shadow duration-200 hover:shadow-lg">
             <CardHeader className="pb-4">
@@ -63,6 +64,9 @@ export function PropertyCard({ property, onEdit, onDelete }: PropertyCardProps) 
                 <p className="text-sm text-muted-foreground line-clamp-2">{property.description}</p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={onViewDetails}>
+                    <Eye className="mr-2 h-4 w-4" /> Ver Detalles
+                </Button>
                 <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
                     <Pencil className="h-4 w-4" />
                 </Button>

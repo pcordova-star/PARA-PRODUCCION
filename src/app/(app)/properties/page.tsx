@@ -17,6 +17,7 @@ import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { PropertyDetailsDialog } from '@/components/properties/property-details-dialog';
 
 // Function to generate a random code
 const generatePropertyCode = () => {
@@ -30,6 +31,7 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -105,6 +107,11 @@ export default function PropertiesPage() {
   const handleEdit = (property: Property) => {
     setSelectedProperty(property);
     setIsFormOpen(true);
+  };
+
+  const handleViewDetails = (property: Property) => {
+    setSelectedProperty(property);
+    setIsDetailsOpen(true);
   };
 
   const openDeleteDialog = (property: Property) => {
@@ -249,7 +256,8 @@ export default function PropertiesPage() {
                       key={property.id} 
                       property={property} 
                       onEdit={() => handleEdit(property)} 
-                      onDelete={() => openDeleteDialog(property)} 
+                      onDelete={() => openDeleteDialog(property)}
+                      onViewDetails={() => handleViewDetails(property)}
                     />
                 ))}
             </div>
@@ -273,6 +281,12 @@ export default function PropertiesPage() {
         property={selectedProperty}
         onSave={handleSaveProperty}
         isSubmitting={isSubmitting}
+      />
+
+      <PropertyDetailsDialog
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        property={selectedProperty}
       />
       
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
