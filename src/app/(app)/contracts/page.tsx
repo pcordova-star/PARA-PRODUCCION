@@ -251,7 +251,7 @@ export default function ContractsPage() {
     setIsSubmitting(true);
     const result = await signContractAction({ 
       contractId: contract.id, 
-      signerRole: 'landlord'
+      signerId: currentUser.uid
     });
     setIsSubmitting(false);
 

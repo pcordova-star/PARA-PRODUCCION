@@ -39,10 +39,14 @@ export async function signContractAction({ contractId, signerId }: SignContractP
 
             let updatedData: Partial<Contract> = {};
 
-            if (signerRole === 'tenant' && signerId === contract.tenantId) {
+            if (signerRole === 'tenant' && (signerId === contract.tenantId || !contract.tenantId)) {
                 if (contract.signedByTenant) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByTenant = true;
                 updatedData.tenantSignedAt = new Date().toISOString();
+                // If the tenant didn't exist before, assign their ID now
+                if (!contract.tenantId) {
+                    updatedData.tenantId = signerId;
+                }
             } else if (signerRole === 'landlord' && signerId === contract.landlordId) {
                 if (!contract.signedByTenant) {
                     throw new Error('El arrendatario debe firmar el contrato antes que el arrendador.');
@@ -54,8 +58,8 @@ export async function signContractAction({ contractId, signerId }: SignContractP
                 throw new Error('No tienes permiso para firmar este contrato.');
             }
             
-            const isTenantSigned = signerRole === 'tenant' || contract.signedByTenant;
-            const isLandlordSigned = signerRole === 'landlord' || contract.signedByLandlord;
+            const isTenantSigned = updatedData.signedByTenant || contract.signedByTenant;
+            const isLandlordSigned = updatedData.signedByLandlord || contract.signedByLandlord;
 
             if (isTenantSigned && isLandlordSigned) {
                 updatedData.status = 'Activo';
