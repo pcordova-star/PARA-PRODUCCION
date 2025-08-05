@@ -44,12 +44,14 @@ export default function ContractsPage() {
       let contractsQuery;
       
       if (currentUser.role === 'Arrendador') {
+        console.log(`[DEBUG] Buscando contratos de Arrendador con UID: ${currentUser.uid}`);
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('landlordId', '==', currentUser.uid), 
             where('status', '!=', 'Archivado')
         );
       } else { // Arrendatario
+        console.log(`[DEBUG] Buscando contratos de Arrendatario con UID: ${currentUser.uid}`);
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('tenantId', '==', currentUser.uid), 
@@ -59,6 +61,7 @@ export default function ContractsPage() {
 
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
+      console.log("[DEBUG] Contratos encontrados:", contractsList.length, contractsList.map(c => ({ id: c.id, status: c.status, tenantId: c.tenantId })));
       setContracts(contractsList);
       
       if (currentUser.role === 'Arrendador') {
@@ -113,14 +116,17 @@ export default function ContractsPage() {
       }
       
       const signatureToken = selectedContract?.signatureToken || uuidv4();
+      
+      const newContractRef = doc(collection(db, "contracts"));
 
       const contractDataPayload = {
           ...values,
+          id: newContractRef.id,
           startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId, // Will be null if tenant is new
+          tenantId: tenantId,
           tenantName: tenantData?.name || values.tenantName,
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
@@ -130,16 +136,16 @@ export default function ContractsPage() {
           signedByTenant: false,
           signedByLandlord: false,
       };
+      
+      await setDoc(newContractRef, contractDataPayload);
 
       if (selectedContract) {
+        // This logic path is less likely now, but kept for robustness if editing is re-enabled for new contracts
         const contractRef = doc(db, 'contracts', selectedContract.id);
         await updateDoc(contractRef, contractDataPayload);
         toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
       } else {
-        const newContractRef = await addDoc(collection(db, 'contracts'), contractDataPayload);
-        
         if (!tenantId) {
-            // If tenant does not exist, create a pending reference for them
             const normalizedEmail = values.tenantEmail.toLowerCase();
             const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
             const tempUserSnap = await getDoc(tempUserRef);
