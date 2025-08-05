@@ -8,6 +8,7 @@ import type { Contract, UserRole } from "@/types";
 import { Calendar, User, Home, Pencil, Trash2, CheckCircle, XCircle, Building, FileSliders, CircleDollarSign, Eye, PenSquare, Send } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
 
 interface ContractCardProps {
     contract: Contract;
@@ -120,7 +121,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
             <CardFooter className="flex justify-end gap-2">
                 {userRole === 'Arrendatario' && contract.status === 'Borrador' && !contract.signedByTenant && (
                     <Button asChild size="sm" className="flex-1">
-                        <a href={`/sign/${contract.signatureToken}`} target="_blank">Revisar y Firmar</a>
+                        <Link href={`/sign/${contract.signatureToken}`}>Revisar y Firmar</Link>
                     </Button>
                 )}
                  {userRole === 'Arrendador' && contract.status !== 'Finalizado' && contract.status !== 'Archivado' && (
