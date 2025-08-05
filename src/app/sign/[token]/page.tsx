@@ -10,10 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignContractClient } from './client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-export default function SignContractPage({ params }: { params: { token: string } }) {
-    const { token } = params;
+export default function SignContractPage() {
+    const params = useParams();
+    const token = Array.isArray(params.token) ? params.token[0] : params.token;
     const { currentUser, loading: authLoading } = useAuth();
     const router = useRouter();
 
@@ -59,12 +60,15 @@ export default function SignContractPage({ params }: { params: { token: string }
     }, [token]);
 
     useEffect(() => {
-        if (!authLoading && !currentUser) {
-            router.push(`/login?redirect=/sign/${token}`);
-        } else if (!authLoading && currentUser) {
-            fetchData();
+        if (!authLoading) {
+            if (!currentUser) {
+                router.push(`/login?redirect=/sign/${token}`);
+            } else {
+                fetchData();
+            }
         }
     }, [authLoading, currentUser, router, token, fetchData]);
+
 
     if (authLoading || loading) {
         return (
