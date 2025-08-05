@@ -20,7 +20,7 @@ export async function signContractAction({ contractId }: SignContractParams): Pr
     try {
         const sessionCookie = cookies().get('__session')?.value;
         if (!sessionCookie) {
-            return { success: false, error: 'No has iniciado sesión. Por favor, inicia sesión para firmar.' };
+            return { success: false, error: 'Sesión no encontrada. Por favor, inicia sesión de nuevo.' };
         }
 
         const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);

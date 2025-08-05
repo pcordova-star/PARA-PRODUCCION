@@ -43,15 +43,14 @@ export default function ContractsPage() {
     try {
       let contractsQuery;
       
+      console.log(`[DEBUG] Fetching data for user: ${currentUser.uid}, role: ${currentUser.role}`);
       if (currentUser.role === 'Arrendador') {
-        console.log(`[DEBUG] Buscando contratos de Arrendador con UID: ${currentUser.uid}`);
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('landlordId', '==', currentUser.uid), 
             where('status', '!=', 'Archivado')
         );
       } else { // Arrendatario
-        console.log(`[DEBUG] Buscando contratos de Arrendatario con UID: ${currentUser.uid}`);
         contractsQuery = query(
             collection(db, 'contracts'), 
             where('tenantId', '==', currentUser.uid), 
@@ -71,7 +70,7 @@ export default function ContractsPage() {
         setUserProperties(propertiesList);
       }
 
-    } catch (error) {
+    } catch (error)_ {
       console.error("Error fetching data: ", error);
       toast({
         title: "Error al cargar datos",
@@ -116,7 +115,6 @@ export default function ContractsPage() {
       }
       
       const signatureToken = selectedContract?.signatureToken || uuidv4();
-      
       const newContractRef = doc(collection(db, "contracts"));
 
       const contractDataPayload = {
@@ -139,30 +137,23 @@ export default function ContractsPage() {
       
       await setDoc(newContractRef, contractDataPayload);
 
-      if (selectedContract) {
-        // This logic path is less likely now, but kept for robustness if editing is re-enabled for new contracts
-        const contractRef = doc(db, 'contracts', selectedContract.id);
-        await updateDoc(contractRef, contractDataPayload);
-        toast({ title: 'Contrato actualizado', description: 'Los cambios se han guardado.' });
-      } else {
-        if (!tenantId) {
-            const normalizedEmail = values.tenantEmail.toLowerCase();
-            const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
-            const tempUserSnap = await getDoc(tempUserRef);
-            
-            if (tempUserSnap.exists()) {
-                 await updateDoc(tempUserRef, {
-                    pendingContracts: arrayUnion(newContractRef.id)
-                });
-            } else {
-                await setDoc(tempUserRef, {
-                    pendingContracts: [newContractRef.id]
-                });
-            }
-        }
-        
-        toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
+      if (!tenantId) {
+          const normalizedEmail = values.tenantEmail.toLowerCase();
+          const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
+          const tempUserSnap = await getDoc(tempUserRef);
+          
+          if (tempUserSnap.exists()) {
+               await updateDoc(tempUserRef, {
+                  pendingContracts: arrayUnion(newContractRef.id)
+              });
+          } else {
+              await setDoc(tempUserRef, {
+                  pendingContracts: [newContractRef.id]
+              });
+          }
       }
+        
+      toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
 
       await sendCreationEmailToTenant({
         tenantEmail: values.tenantEmail,
