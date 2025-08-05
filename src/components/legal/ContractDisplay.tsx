@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import type { Contract, Property } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,6 +15,14 @@ interface ContractDisplayProps {
 }
 
 export function ContractDisplay({ contract, property }: ContractDisplayProps) {
+  const [generationDate, setGenerationDate] = useState("");
+
+  useEffect(() => {
+    // Set the date only on the client-side to prevent hydration mismatch
+    setGenerationDate(format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es }));
+  }, []);
+
+
   if (!property) {
     return (
       <Alert variant="default" className="border-dashed">
@@ -64,7 +73,7 @@ export function ContractDisplay({ contract, property }: ContractDisplayProps) {
       </header>
       
       <p className="mb-6">
-        En {cityAndCommune}, a {formatDate(new Date())}, entre las partes identificadas a continuación:
+        En {cityAndCommune}, a {generationDate || "..." }, entre las partes identificadas a continuación:
       </p>
 
       <div className="space-y-4 mb-6">
