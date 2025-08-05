@@ -38,13 +38,8 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
             const interval = setInterval(async () => {
                 try {
                     // Re-fetch contract data from server to check if tenantId has been updated
-                    const res = await fetch(window.location.href, {
-                        headers: { 'Cache-Control': 'no-cache' }
-                    });
-                    if (res.ok) {
-                        // A simple page reload will get the fresh server-rendered props
-                        router.refresh(); 
-                    }
+                    // A simple page refresh will get the fresh server-rendered props
+                    router.refresh(); 
                 } catch (e) {
                     console.error("Failed to re-fetch contract data:", e);
                 }
@@ -120,23 +115,23 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    // After the user logs in, if they are not the correct tenant, show an error.
-    if (currentUser.uid !== contract.tenantId) {
+    // After the user logs in, if they are not the correct tenant or landlord, show an error.
+    const isTenant = currentUser.uid === contract.tenantId;
+    const isLandlord = currentUser.uid === contract.landlordId;
+
+    if (!isTenant && !isLandlord) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acceso Denegado</AlertTitle>
                 <AlertDescription>
-                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario correcto ({contract.tenantEmail}).
+                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario ({contract.tenantEmail}) o el arrendador correcto.
                 </AlertDescription>
             </Alert>
         );
     }
 
-    const isTenant = currentUser?.uid === contract.tenantId;
-    const isLandlord = currentUser?.uid === contract.landlordId;
-    
-     if (contract.status !== 'Borrador') {
+    if (contract.status !== 'Borrador') {
         return (
             <Alert variant="default">
                 <CheckCircle2 className="h-4 w-4" />
