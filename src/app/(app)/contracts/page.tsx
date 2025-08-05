@@ -341,8 +341,8 @@ export default function ContractsPage() {
        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Contratos</h1>
-          <p className="text-muted-foreground">
-            Cree, envíe y administre sus contratos de arriendo.
+          <p className="text-muted-foreground max-w-3xl">
+            Cree, envíe y administre sus contratos de arriendo. Puede optar por una 'Gestión Colaborativa', que requiere la firma digital del arrendatario para su activación, o 'Solo Administración Interna' para un registro rápido y activación inmediata sin necesidad de firma.
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
