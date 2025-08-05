@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
+      sameSite: 'lax', // Added for better browser compatibility
     });
     return response;
   } catch (error) {
@@ -25,12 +26,18 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ status: 'success' });
-  response.cookies.set('__session', '', {
-    maxAge: 0,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-  });
-  return response;
+  try {
+    const response = NextResponse.json({ status: 'success' });
+    response.cookies.set('__session', '', {
+      maxAge: -1, // Use -1 to expire the cookie immediately
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'lax',
+    });
+    return response;
+  } catch (error) {
+    console.error('Error deleting session cookie:', error);
+    return NextResponse.json({ status: 'error', message: 'Failed to delete session' }, { status: 500 });
+  }
 }

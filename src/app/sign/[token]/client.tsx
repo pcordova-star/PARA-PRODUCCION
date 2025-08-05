@@ -26,28 +26,16 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     const router = useRouter();
     const pathname = usePathname();
 
-    // State to handle the intermediate assignment step for new users
     const [isAssigning, setIsAssigning] = useState(false);
 
     useEffect(() => {
-        // This effect handles the race condition after a new user signs up.
-        // If the current user is the intended tenant but the contract isn't assigned yet,
-        // it means the backend function is still running. We show a loading state and poll.
         if (currentUser && currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase() && !contract.tenantId) {
             setIsAssigning(true);
-            const interval = setInterval(async () => {
-                try {
-                    // Re-fetch contract data from server to check if tenantId has been updated
-                    // A simple page refresh will get the fresh server-rendered props
-                    router.refresh(); 
-                } catch (e) {
-                    console.error("Failed to re-fetch contract data:", e);
-                }
-            }, 2000); // Check every 2 seconds
+            const interval = setInterval(() => {
+                router.refresh(); 
+            }, 2500); 
 
-            // If the contract is assigned, the component will re-render with the new props
-            // and this effect's condition will no longer be met.
-            if (contract.tenantId) {
+            if (contract.tenantId === currentUser.uid) {
                 setIsAssigning(false);
                 clearInterval(interval);
             }
@@ -91,7 +79,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    // If a new user is signing up, this state will be true while the backend assigns the contract.
     if (isAssigning) {
         return (
              <div className="flex items-center justify-center p-6 bg-blue-50 border border-blue-200 rounded-md text-blue-800">
@@ -101,8 +88,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         )
     }
 
-    // If the contract is for a new user, their tenantId will be null initially.
-    // We must guide them to log in or sign up first.
     if (!currentUser) {
         return (
             <Alert variant="destructive">
@@ -115,7 +100,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    // After the user logs in, if they are not the correct tenant or landlord, show an error.
     const isTenant = currentUser.uid === contract.tenantId;
     const isLandlord = currentUser.uid === contract.landlordId;
 
@@ -144,7 +128,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    // Logic for Tenant
     if (isTenant) {
         if (contract.signedByTenant) {
              return (
@@ -175,7 +158,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         }
     }
 
-    // Logic for Landlord
     if (isLandlord) {
         if (contract.signedByLandlord) {
             return (
@@ -216,5 +198,5 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         }
     }
 
-    return null; // Should not be reached
+    return null;
 }
