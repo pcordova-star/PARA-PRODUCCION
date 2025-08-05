@@ -53,6 +53,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (doc.exists()) {
             setCurrentUser({ uid: user.uid, ...doc.data() } as UserProfile);
           } else {
+            // This case can happen if a user is in auth but not yet in firestore.
+            // Or if the user was deleted from firestore but not from auth.
             setCurrentUser(null); 
           }
           setLoading(false);
