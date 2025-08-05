@@ -4,10 +4,11 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import type { Contract } from '@/types';
+import type { Contract, UserRole } from '@/types';
 
 interface SignContractParams {
     contractId: string;
+    signerRole: 'tenant' | 'landlord';
 }
 
 interface ActionResult {
@@ -16,7 +17,7 @@ interface ActionResult {
     contract?: Contract;
 }
 
-export async function signContractAction({ contractId }: SignContractParams): Promise<ActionResult> {
+export async function signContractAction({ contractId, signerRole }: SignContractParams): Promise<ActionResult> {
     try {
         const sessionCookie = cookies().get('__session')?.value;
         if (!sessionCookie) {
@@ -41,30 +42,26 @@ export async function signContractAction({ contractId }: SignContractParams): Pr
             }
 
             let updatedData: Partial<Contract> = {};
-            let isLandlordSigning = false;
-            let isTenantSigning = false;
 
-            if (userId === contract.tenantId) {
+            if (signerRole === 'tenant' && userId === contract.tenantId) {
                 if (contract.signedByTenant) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByTenant = true;
                 updatedData.tenantSignedAt = new Date().toISOString();
-                isTenantSigning = true;
-            } else if (userId === contract.landlordId) {
+            } else if (signerRole === 'landlord' && userId === contract.landlordId) {
                 if (!contract.signedByTenant) {
                     throw new Error('El arrendatario debe firmar el contrato antes que el arrendador.');
                 }
                 if (contract.signedByLandlord) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByLandlord = true;
                 updatedData.landlordSignedAt = new Date().toISOString();
-                isLandlordSigning = true;
             } else {
                 throw new Error('No tienes permiso para firmar este contrato.');
             }
+            
+            const isTenantSigned = signerRole === 'tenant' || contract.signedByTenant;
+            const isLandlordSigned = signerRole === 'landlord' || contract.signedByLandlord;
 
-            const landlordHasSigned = isLandlordSigning || contract.signedByLandlord;
-            const tenantHasSigned = isTenantSigning || contract.signedByTenant;
-
-            if (landlordHasSigned && tenantHasSigned) {
+            if (isTenantSigned && isLandlordSigned) {
                 updatedData.status = 'Activo';
                 const propertyRef = adminDb.collection('properties').doc(contract.propertyId);
                 transaction.update(propertyRef, { status: 'Arrendada' });

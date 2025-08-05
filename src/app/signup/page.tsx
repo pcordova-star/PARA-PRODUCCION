@@ -54,42 +54,40 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// This function finds pending contracts for a new tenant and assigns them.
 async function assignPendingContracts(userId: string, userEmail: string, userName: string) {
     const normalizedEmail = userEmail.toLowerCase();
     const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
-    console.log(`Buscando contratos pendientes para: ${normalizedEmail}`);
+    console.log("Buscando contratos pendientes para:", normalizedEmail);
 
     const tempUserSnap = await getDoc(tempUserRef);
 
-    if (tempUserSnap.exists()) {
-        const batch = writeBatch(db);
-        const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
-        
-        console.log("Contratos pendientes encontrados:", pendingContracts);
-
-        for (const contractId of pendingContracts) {
-            if (typeof contractId === 'string' && contractId) {
-                console.log(`Asignando contrato ${contractId} a usuario ${userId}`);
-                const contractRef = doc(db, 'contracts', contractId);
-                batch.update(contractRef, { 
-                  tenantId: userId,
-                  tenantName: userName // Also update the tenant name for consistency
-                });
-            }
-        }
-        
-        // After assigning, delete the temporary document
-        batch.delete(tempUserRef);
-        
-        try {
-            await batch.commit();
-            console.log(`✔️ Batch ejecutado. Se asignaron ${pendingContracts.length} contrato(s) al nuevo usuario ${userName} (${userId})`);
-        } catch (error) {
-            console.error("❌ Error en batch commit al asignar contratos pendientes:", error);
-        }
-    } else {
+    if (!tempUserSnap.exists()) {
         console.log(`No se encontró documento en tempUsers para ${normalizedEmail}`);
+        return;
+    }
+
+    console.log("Contratos encontrados:", tempUserSnap.data().pendingContracts);
+    const batch = writeBatch(db);
+    const pendingContracts: string[] = tempUserSnap.data().pendingContracts || [];
+    
+    for (const contractId of pendingContracts) {
+        if (typeof contractId === 'string' && contractId) {
+            console.log(`Asignando contrato ${contractId} a usuario ${userId}`);
+            const contractRef = doc(db, 'contracts', contractId);
+            batch.update(contractRef, { 
+              tenantId: userId,
+              tenantName: userName 
+            });
+        }
+    }
+    
+    batch.delete(tempUserRef);
+    
+    try {
+        await batch.commit();
+        console.log(`✔️ Batch ejecutado. Se asignaron ${pendingContracts.length} contrato(s) al nuevo usuario ${userName} (${userId})`);
+    } catch (error) {
+        console.error("❌ Error en batch commit al asignar contratos pendientes:", error);
     }
 }
 
@@ -118,7 +116,6 @@ function RegisterForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Crucial: Create the user profile in Firestore FIRST.
       if(updateUserProfileInFirestore) {
         await updateUserProfileInFirestore(
           user.uid,
@@ -129,7 +126,6 @@ function RegisterForm() {
         );
       }
       
-      // THEN, check for and assign any pending contracts.
       if (values.role === 'Arrendatario') {
           await assignPendingContracts(user.uid, values.email, values.displayName);
       }
@@ -144,9 +140,9 @@ function RegisterForm() {
         title: "Registro Exitoso",
         description: "Tu cuenta ha sido creada. Serás redirigido.",
       });
-
-      // REDIRECT to /contracts page after sign up to let the app sync state
-      router.push('/contracts');
+      
+      const redirectUrl = searchParams.get('redirect');
+      router.push(redirectUrl || '/contracts');
 
     } catch (error: any) {
       console.error("Error during registration:", error);

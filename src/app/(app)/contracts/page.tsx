@@ -12,7 +12,7 @@ import { columns as createColumns } from '@/components/contracts/contracts-colum
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ContractCard } from '@/components/contracts/contract-card';
 import Papa from 'papaparse';
-import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc, setDoc, documentId } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, getDoc, writeBatch, arrayUnion, addDoc, setDoc, documentId, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,7 +43,7 @@ export default function ContractsPage() {
     try {
       let contractsQuery;
       
-      console.log(`[DEBUG] Fetching data for user: ${currentUser.uid}, role: ${currentUser.role}`);
+      console.log(`Buscando contratos con UID:`, currentUser.uid);
       if (currentUser.role === 'Arrendador') {
         contractsQuery = query(
             collection(db, 'contracts'), 
@@ -60,7 +60,7 @@ export default function ContractsPage() {
 
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
-      console.log("[DEBUG] Contratos encontrados:", contractsList.length, contractsList.map(c => ({ id: c.id, status: c.status, tenantId: c.tenantId })));
+      console.log("Contratos encontrados:", contractsList.map(c => c.id));
       setContracts(contractsList);
       
       if (currentUser.role === 'Arrendador') {
@@ -100,9 +100,10 @@ export default function ContractsPage() {
           throw new Error("Property not found");
       }
       const propertyData = propertySnap.data() as Property;
-
+      
+      const normalizedEmail = values.tenantEmail.toLowerCase();
       const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", values.tenantEmail));
+      const q = query(usersRef, where("email", "==", normalizedEmail), limit(1));
       const querySnapshot = await getDocs(q);
       
       let tenantId: string | null = null;
@@ -112,20 +113,22 @@ export default function ContractsPage() {
           const tenantDoc = querySnapshot.docs[0];
           tenantId = tenantDoc.id;
           tenantData = tenantDoc.data() as UserProfile;
+          console.log(`Arrendatario existente encontrado: ${tenantId}`);
       }
       
-      const signatureToken = selectedContract?.signatureToken || uuidv4();
+      const signatureToken = uuidv4();
       const newContractRef = doc(collection(db, "contracts"));
 
-      const contractDataPayload = {
+      const contractDataPayload: Omit<Contract, 'id'> = {
           ...values,
           id: newContractRef.id,
           startDate: values.startDate instanceof Date ? values.startDate.toISOString() : values.startDate,
           endDate: values.endDate instanceof Date ? values.endDate.toISOString() : values.endDate,
           landlordId: currentUser.uid,
           landlordName: currentUser.name,
-          tenantId: tenantId,
-          tenantName: tenantData?.name || values.tenantName,
+          tenantId: tenantId, // Será null si el usuario no existe
+          tenantName: tenantData?.name || values.tenantName, // Usa nombre existente o el nuevo
+          tenantEmail: normalizedEmail, // Guardar normalizado
           tenantRut: values.tenantRut,
           propertyAddress: propertyData.address,
           propertyName: `${propertyData.type} en ${propertyData.comuna}`,
@@ -138,19 +141,14 @@ export default function ContractsPage() {
       await setDoc(newContractRef, contractDataPayload);
 
       if (!tenantId) {
-          const normalizedEmail = values.tenantEmail.toLowerCase();
+          // Si el arrendatario no existe, guardamos el contrato pendiente en tempUsers
+          console.log(`Arrendatario no existe. Guardando contrato pendiente para ${normalizedEmail}`);
           const tempUserRef = doc(db, 'tempUsers', normalizedEmail);
-          const tempUserSnap = await getDoc(tempUserRef);
           
-          if (tempUserSnap.exists()) {
-               await updateDoc(tempUserRef, {
-                  pendingContracts: arrayUnion(newContractRef.id)
-              });
-          } else {
-              await setDoc(tempUserRef, {
-                  pendingContracts: [newContractRef.id]
-              });
-          }
+          // Usamos set con merge:true para crear o actualizar el array
+          await setDoc(tempUserRef, {
+              pendingContracts: arrayUnion(newContractRef.id)
+          }, { merge: true });
       }
         
       toast({ title: 'Contrato creado', description: 'Se ha enviado una notificación al arrendatario.' });
@@ -231,7 +229,7 @@ export default function ContractsPage() {
         });
         toast({ 
             title: 'Contrato Archivado', 
-            description: `El contrato con ${contractToDelete.tenantName} ha sido archivado y se eliminará en 15 días.`,
+            description: `El contrato con ${contractToDelete.tenantName} ha sido archivado.`,
             variant: 'default' 
         });
         fetchContractsAndProperties();
@@ -251,7 +249,10 @@ export default function ContractsPage() {
     if (!currentUser || currentUser.uid !== contract.landlordId) return;
 
     setIsSubmitting(true);
-    const result = await signContractAction({ contractId: contract.id });
+    const result = await signContractAction({ 
+      contractId: contract.id, 
+      signerRole: 'landlord'
+    });
     setIsSubmitting(false);
 
     if (result.error) {
@@ -380,7 +381,7 @@ export default function ContractsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de que desea archivar este contrato?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción archivará el contrato. El arrendatario aún podrá verlo por un período de 15 días antes de que sea eliminado permanentemente de la plataforma.
+             Esta acción archivará el contrato. Será eliminado permanentemente de la plataforma después de 15 días.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

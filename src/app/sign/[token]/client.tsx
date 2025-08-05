@@ -26,17 +26,25 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     const router = useRouter();
     const pathname = usePathname();
 
-    // Update local contract state when initialContract prop changes after a server action.
     useEffect(() => {
         setContract(initialContract);
     }, [initialContract]);
 
 
     const handleSign = async () => {
+        if (!currentUser) {
+            setError("Debes iniciar sesión para poder firmar.");
+            return;
+        }
         setIsLoading(true);
         setError(null);
+        
+        const signerRole = currentUser.uid === contract.landlordId ? 'landlord' : 'tenant';
 
-        const result = await signContractAction({ contractId: contract.id });
+        const result = await signContractAction({ 
+            contractId: contract.id,
+            signerRole,
+        });
 
         if (result.error) {
             setError(result.error);
@@ -51,7 +59,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
                 title: '¡Contrato Firmado!',
                 description: 'Tu firma ha sido registrada exitosamente.',
             });
-             // Refresh server components to get the latest contract state everywhere
             router.refresh();
         }
         setIsLoading(false);
@@ -66,29 +73,31 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
 
+    // This is the gatekeeper. No currentUser means no access. The page.tsx handles redirection.
     if (!currentUser) {
         return (
-            <Alert variant="destructive">
+             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Acción Requerida: Inicia Sesión</AlertTitle>
+                <AlertTitle>Acción Requerida</AlertTitle>
                 <AlertDescription>
-                    Debes <Link href={`/login?redirect=${pathname}`} className="font-bold underline">iniciar sesión</Link> como <strong>{contract.tenantEmail}</strong> para poder firmar este contrato. Si no tienes una cuenta, por favor <Link href={`/signup?redirect=${pathname}`} className="font-bold underline">regístrate</Link> con ese correo.
+                    Por favor, inicia sesión para continuar con el proceso de firma.
                 </AlertDescription>
             </Alert>
         );
     }
     
-    // Core permission logic
+    // Permission logic
     const isLandlord = currentUser.uid === contract.landlordId;
     const isTenant = currentUser.uid === contract.tenantId;
+    const isTenantByEmail = currentUser.email?.toLowerCase() === contract.tenantEmail?.toLowerCase() && !contract.tenantId;
 
-    if (!isTenant && !isLandlord) {
+    if (!isLandlord && !isTenant && !isTenantByEmail) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Acceso Denegado</AlertTitle>
                 <AlertDescription>
-                    No tienes permiso para firmar este contrato. Debes iniciar sesión como el arrendatario ({contract.tenantEmail}) o el arrendador correcto.
+                    No tienes permiso para ver o firmar este contrato. Verifica que has iniciado sesión con la cuenta correcta.
                 </AlertDescription>
             </Alert>
         );
@@ -106,8 +115,8 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
             </Alert>
         );
     }
-    
-    if (isTenant) {
+
+    if (isTenant || isTenantByEmail) {
         if (contract.signedByTenant) {
              return (
                 <div className="text-center p-6 bg-muted rounded-lg border">
@@ -143,7 +152,7 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
                  <div className="text-center p-6 bg-muted rounded-lg border">
                     <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
                     <h2 className="text-xl font-bold">Firma Registrada</h2>
-                    <p className="text-muted-foreground">Ya has firmado este contrato. Esperando la activación final.</p>
+                    <p className="text-muted-foreground">Ya has firmado este contrato.</p>
                     <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
                 </div>
             )

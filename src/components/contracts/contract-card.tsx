@@ -68,10 +68,10 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
         let text = "";
         let colorClass = "";
 
-        if (landlordSigned && tenantSigned) { // This case should not happen if status becomes Active
+        if (landlordSigned && tenantSigned) { 
             text = "Ambos han firmado";
             colorClass = "text-green-600";
-        } else if (landlordSigned) { // This case should not happen based on new flow
+        } else if (landlordSigned) { 
             text = "Esperando firma del arrendatario";
             colorClass = "text-yellow-600";
         } else if (tenantSigned) {
@@ -134,7 +134,7 @@ export function ContractCard({ contract, userRole, onEdit, onDelete, onSign, onV
                                 <PenSquare className="mr-2 h-4 w-4" /> Firmar para Activar
                             </Button>
                         )}
-                         {contract.status === 'Borrador' && (
+                         {contract.status === 'Borrador' && !contract.signedByTenant && (
                             <Button variant="outline" size="sm" onClick={onResend}>
                                 <Send className="mr-2 h-4 w-4" /> Reenviar
                             </Button>

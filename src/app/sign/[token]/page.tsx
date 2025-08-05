@@ -29,7 +29,7 @@ export default function SignContractPage() {
             setLoading(false);
             return;
         }
-
+        setLoading(true);
         try {
             const contractsRef = collection(db, "contracts");
             const q = query(contractsRef, where("signatureToken", "==", token), limit(1));
@@ -37,7 +37,6 @@ export default function SignContractPage() {
 
             if (contractSnapshot.empty) {
                 setError("No se pudo encontrar un contrato asociado a este enlace.");
-                setLoading(false);
                 return;
             }
 
@@ -96,10 +95,11 @@ export default function SignContractPage() {
     if (!contract || !property) {
         return (
              <div className="flex min-h-screen items-center justify-center p-4">
-                <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-muted-foreground">Cargando datos del contrato...</p>
-                </div>
+                <Alert variant="destructive" className="max-w-md">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error de Carga</AlertTitle>
+                    <AlertDescription>No se pudieron cargar todos los datos del contrato. Inténtalo de nuevo.</AlertDescription>
+                </Alert>
             </div>
         );
     }
