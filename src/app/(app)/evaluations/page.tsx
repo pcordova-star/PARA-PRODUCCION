@@ -178,10 +178,9 @@ export default function EvaluationsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Evaluaciones de Arrendatarios</h1>
           <p className="text-muted-foreground">
-            {currentUser?.role === 'Arrendador' 
-              ? 'Evalúe a sus arrendatarios al finalizar un contrato colaborativo.'
-              : 'Revise las evaluaciones recibidas de sus arrendadores en contratos colaborativos.'
-            }
+            {currentUser?.role === 'Arrendador'
+              ? 'Evalúe a sus arrendatarios en cualquier momento durante un contrato colaborativo.'
+              : 'Revise las evaluaciones recibidas de sus arrendadores en contratos colaborativos.'}
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
