@@ -26,29 +26,7 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     const router = useRouter();
     const pathname = usePathname();
 
-    const [isAssigning, setIsAssigning] = useState(false);
-
-    useEffect(() => {
-        // This effect detects when a new user has logged in and the contract needs assignment.
-        if (currentUser && currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase() && !contract.tenantId) {
-            setIsAssigning(true);
-            const interval = setInterval(() => {
-                router.refresh(); 
-            }, 2500); 
-
-            // Stop checking once the contract is assigned in the re-rendered props.
-            if (contract.tenantId === currentUser.uid) {
-                setIsAssigning(false);
-                clearInterval(interval);
-            }
-            
-            return () => clearInterval(interval);
-        } else {
-            setIsAssigning(false);
-        }
-    }, [currentUser, contract, router]);
-
-    // Update local contract state when initialContract prop changes after a router.refresh()
+    // Update local contract state when initialContract prop changes after a server action.
     useEffect(() => {
         setContract(initialContract);
     }, [initialContract]);
@@ -73,6 +51,8 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
                 title: '¡Contrato Firmado!',
                 description: 'Tu firma ha sido registrada exitosamente.',
             });
+             // Refresh server components to get the latest contract state everywhere
+            router.refresh();
         }
         setIsLoading(false);
     };
@@ -84,15 +64,6 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
                 <p className="ml-2">Verificando tu identidad...</p>
             </div>
         );
-    }
-    
-    if (isAssigning) {
-        return (
-             <div className="flex items-center justify-center p-6 bg-blue-50 border border-blue-200 rounded-md text-blue-800">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <p className="ml-3 font-medium">Asignando contrato a tu cuenta...</p>
-            </div>
-        )
     }
 
     if (!currentUser) {
@@ -107,9 +78,13 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
         );
     }
     
-    const isTenant = currentUser.uid === contract.tenantId;
+    // Core permission logic
     const isLandlord = currentUser.uid === contract.landlordId;
-
+    // CRITICAL: Allow tenant access if their email matches, even if tenantId is not yet assigned.
+    const isTenantByEmail = currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase();
+    const isTenantById = contract.tenantId ? currentUser.uid === contract.tenantId : false;
+    const isTenant = isTenantById || isTenantByEmail;
+    
     if (!isTenant && !isLandlord) {
         return (
             <Alert variant="destructive">
