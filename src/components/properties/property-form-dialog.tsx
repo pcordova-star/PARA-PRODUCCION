@@ -96,7 +96,6 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
   const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertyFormSchema),
     defaultValues: {
-      code: "",
       ownerRut: "",
       region: "",
       comuna: "",
@@ -140,7 +139,6 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
             bathrooms: property.bathrooms ?? undefined,
           }
         : {
-            code: "",
             ownerRut: "",
             region: "",
             comuna: "",
@@ -185,20 +183,7 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código de Propiedad</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: PRO-001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            
               <FormField
                 control={form.control}
                 name="ownerRut"
@@ -218,7 +203,7 @@ export function PropertyFormDialog({ property, open, onOpenChange, onSave, isSub
                   </FormItem>
                 )}
               />
-            </div>
+            
             
             <FormField
               control={form.control}

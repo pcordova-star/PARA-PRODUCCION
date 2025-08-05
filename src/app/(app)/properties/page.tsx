@@ -18,6 +18,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
+// Function to generate a random code
+const generatePropertyCode = () => {
+  const prefix = "PROP-";
+  const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+  return `${prefix}${randomPart}`;
+};
+
+
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +76,7 @@ export default function PropertiesPage() {
       } else {
         const newPropertyData = {
           ...values,
+          code: generatePropertyCode(),
           status: 'Disponible' as const,
         };
         await addDoc(collection(db, 'properties'), newPropertyData);
