@@ -145,8 +145,8 @@ function RegisterForm() {
         description: "Tu cuenta ha sido creada. Serás redirigido.",
       });
 
-      const redirectUrl = searchParams.get('redirect');
-      router.push(redirectUrl || '/dashboard');
+      // REDIRECT to /contracts page after sign up to let the app sync state
+      router.push('/contracts');
 
     } catch (error: any) {
       console.error("Error during registration:", error);

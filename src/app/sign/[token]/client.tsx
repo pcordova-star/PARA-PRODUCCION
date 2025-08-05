@@ -80,11 +80,8 @@ export function SignContractClient({ contract: initialContract }: SignContractCl
     
     // Core permission logic
     const isLandlord = currentUser.uid === contract.landlordId;
-    // CRITICAL: Allow tenant access if their email matches, even if tenantId is not yet assigned.
-    const isTenantByEmail = currentUser.email.toLowerCase() === contract.tenantEmail.toLowerCase();
-    const isTenantById = contract.tenantId ? currentUser.uid === contract.tenantId : false;
-    const isTenant = isTenantById || isTenantByEmail;
-    
+    const isTenant = currentUser.uid === contract.tenantId;
+
     if (!isTenant && !isLandlord) {
         return (
             <Alert variant="destructive">
