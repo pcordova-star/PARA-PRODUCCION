@@ -36,7 +36,11 @@ export default function PaymentsPage() {
     setLoading(true);
     try {
       const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
-      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      const contractsQuery = query(
+        collection(db, 'contracts'), 
+        where(userField, '==', currentUser.uid),
+        where('managementType', '==', 'collaborative') // Only collaborative contracts
+      );
 
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
@@ -113,31 +117,35 @@ export default function PaymentsPage() {
 
         await addDoc(collection(db, 'payments'), sanitizedPaymentData);
 
-        // Send notification email to landlord
-        await sendEmail({
-            to: landlordEmail,
-            subject: `Nuevo Pago Declarado por ${currentUser.name}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                        <h1 style="color: #2077c2; text-align: center;">Nuevo Pago Declarado</h1>
-                        <p>Hola ${contract.landlordName},</p>
-                        <p><strong>${currentUser.name}</strong> ha declarado un nuevo pago para la propiedad <strong>${contract.propertyName}</strong>.</p>
-                        <ul>
-                            <li><strong>Tipo:</strong> ${data.type}</li>
-                            <li><strong>Monto:</strong> $${data.amount.toLocaleString('es-CL')}</li>
-                            <li><strong>Fecha de Pago:</strong> ${new Date(data.paymentDate).toLocaleDateString('es-CL')}</li>
-                        </ul>
-                        <p>Por favor, inicia sesión en S.A.R.A para revisar y aceptar este pago.</p>
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
-                        </div>
-                    </div>
-                </div>
-            `,
-        });
-
-        toast({ title: 'Pago Declarado', description: 'El pago ha sido registrado y el arrendador ha sido notificado.' });
+        // Send notification email to landlord only for collaborative contracts
+        if (contract.managementType === 'collaborative') {
+          await sendEmail({
+              to: landlordEmail,
+              subject: `Nuevo Pago Declarado por ${currentUser.name}`,
+              html: `
+                  <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                      <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                          <h1 style="color: #2077c2; text-align: center;">Nuevo Pago Declarado</h1>
+                          <p>Hola ${contract.landlordName},</p>
+                          <p><strong>${currentUser.name}</strong> ha declarado un nuevo pago para la propiedad <strong>${contract.propertyName}</strong>.</p>
+                          <ul>
+                              <li><strong>Tipo:</strong> ${data.type}</li>
+                              <li><strong>Monto:</strong> $${data.amount.toLocaleString('es-CL')}</li>
+                              <li><strong>Fecha de Pago:</strong> ${new Date(data.paymentDate).toLocaleDateString('es-CL')}</li>
+                          </ul>
+                          <p>Por favor, inicia sesión en S.A.R.A para revisar y aceptar este pago.</p>
+                          <div style="text-align: center; margin: 30px 0;">
+                              <a href="http://www.sarachile.com/login" style="background-color: #2077c2; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a S.A.R.A</a>
+                          </div>
+                      </div>
+                  </div>
+              `,
+          });
+          toast({ title: 'Pago Declarado', description: 'El pago ha sido registrado y el arrendador ha sido notificado.' });
+        } else {
+          toast({ title: 'Pago Declarado', description: 'El pago ha sido registrado para su gestión interna.' });
+        }
+        
         fetchData();
         setIsFormOpen(false);
     } catch(error) {
@@ -263,8 +271,8 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Pagos</h1>
           <p className="text-muted-foreground">
             {currentUser?.role === 'Arrendador'
-              ? 'Revise y acepte los pagos declarados por sus arrendatarios.'
-              : 'Declare los pagos de su arriendo de forma rápida y sencilla.'}
+              ? 'Revise y acepte los pagos declarados por sus arrendatarios en contratos colaborativos.'
+              : 'Declare los pagos de su arriendo en contratos colaborativos de forma rápida y sencilla.'}
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
@@ -309,7 +317,7 @@ export default function PaymentsPage() {
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <h3 className="text-lg font-medium">No hay pagos para mostrar</h3>
             <p className="text-muted-foreground mt-1">
-                {currentUser?.role === 'Arrendatario' ? 'Declare su primer pago para comenzar.' : 'Aún no se han declarado pagos.'}
+                Esta sección solo muestra pagos de contratos colaborativos.
             </p>
         </div>
       )}

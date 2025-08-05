@@ -36,7 +36,8 @@ export default function EvaluationsPage() {
     try {
       const contractsQuery = query(
         collection(db, 'contracts'),
-        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid)
+        where(currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId', '==', currentUser.uid),
+        where('managementType', '==', 'collaborative') // Only collaborative contracts
       );
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
@@ -178,8 +179,8 @@ export default function EvaluationsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Evaluaciones de Arrendatarios</h1>
           <p className="text-muted-foreground">
             {currentUser?.role === 'Arrendador' 
-              ? 'Evalúe a sus arrendatarios al finalizar un contrato.'
-              : 'Revise las evaluaciones recibidas de sus arrendadores.'
+              ? 'Evalúe a sus arrendatarios al finalizar un contrato colaborativo.'
+              : 'Revise las evaluaciones recibidas de sus arrendadores en contratos colaborativos.'
             }
           </p>
         </div>
@@ -221,7 +222,7 @@ export default function EvaluationsPage() {
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <h3 className="text-lg font-medium">No hay evaluaciones</h3>
             <p className="text-muted-foreground mt-1">
-                Aún no se han generado o recibido evaluaciones.
+                Esta sección solo muestra evaluaciones de contratos colaborativos.
             </p>
         </div>
       )}

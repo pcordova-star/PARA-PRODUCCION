@@ -41,7 +41,11 @@ export default function IncidentsPage() {
     setLoading(true);
     try {
       const userField = currentUser.role === 'Arrendador' ? 'landlordId' : 'tenantId';
-      const contractsQuery = query(collection(db, 'contracts'), where(userField, '==', currentUser.uid));
+      const contractsQuery = query(
+        collection(db, 'contracts'), 
+        where(userField, '==', currentUser.uid),
+        where('managementType', '==', 'collaborative') // Only collaborative contracts
+      );
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       setContracts(contractsList);
@@ -250,7 +254,7 @@ export default function IncidentsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Incidentes</h1>
           <p className="text-muted-foreground">
-            Reporte y de seguimiento a los incidentes de sus propiedades.
+            Reporte y de seguimiento a los incidentes de sus contratos colaborativos.
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2">
@@ -290,7 +294,7 @@ export default function IncidentsPage() {
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <h3 className="text-lg font-medium">No hay incidentes</h3>
             <p className="text-muted-foreground mt-1">
-                Aún no se han reportado incidentes para sus contratos.
+                Esta sección solo muestra incidentes de contratos colaborativos.
             </p>
         </div>
       )}

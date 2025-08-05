@@ -35,11 +35,12 @@ export default function LegalRecoveryClient() {
     }
     setLoading(true);
     try {
-      // Fetch only active contracts
+      // Fetch only active, collaborative contracts
       const contractsQuery = query(
         collection(db, 'contracts'), 
         where('landlordId', '==', currentUser.uid),
-        where('status', '==', 'Activo')
+        where('status', '==', 'Activo'),
+        where('managementType', '==', 'collaborative')
       );
       const contractsSnapshot = await getDocs(contractsQuery);
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
@@ -111,7 +112,7 @@ export default function LegalRecoveryClient() {
         <CardHeader>
           <CardTitle className="text-2xl">Herramientas de Recuperación Legal</CardTitle>
           <CardDescription>
-            Genere y gestione documentos clave para incumplimientos contractuales. 
+            Genere y gestione documentos clave para incumplimientos en contratos colaborativos. 
             Seleccione un contrato activo para comenzar.
           </CardDescription>
         </CardHeader>
@@ -124,7 +125,7 @@ export default function LegalRecoveryClient() {
                 onValueChange={setSelectedContractId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un contrato activo..." />
+                  <SelectValue placeholder="Seleccione un contrato..." />
                 </SelectTrigger>
                 <SelectContent>
                   {activeContracts.map(contract => (
@@ -177,7 +178,7 @@ export default function LegalRecoveryClient() {
             <FileWarning className="h-4 w-4" />
             <AlertTitle>Seleccione un Contrato</AlertTitle>
             <AlertDescription>
-                Por favor, elija un contrato de la lista superior para generar y visualizar los documentos legales asociados. Si no hay contratos, significa que no tiene contratos en estado "Activo".
+                Por favor, elija un contrato de la lista superior para generar los documentos. Esta sección solo aplica a contratos en estado "Activo" y de tipo "colaborativo".
             </AlertDescription>
         </Alert>
       )}
