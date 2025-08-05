@@ -48,13 +48,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       setLoading(true);
       if (user) {
-        // Create session cookie
-        const idToken = await user.getIdToken();
-        await fetch('/api/auth/session', {
-            method: 'POST',
-            body: idToken,
-        });
-
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (doc) => {
           if (doc.exists()) {
@@ -70,8 +63,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
         return () => unsubscribeSnapshot();
       } else {
-        // Delete session cookie
-        await fetch('/api/auth/session', { method: 'DELETE' });
         setCurrentUser(null);
         setLoading(false);
       }
