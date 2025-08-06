@@ -4,13 +4,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { UserProfile, TenantCertificateData, Contract, Property, Evaluation, Payment, Incident, TenantRentalHistory, TenantEvaluationsSummary, TenantPaymentsSummary, TenantIncidentsSummary, ContractReportData } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Printer, Loader2, AlertCircle, Star, AlertOctagon, Calendar, Building, User as UserIcon, Mail, ShieldAlert, CreditCard } from "lucide-react";
+import { Download, Loader2, AlertCircle, Star, AlertOctagon, Calendar, Building, User as UserIcon, Mail, ShieldAlert, CreditCard } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import { parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
+import html2pdf from 'html2pdf.js';
 
 // Helper to safely format dates, defaulting to 'N/A'
 const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.DateTimeFormatOptions): string => {
@@ -134,8 +135,16 @@ export default function TenantReportClient() {
     }
   }, [currentUser]);
 
-  const handlePrint = () => {
-    alert('Para imprimir o guardar como PDF, por favor use la función de impresión de su navegador (Ctrl+P o Cmd+P).');
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('printable-area');
+    const opt = {
+      margin:       [0.5, 0.5, 0.5, 0.5],
+      filename:     `informe_sara_${reportData?.tenantProfile.rut || 'usuario'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().from(element).set(opt).save();
   };
 
   if (isLoading) {
@@ -166,137 +175,140 @@ export default function TenantReportClient() {
   };
   
   return (
-    <div className="bg-white p-6 md:p-10 rounded-lg shadow-xl mt-6 printable-certificate">
-      <header className="flex flex-col items-center justify-between border-b-2 border-primary pb-6 mb-8 sm:flex-row">
-        <div className='text-center sm:text-left'>
-          <h1 className="text-3xl font-bold text-primary font-headline">Informe de Comportamiento</h1>
-          <p className="text-lg text-muted-foreground">S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
-        </div>
-        <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="h-24 w-24 text-primary mt-4 sm:mt-0"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 text-sm">
-        <p><strong>Fecha de Emisión:</strong> {generationDate}</p>
-        <p><strong>ID del Informe:</strong> <span className="font-mono">{certificateId}</span></p>
-      </div>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Datos del Arrendatario</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          <p><strong>Nombre Completo:</strong> {tenantProfile.name || 'N/A'}</p>
-          <p><strong>RUT:</strong> {tenantProfile.rut || 'N/A'}</p>
-          <p><strong>Correo Electrónico:</strong> {tenantProfile.email || 'N/A'}</p>
-          <p><strong>Miembro S.A.R.A desde:</strong> {tenantProfile.createdAt || 'N/A'}</p>
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Historial de Arriendos en la Plataforma</h2>
-        {contractsData.length > 0 ? (
-          <div className="space-y-6">
-            {contractsData.map(({ contract, landlordEmail, evaluations, payments, incidents }, index) => {
-              const totalPaymentsDeclared = payments.length;
-              const acceptedPayments = payments.filter(p => p.status === 'aceptado');
-              const totalAmountAccepted = acceptedPayments.reduce((sum, p) => sum + p.amount, 0);
-              const totalOverduePayments = payments.filter(p => p.isOverdue).length;
-              const avgRating = evaluations.length > 0 ? (evaluations.reduce((sum, e) => sum + (e.criteria.paymentPunctuality + e.criteria.propertyCare + e.criteria.communication + e.criteria.generalBehavior) / 4, 0) / evaluations.length) : null;
-
-              return (
-              <div key={index} className="p-4 border rounded-lg bg-muted/30 text-sm break-inside-avoid-page">
-                <h3 className="text-lg font-semibold text-primary/90 mb-3 border-b pb-2">Contrato #{index + 1}: {contract.propertyName}</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
-                    <p className="flex items-center"><Building className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Propiedad:</strong><span className="ml-2">{contract.propertyAddress}</span></p>
-                    <p className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Periodo:</strong><span className="ml-2">{formatDateSafe(contract.startDate)} - {formatDateSafe(contract.endDate)}</span></p>
-                    <p className="flex items-center"><UserIcon className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Arrendador:</strong><span className="ml-2">{contract.landlordName}</span></p>
-                    <p className="flex items-center"><Mail className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Email Arrendador:</strong><span className="ml-2">{landlordEmail}</span></p>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <h4 className="font-semibold text-md mb-2 flex items-center"><Star className="h-4 w-4 mr-2 text-yellow-400"/>Resumen de Evaluaciones</h4>
-                        {evaluations.length > 0 && avgRating !== null ? (
-                            <div className="pl-4">
-                                <p><strong>Promedio de Calificaciones:</strong> {renderStars(avgRating)}</p>
-                                {evaluations.some(e => e.tenantComment) && (
-                                    <div className="mt-2"><h5 className="font-medium text-xs mb-1">Comentarios Destacados:</h5>
-                                        {evaluations.filter(e => e.tenantComment).slice(0, 1).map((e, i) => (
-                                            <blockquote key={i} className="text-xs border-l-2 pl-2 italic text-muted-foreground">"{e.tenantComment}"</blockquote>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ) : <p className="text-xs text-muted-foreground pl-4">No hay evaluaciones para este contrato.</p>}
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-md mb-2 flex items-center"><CreditCard className="h-4 w-4 mr-2 text-green-600"/>Resumen de Pagos</h4>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs pl-4">
-                            <p><strong>Declarados:</strong> {totalPaymentsDeclared}</p>
-                            <p><strong>Aceptados:</strong> {acceptedPayments.length}</p>
-                            <p><strong>Monto Total Aceptado:</strong> ${totalAmountAccepted.toLocaleString('es-CL')}</p>
-                            <p><strong>Pagos con Atraso:</strong> {totalOverduePayments}</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-md mb-2 flex items-center"><ShieldAlert className="h-4 w-4 mr-2 text-red-600"/>Resumen de Incidentes</h4>
-                        {incidents.length > 0 ? (
-                            <div className="relative w-full overflow-auto bg-white">
-                                <Table>
-                                    <TableHeader><TableRow><TableHead className="h-8 text-xs">Fecha</TableHead><TableHead className="h-8 text-xs">Tipo</TableHead><TableHead className="h-8 text-xs">Reportado Por</TableHead><TableHead className="h-8 text-xs">Estado</TableHead></TableRow></TableHeader>
-                                    <TableBody>
-                                        {incidents.map(i => (
-                                            <TableRow key={i.id}><TableCell className="py-1 text-xs">{formatDateSafe(i.createdAt)}</TableCell><TableCell className="py-1 text-xs capitalize">{i.type}</TableCell><TableCell className="py-1 text-xs">{i.createdBy === tenantProfile.uid ? 'Arrendatario' : 'Arrendador'}</TableCell><TableCell className="py-1 text-xs">{getStatusBadge(i.status)}</TableCell></TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        ) : <p className="text-xs text-muted-foreground pl-4">No hay incidentes para este contrato.</p>}
-                    </div>
-                </div>
-              </div>
-            )})}
+    <>
+      <div id="printable-area" className="bg-white p-6 md:p-10 rounded-lg shadow-xl mt-6">
+        <header className="flex flex-col items-center justify-between border-b-2 border-primary pb-6 mb-8 sm:flex-row">
+          <div className='text-center sm:text-left'>
+            <h1 className="text-3xl font-bold text-primary font-headline">Informe de Comportamiento</h1>
+            <p className="text-lg text-muted-foreground">S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
           </div>
-        ) : <p className="text-sm text-muted-foreground">No hay historial de arriendos disponible.</p>}
-      </section>
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="h-24 w-24 text-primary mt-4 sm:mt-0"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+        </header>
 
-      <section className="mb-8 pt-6 border-t-2 border-primary">
-         <div className="flex flex-col items-center sm:flex-row justify-between gap-6">
-            <div className="text-center sm:text-left">
-                <h2 className="text-xl font-semibold text-primary mb-2">Puntuación Global del Arrendatario</h2>
-                {globalScore !== null ? (
-                    <div className="flex items-center justify-center sm:justify-start">
-                        {renderStars(globalScore, 5)}
-                        <span className="text-3xl font-bold text-primary ml-3">{globalScore.toFixed(1)} <span className="text-lg">/ 5.0</span></span>
-                    </div>
-                ) : <p className="text-lg text-muted-foreground">Puntuación global no disponible.</p>}
-                <p className="text-xs text-muted-foreground mt-1">Basado en el promedio de todas las evaluaciones recibidas en la plataforma.</p>
-            </div>
-            <div className="flex flex-col items-center">
-                 <img src="https://placehold.co/100x100.png" alt="QR Code de Verificación" width={100} height={100} data-ai-hint="qr code verification" />
-                 <p className="text-xs text-muted-foreground mt-1">Escanear para verificar (simulado)</p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 text-sm">
+          <p><strong>Fecha de Emisión:</strong> {generationDate}</p>
+          <p><strong>ID del Informe:</strong> <span className="font-mono">{certificateId}</span></p>
         </div>
-      </section>
 
-      <footer className="mt-12 pt-6 border-t text-center">
-        <p className="text-xs text-muted-foreground">Este informe es generado automáticamente por S.A.R.A y se basa en la información registrada en la plataforma hasta la fecha de emisión. S.A.R.A no se hace responsable por la veracidad de la información ingresada por los usuarios.</p>
-        <p className="text-xs text-primary mt-1">contacto@sara-app.com | www.sara-app.com (Sitio ficticio)</p>
-      </footer>
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Datos del Arrendatario</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <p><strong>Nombre Completo:</strong> {tenantProfile.name || 'N/A'}</p>
+            <p><strong>RUT:</strong> {tenantProfile.rut || 'N/A'}</p>
+            <p><strong>Correo Electrónico:</strong> {tenantProfile.email || 'N/A'}</p>
+            <p><strong>Miembro S.A.R.A desde:</strong> {tenantProfile.createdAt || 'N/A'}</p>
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-primary mb-3 border-b pb-2">Historial de Arriendos en la Plataforma</h2>
+          {contractsData.length > 0 ? (
+            <div className="space-y-6">
+              {contractsData.map(({ contract, landlordEmail, evaluations, payments, incidents }, index) => {
+                const totalPaymentsDeclared = payments.length;
+                const acceptedPayments = payments.filter(p => p.status === 'aceptado');
+                const totalAmountAccepted = acceptedPayments.reduce((sum, p) => sum + p.amount, 0);
+                const totalOverduePayments = payments.filter(p => p.isOverdue).length;
+                const avgRating = evaluations.length > 0 ? (evaluations.reduce((sum, e) => sum + (e.criteria.paymentPunctuality + e.criteria.propertyCare + e.criteria.communication + e.criteria.generalBehavior) / 4, 0) / evaluations.length) : null;
+
+                return (
+                <div key={index} className="p-4 border rounded-lg bg-muted/30 text-sm break-inside-avoid-page">
+                  <h3 className="text-lg font-semibold text-primary/90 mb-3 border-b pb-2">Contrato #{index + 1}: {contract.propertyName}</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
+                      <p className="flex items-center"><Building className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Propiedad:</strong><span className="ml-2">{contract.propertyAddress}</span></p>
+                      <p className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Periodo:</strong><span className="ml-2">{formatDateSafe(contract.startDate)} - {formatDateSafe(contract.endDate)}</span></p>
+                      <p className="flex items-center"><UserIcon className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Arrendador:</strong><span className="ml-2">{contract.landlordName}</span></p>
+                      <p className="flex items-center"><Mail className="h-4 w-4 mr-2 text-muted-foreground"/><strong>Email Arrendador:</strong><span className="ml-2">{landlordEmail}</span></p>
+                  </div>
+
+                  <div className="space-y-4">
+                      <div>
+                          <h4 className="font-semibold text-md mb-2 flex items-center"><Star className="h-4 w-4 mr-2 text-yellow-400"/>Resumen de Evaluaciones</h4>
+                          {evaluations.length > 0 && avgRating !== null ? (
+                              <div className="pl-4">
+                                  <p><strong>Promedio de Calificaciones:</strong> {renderStars(avgRating)}</p>
+                                  {evaluations.some(e => e.tenantComment) && (
+                                      <div className="mt-2"><h5 className="font-medium text-xs mb-1">Comentarios Destacados:</h5>
+                                          {evaluations.filter(e => e.tenantComment).slice(0, 1).map((e, i) => (
+                                              <blockquote key={i} className="text-xs border-l-2 pl-2 italic text-muted-foreground">"{e.tenantComment}"</blockquote>
+                                          ))}
+                                      </div>
+                                  )}
+                              </div>
+                          ) : <p className="text-xs text-muted-foreground pl-4">No hay evaluaciones para este contrato.</p>}
+                      </div>
+
+                      <div>
+                          <h4 className="font-semibold text-md mb-2 flex items-center"><CreditCard className="h-4 w-4 mr-2 text-green-600"/>Resumen de Pagos</h4>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs pl-4">
+                              <p><strong>Declarados:</strong> {totalPaymentsDeclared}</p>
+                              <p><strong>Aceptados:</strong> {acceptedPayments.length}</p>
+                              <p><strong>Monto Total Aceptado:</strong> ${totalAmountAccepted.toLocaleString('es-CL')}</p>
+                              <p><strong>Pagos con Atraso:</strong> {totalOverduePayments}</p>
+                          </div>
+                      </div>
+
+                      <div>
+                          <h4 className="font-semibold text-md mb-2 flex items-center"><ShieldAlert className="h-4 w-4 mr-2 text-red-600"/>Resumen de Incidentes</h4>
+                          {incidents.length > 0 ? (
+                              <div className="relative w-full overflow-auto bg-white">
+                                  <Table>
+                                      <TableHeader><TableRow><TableHead className="h-8 text-xs">Fecha</TableHead><TableHead className="h-8 text-xs">Tipo</TableHead><TableHead className="h-8 text-xs">Reportado Por</TableHead><TableHead className="h-8 text-xs">Estado</TableHead></TableRow></TableHeader>
+                                      <TableBody>
+                                          {incidents.map(i => (
+                                              <TableRow key={i.id}><TableCell className="py-1 text-xs">{formatDateSafe(i.createdAt)}</TableCell><TableCell className="py-1 text-xs capitalize">{i.type}</TableCell><TableCell className="py-1 text-xs">{i.createdBy === tenantProfile.uid ? 'Arrendatario' : 'Arrendador'}</TableCell><TableCell className="py-1 text-xs">{getStatusBadge(i.status)}</TableCell></TableRow>
+                                          ))}
+                                      </TableBody>
+                                  </Table>
+                              </div>
+                          ) : <p className="text-xs text-muted-foreground pl-4">No hay incidentes para este contrato.</p>}
+                      </div>
+                  </div>
+                </div>
+              )})}
+            </div>
+          ) : <p className="text-sm text-muted-foreground">No hay historial de arriendos disponible.</p>}
+        </section>
+
+        <section className="mb-8 pt-6 border-t-2 border-primary">
+          <div className="flex flex-col items-center sm:flex-row justify-between gap-6">
+              <div className="text-center sm:text-left">
+                  <h2 className="text-xl font-semibold text-primary mb-2">Puntuación Global del Arrendatario</h2>
+                  {globalScore !== null ? (
+                      <div className="flex items-center justify-center sm:justify-start">
+                          {renderStars(globalScore, 5)}
+                          <span className="text-3xl font-bold text-primary ml-3">{globalScore.toFixed(1)} <span className="text-lg">/ 5.0</span></span>
+                      </div>
+                  ) : <p className="text-lg text-muted-foreground">Puntuación global no disponible.</p>}
+                  <p className="text-xs text-muted-foreground mt-1">Basado en el promedio de todas las evaluaciones recibidas en la plataforma.</p>
+              </div>
+              <div className="flex flex-col items-center">
+                  <img src="https://placehold.co/100x100.png" alt="QR Code de Verificación" width={100} height={100} data-ai-hint="qr code verification" />
+                  <p className="text-xs text-muted-foreground mt-1">Escanear para verificar (simulado)</p>
+              </div>
+          </div>
+        </section>
+
+        <footer className="mt-12 pt-6 border-t text-center">
+          <p className="text-xs text-muted-foreground">Este informe es generado automáticamente por S.A.R.A y se basa en la información registrada en la plataforma hasta la fecha de emisión. S.A.R.A no se hace responsable por la veracidad de la información ingresada por los usuarios.</p>
+          <p className="text-xs text-primary mt-1">contacto@sara-app.com | www.sara-app.com (Sitio ficticio)</p>
+        </footer>
+      </div>
       
-       <div className="mt-8 text-center print:hidden">
-        <Button onClick={handlePrint} size="lg"><Printer className="mr-2 h-5 w-5" /> Imprimir / Guardar como PDF</Button>
+      <div className="mt-8 text-center">
+        <Button onClick={handleDownloadPdf} size="lg"><Download className="mr-2 h-5 w-5" /> Descargar Informe en PDF</Button>
       </div>
 
       <style jsx global>{`
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .printable-certificate { margin: 0; padding: 20px; border: none; box-shadow: none; }
-          .print\\:hidden { display: none !important; }
           .break-inside-avoid-page { page-break-inside: avoid; }
         }
       `}</style>
-    </div>
+    </>
   );
 }
+
+    
