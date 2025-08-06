@@ -37,7 +37,7 @@ import { Paperclip, CreditCard, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Contract, PaymentType, ServiceType } from "@/types"; 
 
-const paymentTypes: PaymentType[] = ["arriendo", "gastos comunes", "servicios", "multas", "otro"];
+const paymentTypes: PaymentType[] = ["arriendo", "gastos comunes", "servicios", "multas", "garantía", "otro"];
 const serviceTypes: ServiceType[] = ["agua", "electricidad", "gas"];
 
 const paymentFormSchema = z.object({

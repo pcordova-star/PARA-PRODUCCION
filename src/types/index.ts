@@ -78,7 +78,7 @@ export interface UserProfile {
   pendingContracts?: PendingContract[];
 }
 
-export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "otro";
+export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "garantía" | "otro";
 export type ServiceType = "agua" | "electricidad" | "gas";
 
 
