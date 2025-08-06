@@ -74,10 +74,10 @@ async function fetchTenantReportData(tenantUid: string): Promise<TenantCertifica
       const avgGeneralBehavior = evaluations.reduce((sum, e) => sum + e.criteria.generalBehavior, 0) / numEvals;
       evaluationsSummary = {
         evaluations,
-        averagePunctuality,
-        averagePropertyCare,
-        averageCommunication,
-        averageGeneralBehavior,
+        averagePunctuality: avgPunctuality,
+        averagePropertyCare: avgPropertyCare,
+        averageCommunication: avgCommunication,
+        averageGeneralBehavior: avgGeneralBehavior,
         overallAverage: (avgPunctuality + avgPropertyCare + avgCommunication + avgGeneralBehavior) / 4,
       };
     } else {
