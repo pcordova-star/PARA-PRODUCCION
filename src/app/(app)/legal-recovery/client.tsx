@@ -103,15 +103,7 @@ export default function LegalRecoveryClient() {
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-
-    // Temporarily show all content for PDF generation
-    const elementsToShow = element?.querySelectorAll('.print-section');
-    elementsToShow?.forEach(el => (el as HTMLElement).style.display = 'block');
-
-    html2pdf().from(element).set(opt).save().then(() => {
-       // Restore original display styles
-       elementsToShow?.forEach(el => (el as HTMLElement).style.display = '');
-    });
+    html2pdf().from(element).set(opt).save();
   };
 
 
@@ -131,7 +123,7 @@ export default function LegalRecoveryClient() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg print:hidden">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Herramientas de Recuperación Legal</CardTitle>
           <CardDescription>
@@ -175,29 +167,25 @@ export default function LegalRecoveryClient() {
       
       {selectedContract && selectedProperty ? (
         <Tabs defaultValue="prior_notice" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 print:hidden">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="prior_notice">Notificación Previa</TabsTrigger>
               <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
               <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
             </TabsList>
-            <div id="printable-area" className="printable-area">
-                <div className="print:block hidden text-center my-4">
-                  <h2 className="text-2xl font-bold">Documentación Legal - Contrato {selectedContract.id}</h2>
-                  <p>Generado el {new Date().toLocaleDateString('es-CL')}</p>
-                </div>
-                <TabsContent value="prior_notice" className="print-section">
+            <div id="printable-area">
+                <TabsContent value="prior_notice">
                    <PriorNotice contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="legal_dossier" className="print-section data-[state=inactive]:hidden print:block">
+                <TabsContent value="legal_dossier">
                   <LegalDossier contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="contract_display" className="print-section data-[state=inactive]:hidden print:block">
+                <TabsContent value="contract_display">
                   <ContractDisplay contract={selectedContract} property={selectedProperty} />
                 </TabsContent>
             </div>
         </Tabs>
       ) : (
-         <Alert variant="default" className="mt-6 border-dashed print:hidden">
+         <Alert variant="default" className="mt-6 border-dashed">
             <FileWarning className="h-4 w-4" />
             <AlertTitle>Seleccione un Contrato</AlertTitle>
             <AlertDescription>
@@ -220,23 +208,6 @@ export default function LegalRecoveryClient() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <style jsx global>{`
-        @media print {
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            background-color: white;
-          }
-          .print-section {
-             display: block !important;
-             page-break-before: always;
-          }
-          .printable-area > div:first-child.print-section {
-            page-break-before: auto; /* Evita un salto de página antes del primer elemento */
-          }
-        }
-      `}</style>
     </div>
   );
 }
