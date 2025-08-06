@@ -161,7 +161,7 @@ export function LegalDossier({ contract }: LegalDossierProps) {
 
          {/* Attachments Section */}
         <section className="print:hidden">
-            <h3 className="text-lg font-semibold mb-3 border-b pb-1 text-primary/90">Descarga de Evidencia Digital</h3>
+            <h3 className="text-lg font-semibold mb-3 border-b pb-1 text-primary/90">Evidencia Digital</h3>
             {(paymentAttachments.length > 0 || incidentAttachments.length > 0) ? (
                 <div className="space-y-4">
                     {paymentAttachments.length > 0 && (
