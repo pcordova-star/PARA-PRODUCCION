@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, from "react";
+import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,7 +95,17 @@ export default function LegalRecoveryClient() {
 
   const handleDownloadPdf = () => {
     if (!selectedContract) return;
+
     const element = document.getElementById('printable-area');
+    if (!element) {
+        toast({
+            title: "Error al generar PDF",
+            description: "No se encontró el contenido para descargar.",
+            variant: "destructive"
+        });
+        return;
+    }
+
     const opt = {
       margin:       [0.5, 0.5, 0.5, 0.5],
       filename:     `documentacion_legal_${selectedContract.id}.pdf`,
@@ -166,24 +176,40 @@ export default function LegalRecoveryClient() {
       </Card>
       
       {selectedContract && selectedProperty ? (
-        <Tabs defaultValue="prior_notice" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="prior_notice">Notificación Previa</TabsTrigger>
-              <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
-              <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
-            </TabsList>
-            <div id="printable-area">
-                <TabsContent value="prior_notice">
-                   <PriorNotice contract={selectedContract} />
-                </TabsContent>
-                <TabsContent value="legal_dossier">
-                  <LegalDossier contract={selectedContract} />
-                </TabsContent>
-                <TabsContent value="contract_display">
-                  <ContractDisplay contract={selectedContract} property={selectedProperty} />
-                </TabsContent>
-            </div>
-        </Tabs>
+        <>
+          <Tabs defaultValue="prior_notice" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="prior_notice">Notificación Previa</TabsTrigger>
+                <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
+                <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
+              </TabsList>
+              <TabsContent value="prior_notice">
+                 <PriorNotice contract={selectedContract} />
+              </TabsContent>
+              <TabsContent value="legal_dossier">
+                <LegalDossier contract={selectedContract} />
+              </TabsContent>
+              <TabsContent value="contract_display">
+                <ContractDisplay contract={selectedContract} property={selectedProperty} />
+              </TabsContent>
+          </Tabs>
+
+          {/* Invisible container for PDF generation */}
+          <div id="printable-area" className="absolute -left-[9999px] top-auto h-auto overflow-hidden">
+              <h1 className="text-3xl font-bold text-center my-4">Documentación Legal del Contrato</h1>
+              <PriorNotice contract={selectedContract} />
+              <div className="break-after-page"></div>
+              <LegalDossier contract={selectedContract} />
+              <div className="break-after-page"></div>
+              <ContractDisplay contract={selectedContract} property={selectedProperty} />
+          </div>
+
+          <style jsx global>{`
+              .break-after-page {
+                  page-break-after: always;
+              }
+          `}</style>
+        </>
       ) : (
          <Alert variant="default" className="mt-6 border-dashed">
             <FileWarning className="h-4 w-4" />
