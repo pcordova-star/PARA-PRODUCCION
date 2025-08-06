@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { UserProfile, TenantCertificateData, Contract, Property, Evaluation, Payment, Incident, TenantRentalHistory, TenantEvaluationsSummary, TenantPaymentsSummary, TenantIncidentsSummary, ContractReportData } from "@/types";
+import type { UserProfile, TenantCertificateData, Contract, Property, Evaluation, Payment, Incident, TenantRentalHistory, TenantEvaluationsSummary, TenantIncidentsSummary, ContractReportData } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2, AlertCircle, Star, AlertOctagon, Calendar, Building, User as UserIcon, Mail, ShieldAlert, CreditCard } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
@@ -133,6 +133,10 @@ export default function TenantCertificateClient() {
         setIsLoading(false);
     }
   }, [currentUser]);
+  
+  const handlePrint = () => {
+    alert('Para imprimir o guardar como PDF, por favor use la función de impresión de su navegador (Ctrl+P o Cmd+P).');
+  };
 
   if (isLoading) {
     return <div className="flex flex-col items-center justify-center py-10"><Loader2 className="h-12 w-12 animate-spin text-primary mb-4" /><p className="text-lg text-muted-foreground">Generando tu informe...</p></div>;
@@ -282,7 +286,7 @@ export default function TenantCertificateClient() {
       </footer>
       
        <div className="mt-8 text-center print:hidden">
-        <Button onClick={() => window.print()} size="lg"><Printer className="mr-2 h-5 w-5" /> Imprimir / Guardar como PDF</Button>
+        <Button onClick={handlePrint} size="lg"><Printer className="mr-2 h-5 w-5" /> Imprimir / Guardar como PDF</Button>
       </div>
 
       <style jsx global>{`
