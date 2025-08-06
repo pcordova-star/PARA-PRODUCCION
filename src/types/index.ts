@@ -1,5 +1,6 @@
 
 
+
 export interface Property {
   id: string;
   code: string;
@@ -73,6 +74,7 @@ export interface UserProfile {
   role: UserRole;
   name: string;
   email: string;
+  rut?: string;
   createdAt?: string;
   mobilePhone?: string;
   pendingContracts?: PendingContract[];
@@ -177,6 +179,7 @@ export interface Evaluation {
 
 // --- Tenant Certificate Types ---
 
+// DEPRECATED - Use ContractReportData instead
 export interface TenantRentalHistory {
   contractId: string;
   propertyAddress: string;
@@ -185,6 +188,7 @@ export interface TenantRentalHistory {
   landlordName: string;
 }
 
+// DEPRECATED
 export interface TenantEvaluationsSummary {
   averagePunctuality: number | null;
   averagePropertyCare: number | null;
@@ -194,6 +198,7 @@ export interface TenantEvaluationsSummary {
   evaluations: Evaluation[];
 }
 
+// DEPRECATED
 export interface TenantPaymentsSummary {
   totalPaymentsDeclared: number;
   totalPaymentsAccepted: number;
@@ -203,6 +208,7 @@ export interface TenantPaymentsSummary {
   overduePaymentsPercentage: number | null;
 }
 
+// DEPRECATED
 export interface TenantIncidentsSummary {
   totalIncidentsInvolved: number;
   incidentsReportedByTenant: number;
@@ -210,12 +216,18 @@ export interface TenantIncidentsSummary {
   incidentsResolved: number;
 }
 
+export interface ContractReportData {
+  contract: Contract;
+  landlordEmail: string;
+  evaluations: Evaluation[];
+  payments: Payment[];
+  incidents: Incident[];
+}
+
+
 export interface TenantCertificateData {
   tenantProfile: UserProfile;
-  rentalHistory: TenantRentalHistory[];
-  evaluationsSummary: TenantEvaluationsSummary;
-  paymentsSummary: TenantPaymentsSummary;
-  incidentsSummary: TenantIncidentsSummary;
+  contractsData: ContractReportData[];
   globalScore: number | null;
   generationDate: string;
   certificateId: string;
