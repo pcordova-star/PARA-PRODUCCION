@@ -159,7 +159,7 @@ export function LandlordDashboard() {
       <div className="space-y-6">
         <Card className="shadow-lg border-l-4 border-primary">
           <CardHeader>
-            <CardTitle className="text-4xl font-extrabold font-headline text-primary">Panel de Arrendador</CardTitle>
+            <CardTitle className="text-4xl font-extrabold font-headline text-accent">Panel de Arrendador</CardTitle>
             <CardDescription className="text-lg">Bienvenido a tu espacio de gestión centralizado en S.A.R.A.</CardDescription>
           </CardHeader>
           {(pendingContractsCount > 0 || pendingPaymentsCount > 0 || openIncidentsCount > 0 || expiringContractsCount > 0) && (
