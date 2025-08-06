@@ -216,11 +216,6 @@ export default function PaymentsPage() {
     }
   };
 
-  const userContracts = useMemo(() => {
-    if (!currentUser) return [];
-    return contracts.filter(c => c.status === 'Activo');
-  }, [contracts, currentUser]);
-
   const columns = createColumns({ onAccept: openAcceptDialog, currentUserRole: currentUser?.role || 'Arrendatario' });
 
   const handleExport = () => {
@@ -326,7 +321,7 @@ export default function PaymentsPage() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onSave={handleSavePayment}
-        tenantContracts={userContracts}
+        tenantContracts={contracts}
       />
       
       <AlertDialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
