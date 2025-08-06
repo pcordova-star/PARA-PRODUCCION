@@ -65,7 +65,7 @@ export function TenantDashboard() {
       const contractsList = contractsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Contract));
       
       const active = contractsList.filter(c => c.status === 'Activo');
-      const pending = contractsList.find(c => c.status === 'Borrador');
+      const pending = contractsList.find(c => c.status === 'Borrador' && !c.signedByTenant);
       setActiveContracts(active);
       setPendingContract(pending || null);
 
@@ -140,7 +140,7 @@ export function TenantDashboard() {
                 <div>
                   <p className="font-semibold text-yellow-800 dark:text-yellow-200">¡Atención Requerida!</p>
                   <ul className="list-disc list-inside text-sm text-yellow-700 dark:text-yellow-300">
-                    {pendingContract && <li><Link href="/contracts" className="underline">Tienes un contrato pendiente de aprobación.</Link></li>}
+                    {pendingContract && <li><Link href="/contracts" className="underline">Tienes un contrato pendiente de firma.</Link></li>}
                     {pendingEvaluationsCount > 0 && <li><Link href="/evaluations" className="underline">Tienes {pendingEvaluationsCount} evaluación(es) por confirmar.</Link></li>}
                     {openIncidentsCount > 0 && <li><Link href="/incidents" className="underline">Hay {openIncidentsCount} incidente(s) abierto(s).</Link></li>}
                   </ul>
@@ -154,10 +154,19 @@ export function TenantDashboard() {
         <Card>
           <CardHeader><CardTitle>Acciones Rápidas</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
-            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Mis Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa tus contratos de arriendo, actuales e históricos.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><div className="relative">
+              <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/contracts"><FileText className="mr-2" /><span>Mis Contratos</span></Link></Button>
+              {pendingContract && <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">1</Badge>}
+            </div></TooltipTrigger><TooltipContent><p>Revisa tus contratos de arriendo, actuales e históricos.</p></TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Declarar Pago</span></Link></Button></TooltipTrigger><TooltipContent><p>Declara tus pagos de arriendo y otros gastos.</p></TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button></TooltipTrigger><TooltipContent><p>Comunica cualquier problema o incidente en tu propiedad.</p></TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Award className="mr-2" /><span>Mis Evaluaciones</span></Link></Button></TooltipTrigger><TooltipContent><p>Consulta las evaluaciones que has recibido de tus arrendadores.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><div className="relative">
+              <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button>
+              {openIncidentsCount > 0 && <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{openIncidentsCount}</Badge>}
+            </div></TooltipTrigger><TooltipContent><p>Comunica cualquier problema o incidente en tu propiedad.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><div className="relative">
+              <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/evaluations"><Award className="mr-2" /><span>Mis Evaluaciones</span></Link></Button>
+              {pendingEvaluationsCount > 0 && <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{pendingEvaluationsCount}</Badge>}
+            </div></TooltipTrigger><TooltipContent><p>Consulta las evaluaciones que has recibido de tus arrendadores.</p></TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa tus fechas de pago y vencimientos importantes.</p></TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/report"><Download className="mr-2" /><span>Informe</span></Link></Button></TooltipTrigger><TooltipContent><p>Descarga tu informe de comportamiento como arrendatario.</p></TooltipContent></Tooltip>
           </CardContent>

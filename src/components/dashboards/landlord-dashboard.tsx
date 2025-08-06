@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import {
   Building2, FileText, PlusCircle, Upload, Calendar, Wallet, AlertTriangle,
-  BarChart, PieChart as PieChartIcon, ArrowRight
+  BarChart, PieChart as PieChartIcon, ArrowRight, ShieldAlert
 } from "lucide-react";
 import type { Property, Contract, Payment, Incident, Evaluation, UserProfile } from "@/types";
 import { AnnouncementsSection } from "./announcements-section";
@@ -200,10 +200,24 @@ export function LandlordDashboard() {
                     </TooltipTrigger>
                     <TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent>
                   </Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button></TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild>
+                    <div className="relative">
+                      <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button>
+                      {pendingPaymentsCount > 0 && (
+                          <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{pendingPaymentsCount}</Badge>
+                      )}
+                    </div>
+                  </TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild>
+                     <div className="relative">
+                        <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/incidents"><ShieldAlert className="mr-2" /><span>Gestionar Incidentes</span></Link></Button>
+                        {openIncidentsCount > 0 && (
+                            <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{openIncidentsCount}</Badge>
+                        )}
+                    </div>
+                  </TooltipTrigger><TooltipContent><p>Revisa y responde a los incidentes reportados.</p></TooltipContent></Tooltip>
+                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Visualiza fechas importantes de pagos y contratos.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button onClick={() => setIsBulkUploadModalOpen(true)} size="lg" className="h-auto py-3"><Upload className="mr-2" /><span>Carga Masiva</span></Button></TooltipTrigger><TooltipContent><p>Añade múltiples propiedades a la vez usando un archivo.</p></TooltipContent></Tooltip>
               </CardContent>
             </Card>
             <Card className="shadow-md">
