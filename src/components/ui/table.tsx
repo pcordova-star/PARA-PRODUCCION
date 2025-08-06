@@ -2,18 +2,23 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const TableContext = React.createContext({ isWithinTable: false });
+
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
-  </div>
-))
+>(({ className, ...props }, ref) => {
+  const value = React.useMemo(() => ({ isWithinTable: true }), []);
+  return (
+    <TableContext.Provider value={value}>
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
+    </TableContext.Provider>
+  );
+});
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
@@ -96,13 +101,23 @@ TableCell.displayName = "TableCell"
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
->(({ className, ...props }, ref) => (
-  <caption
-    ref={ref}
-    className={cn("mt-4 text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const { isWithinTable } = React.useContext(TableContext);
+
+  if (!isWithinTable) {
+    console.error("Warning: TableCaption should be used within a Table component.");
+    // Optionally render nothing or a fallback to avoid breaking the layout
+    return null; 
+  }
+
+  return (
+    <caption
+      ref={ref}
+      className={cn("mt-4 text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+})
 TableCaption.displayName = "TableCaption"
 
 export {

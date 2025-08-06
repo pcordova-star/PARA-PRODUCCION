@@ -238,14 +238,16 @@ export default function TenantReportClient() {
                     <div>
                         <h4 className="font-semibold text-md mb-2 flex items-center"><ShieldAlert className="h-4 w-4 mr-2 text-red-600"/>Resumen de Incidentes</h4>
                         {incidents.length > 0 ? (
-                            <Table className="bg-white">
-                                <TableHeader><TableRow><TableHead className="h-8 text-xs">Fecha</TableHead><TableHead className="h-8 text-xs">Tipo</TableHead><TableHead className="h-8 text-xs">Reportado Por</TableHead><TableHead className="h-8 text-xs">Estado</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {incidents.map(i => (
-                                        <TableRow key={i.id}><TableCell className="py-1 text-xs">{formatDateSafe(i.createdAt)}</TableCell><TableCell className="py-1 text-xs capitalize">{i.type}</TableCell><TableCell className="py-1 text-xs">{i.createdBy === tenantProfile.uid ? 'Arrendatario' : 'Arrendador'}</TableCell><TableCell className="py-1 text-xs">{getStatusBadge(i.status)}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            <div className="relative w-full overflow-auto bg-white">
+                                <Table>
+                                    <TableHeader><TableRow><TableHead className="h-8 text-xs">Fecha</TableHead><TableHead className="h-8 text-xs">Tipo</TableHead><TableHead className="h-8 text-xs">Reportado Por</TableHead><TableHead className="h-8 text-xs">Estado</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {incidents.map(i => (
+                                            <TableRow key={i.id}><TableCell className="py-1 text-xs">{formatDateSafe(i.createdAt)}</TableCell><TableCell className="py-1 text-xs capitalize">{i.type}</TableCell><TableCell className="py-1 text-xs">{i.createdBy === tenantProfile.uid ? 'Arrendatario' : 'Arrendador'}</TableCell><TableCell className="py-1 text-xs">{getStatusBadge(i.status)}</TableCell></TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         ) : <p className="text-xs text-muted-foreground pl-4">No hay incidentes para este contrato.</p>}
                     </div>
                 </div>
