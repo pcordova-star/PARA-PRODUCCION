@@ -166,7 +166,7 @@ export function TenantDashboard() {
         <AnnouncementsSection />
       </div>
       
-      {activeContracts.length > 0 ? (
+      {activeContracts.length > 0 && (
         <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Tus Arriendos Activos</CardTitle>
@@ -194,7 +194,9 @@ export function TenantDashboard() {
               </div>
             </CardContent>
         </Card>
-      ) : !pendingContract && (
+      )}
+
+      {activeContracts.length === 0 && !pendingContract && (
         <Card className="shadow-lg">
           <CardContent className="text-center py-8">
             <Home className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
