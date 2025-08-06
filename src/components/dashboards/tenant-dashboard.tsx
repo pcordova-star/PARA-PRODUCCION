@@ -28,7 +28,7 @@ const ScoreDisplay = ({ score }: { score: number | null }) => {
       </div>
     );
   }
-  let scoreColor = score >= 4 ? "text-green-600" : score >= 3 ? "text-yellow-500" : "text-red-600";
+  let scoreColor = "text-gray-600";
   return (
     <div className="flex items-center justify-center bg-card rounded-lg aspect-square w-full h-auto max-h-[300px] p-4 shadow">
       <svg viewBox="0 0 120 120" className="w-full h-full max-w-[200px] max-h-[200px]">

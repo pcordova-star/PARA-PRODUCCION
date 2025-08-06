@@ -121,7 +121,7 @@ export function LandlordDashboard() {
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
-  const PROPERTIES_COLORS = { "Disponible": "#22c55e", "Arrendada": "#3b82f6", "Mantenimiento": "#f97316" };
+  const PROPERTIES_COLORS = { "Disponible": "#4b5563", "Arrendada": "#9ca3af", "Mantenimiento": "#d1d5db" };
 
   const contractsData = Object.entries(
     contracts.reduce((acc, contract) => {
@@ -130,7 +130,7 @@ export function LandlordDashboard() {
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
-  const CONTRACTS_COLORS = { "Activo": "#22c55e", "Borrador": "#f97316", "Finalizado": "#6b7280", "Cancelado": "#ef4444" };
+  const CONTRACTS_COLORS = { "Activo": "#4b5563", "Borrador": "#9ca3af", "Finalizado": "#d1d5db", "Cancelado": "#6b7280" };
 
   const incidentsData = Object.entries(
     incidents.reduce((acc, incident) => {
@@ -139,7 +139,7 @@ export function LandlordDashboard() {
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
-  const INCIDENTS_COLORS = { "pendiente": "#f97316", "respondido": "#3b82f6", "cerrado": "#6b7280" };
+  const INCIDENTS_COLORS = { "pendiente": "#6b7280", "respondido": "#9ca3af", "cerrado": "#d1d5db" };
 
 
   if (loading) {
