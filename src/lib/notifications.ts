@@ -1,6 +1,7 @@
 
 import { collection, addDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import type { Contract } from '@/types';
 
 interface EmailParams {
   to: string | string[];
@@ -79,6 +80,50 @@ export async function sendCreationEmailToTenant({ tenantEmail, tenantName, landl
           <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
           <p style="font-size: 0.8em; color: #aaa; text-align: center;">Enviado a través de S.A.R.A - Sistema de Administración Responsable de Arriendos</p>
         </div>
+      </div>
+    `,
+  });
+}
+
+interface LegalAssistanceRequestParams {
+  landlordName: string;
+  landlordEmail: string;
+  contract: Contract;
+}
+
+export async function sendLegalAssistanceRequestEmail({ landlordName, landlordEmail, contract }: LegalAssistanceRequestParams) {
+  const lawyerEmail = "pcordova@woken.cl";
+  const { propertyAddress, tenantName, tenantRut, id: contractId } = contract;
+
+  await sendEmail({
+    to: lawyerEmail,
+    subject: `Solicitud de Asesoría Legal - Contrato ${propertyAddress}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; border: 1px solid #ccc; padding: 20px; border-radius: 8px; max-width: 600px;">
+        <h2 style="color: #2077c2; border-bottom: 2px solid #2077c2; padding-bottom: 10px;">Solicitud de Asesoría Profesional S.A.R.A</h2>
+        <p>Estimado equipo legal,</p>
+        <p>Un usuario de la plataforma S.A.R.A ha solicitado formalmente asesoría legal para un caso de incumplimiento de contrato de arrendamiento.</p>
+        
+        <h3 style="color: #333; margin-top: 25px;">Datos del Solicitante (Arrendador)</h3>
+        <ul style="list-style-type: none; padding-left: 0; border-left: 3px solid #eee; padding-left: 15px;">
+          <li><strong>Nombre:</strong> ${landlordName}</li>
+          <li><strong>Email de Contacto:</strong> <a href="mailto:${landlordEmail}">${landlordEmail}</a></li>
+        </ul>
+
+        <h3 style="color: #333; margin-top: 25px;">Detalles del Caso</h3>
+        <ul style="list-style-type: none; padding-left: 0; border-left: 3px solid #eee; padding-left: 15px;">
+          <li><strong>ID del Contrato:</strong> ${contractId}</li>
+          <li><strong>Propiedad:</strong> ${propertyAddress}</li>
+          <li><strong>Arrendatario:</strong> ${tenantName} (RUT: ${tenantRut})</li>
+        </ul>
+        
+        <p style="margin-top: 25px;">Se solicita contactar al arrendador a la brevedad para coordinar los próximos pasos.</p>
+        <p>Se recomienda solicitar al arrendador que descargue el "Dossier Legal" desde la plataforma S.A.R.A para obtener el historial completo de pagos, incidentes y evaluaciones del contrato.</p>
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px; margin-bottom: 10px;" />
+        <p style="font-size: 0.8em; color: #aaa; text-align: center;">
+          Este es un correo automático generado por la plataforma S.A.R.A.
+        </p>
       </div>
     `,
   });

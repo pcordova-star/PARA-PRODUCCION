@@ -21,6 +21,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import html2pdf from 'html2pdf.js';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { sendLegalAssistanceRequestEmail } from '@/lib/notifications';
 
 
 export default function LegalRecoveryClient() {
@@ -29,6 +30,7 @@ export default function LegalRecoveryClient() {
   const [loading, setLoading] = useState(true);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useAuth();
 
@@ -88,12 +90,33 @@ export default function LegalRecoveryClient() {
     return properties.find(p => p.id === selectedContract.propertyId) || null;
   }, [selectedContract, properties]);
   
-  const handleSendToLawyer = () => {
-    setIsSendDialogOpen(false);
-    toast({
-      title: 'Documentación Enviada',
-      description: 'Los documentos del caso han sido enviados al abogado en convenio (simulación).',
-    });
+  const handleSendToLawyer = async () => {
+    if (!currentUser || !selectedContract) {
+        toast({ title: 'Error', description: 'No se ha seleccionado ningún contrato o usuario no válido.', variant: 'destructive' });
+        return;
+    }
+    setIsSending(true);
+    try {
+        await sendLegalAssistanceRequestEmail({
+            landlordName: currentUser.name,
+            landlordEmail: currentUser.email,
+            contract: selectedContract,
+        });
+        toast({
+            title: 'Solicitud Enviada',
+            description: 'Tu solicitud de asesoría ha sido enviada al abogado en convenio. Te contactarán pronto.',
+        });
+    } catch (error) {
+        console.error("Error sending legal request email:", error);
+        toast({
+            title: 'Error de Envío',
+            description: 'No se pudo enviar la solicitud. Por favor, inténtalo de nuevo más tarde.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSending(false);
+        setIsSendDialogOpen(false);
+    }
   };
 
   const handleDownloadPdf = () => {
@@ -199,8 +222,8 @@ export default function LegalRecoveryClient() {
           </Tabs>
 
           {/* Invisible container for PDF generation */}
-          <div className="invisible h-0 overflow-hidden absolute -z-10 w-[210mm]">
-            <div id="printable-area">
+          <div className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden opacity-0">
+            <div id="printable-area" className="w-[210mm]">
                 <ContractDisplay contract={selectedContract} property={selectedProperty} />
                 <div className="break-after-page"></div>
                 <LegalDossier contract={selectedContract} property={selectedProperty}/>
@@ -228,12 +251,15 @@ export default function LegalRecoveryClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Confirmar envío a abogado?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción enviará una copia del contrato, el historial de incidentes y el borrador de la notificación previa al abogado en convenio de S.A.R.A. Esta acción es simulada.
+              Esta acción enviará una solicitud de asesoría profesional al abogado en convenio de S.A.R.A, junto con los detalles de este caso.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSendToLawyer}>Sí, enviar</AlertDialogAction>
+            <AlertDialogCancel disabled={isSending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSendToLawyer} disabled={isSending}>
+              {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSending ? 'Enviando...' : 'Sí, enviar'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
