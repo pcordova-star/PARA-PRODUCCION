@@ -45,6 +45,16 @@ export function ContractDisplay({ contract, property }: ContractDisplayProps) {
       return "Fecha inválida";
     }
   };
+  
+  const formatSignatureDate = (dateInput?: string): string | null => {
+      if (!dateInput) return null;
+      try {
+          const date = parseISO(dateInput);
+          return format(date, "d 'de' MMMM 'de' yyyy, HH:mm:ss 'hrs.'", { locale: es });
+      } catch (e) {
+          return "Fecha inválida";
+      }
+  };
 
   const formatCurrency = (amount: number | undefined): string => {
     if (amount === undefined || amount === null) return "No especificado";
@@ -149,12 +159,18 @@ export function ContractDisplay({ contract, property }: ContractDisplayProps) {
           <div className="border-t-2 border-gray-600 w-3/4 mx-auto pt-2">
             <p className="font-semibold">{contract.landlordName || "ARRENDADOR"}</p>
             <p>RUT: {property.ownerRut || "[RUT no especificado]"}</p>
+            {contract.signedByLandlord && contract.landlordSignedAt && (
+                <p className="text-xs text-gray-500 italic mt-1">Firmado digitalmente el {formatSignatureDate(contract.landlordSignedAt)}</p>
+            )}
           </div>
         </div>
         <div className="text-center">
           <div className="border-t-2 border-gray-600 w-3/4 mx-auto pt-2">
             <p className="font-semibold">{contract.tenantName || "ARRENDATARIO"}</p>
             <p>RUT: {contract.tenantRut || "[RUT no especificado]"}</p>
+            {contract.signedByTenant && contract.tenantSignedAt && (
+                <p className="text-xs text-gray-500 italic mt-1">Firmado digitalmente el {formatSignatureDate(contract.tenantSignedAt)}</p>
+            )}
           </div>
         </div>
       </div>
