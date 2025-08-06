@@ -342,7 +342,9 @@ export default function ContractsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Contratos</h1>
           <p className="text-muted-foreground max-w-3xl">
-            Cree, envíe y administre sus contratos de arriendo. Puede optar por una 'Gestión Colaborativa', que requiere la firma digital del arrendatario para su activación, o 'Solo Administración Interna' para un registro rápido y activación inmediata sin necesidad de firma.
+             {currentUser?.role === 'Arrendador'
+              ? 'Cree, envíe y administre sus contratos de arriendo. Puede optar por una \'Gestión Colaborativa\', que requiere la firma digital del arrendatario para su activación, o \'Solo Administración Interna\' para un registro rápido y activación inmediata sin necesidad de firma.'
+              : 'Revise y gestione los contratos de arriendo que le han sido enviados. Aquí podrá firmar los contratos pendientes y consultar el historial de sus arriendos.'}
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2 flex-wrap">
