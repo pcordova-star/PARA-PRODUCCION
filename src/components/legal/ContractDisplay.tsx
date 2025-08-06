@@ -76,7 +76,7 @@ export function ContractDisplay({ contract, property }: ContractDisplayProps) {
   };
 
   return (
-    <div className="p-8 border rounded-md bg-white shadow-lg font-serif text-gray-800 text-justify mt-4 text-sm/relaxed">
+    <div className="p-8 border rounded-md bg-white shadow-lg font-serif text-gray-800 text-justify mt-4 text-sm/relaxed print:shadow-none print:border-none">
       <header className="text-center mb-8">
         <h1 className="text-2xl font-bold uppercase tracking-wider">Contrato de Arrendamiento</h1>
         <h2 className="text-lg font-semibold uppercase">{contract.propertyUsage === 'Habitacional' ? 'Para Fines Habitacionales' : 'Para Fines Comerciales'}</h2>

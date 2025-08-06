@@ -22,20 +22,6 @@ import html2pdf from 'html2pdf.js';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-function PriorNoticeSummary({ contract }: { contract: Contract }) {
-    return (
-        <div className="p-8 border rounded-md bg-white font-serif text-gray-800 text-sm/relaxed">
-            <h2 className="text-xl font-bold text-center mb-4">RESUMEN DE NOTIFICACIÓN PREVIA</h2>
-            <p className="mb-4">
-                <strong>Fecha de Generación del Borrador:</strong> {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}
-            </p>
-            <p>
-                Este documento es un extracto que confirma la generación de un borrador de notificación previa por incumplimiento de contrato para el arrendatario <strong>{contract.tenantName}</strong>, en relación con la propiedad ubicada en <strong>{contract.propertyAddress}</strong>. El contenido completo de la notificación se encuentra disponible en la plataforma.
-            </p>
-        </div>
-    );
-}
-
 
 export default function LegalRecoveryClient() {
   const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
@@ -205,7 +191,7 @@ export default function LegalRecoveryClient() {
                  <PriorNotice contract={selectedContract} />
               </TabsContent>
               <TabsContent value="legal_dossier">
-                <LegalDossier contract={selectedContract} />
+                <LegalDossier contract={selectedContract} property={selectedProperty}/>
               </TabsContent>
               <TabsContent value="contract_display">
                 <ContractDisplay contract={selectedContract} property={selectedProperty} />
@@ -213,14 +199,11 @@ export default function LegalRecoveryClient() {
           </Tabs>
 
           {/* Invisible container for PDF generation */}
-          <div className="invisible h-0 overflow-hidden">
+          <div className="invisible h-0 overflow-hidden absolute -z-10 w-[210mm]">
             <div id="printable-area">
-                <h1 className="text-3xl font-bold text-center my-4">Documentación Legal del Contrato</h1>
-                <PriorNoticeSummary contract={selectedContract} />
-                <div className="break-after-page"></div>
-                <LegalDossier contract={selectedContract} />
-                <div className="break-after-page"></div>
                 <ContractDisplay contract={selectedContract} property={selectedProperty} />
+                <div className="break-after-page"></div>
+                <LegalDossier contract={selectedContract} property={selectedProperty}/>
             </div>
           </div>
 
