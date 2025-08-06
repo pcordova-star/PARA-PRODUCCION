@@ -19,6 +19,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { Badge } from "@/components/ui/badge";
 
 const formatDate = (dateString: string) => {
     try {
@@ -91,7 +92,9 @@ export function LandlordDashboard() {
   };
 
   const activeContracts = contracts.filter(c => c.status === "Activo");
-  const pendingContractsCount = contracts.filter(c => c.status === "Borrador").length;
+  
+  const contractsToSignCount = contracts.filter(c => c.status === 'Borrador' && c.signedByTenant && !c.signedByLandlord).length;
+
   const expiringContractsCount = contracts.filter(c => {
     const endDate = moment(c.endDate);
     const now = moment();
@@ -141,6 +144,7 @@ export function LandlordDashboard() {
   ).map(([name, value]) => ({ name, value }));
   const INCIDENTS_COLORS = { "pendiente": "#6b7280", "respondido": "#9ca3af", "cerrado": "#d1d5db" };
 
+  const hasPendingActions = contractsToSignCount > 0 || pendingPaymentsCount > 0 || openIncidentsCount > 0 || expiringContractsCount > 0;
 
   if (loading) {
     return (
@@ -159,16 +163,17 @@ export function LandlordDashboard() {
       <div className="space-y-6">
         <Card className="shadow-lg border-l-4 border-primary">
           <CardHeader>
-            <CardTitle className="text-4xl font-extrabold font-headline text-accent">Panel de Arrendador</CardTitle>
+            <CardTitle className="text-4xl font-extrabold font-headline text-cyan-800">Panel de Arrendador</CardTitle>
             <CardDescription className="text-lg">Bienvenido a tu espacio de gestión centralizado en S.A.R.A.</CardDescription>
           </CardHeader>
-          {(pendingContractsCount > 0 || pendingPaymentsCount > 0 || openIncidentsCount > 0 || expiringContractsCount > 0) && (
+          {hasPendingActions && (
             <CardContent>
               <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-4">
                 <AlertTriangle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
                 <div>
                   <p className="font-bold text-lg text-yellow-700 dark:text-yellow-300">¡Atención Requerida!</p>
                   <ul className="list-disc list-inside text-sm text-yellow-600 dark:text-yellow-400">
+                    {contractsToSignCount > 0 && <li><Link href="/contracts" className="underline">Hay {contractsToSignCount} contrato(s) por firmar para activar.</Link></li>}
                     {pendingPaymentsCount > 0 && <li><Link href="/payments" className="underline">Hay {pendingPaymentsCount} pago(s) pendiente(s) de aprobación.</Link></li>}
                     {openIncidentsCount > 0 && <li><Link href="/incidents" className="underline">Hay {openIncidentsCount} incidente(s) abierto(s) que requieren tu atención.</Link></li>}
                     {expiringContractsCount > 0 && <li><Link href="/contracts" className="underline">Tienes {expiringContractsCount} contrato(s) próximos a vencer.</Link></li>}
@@ -184,7 +189,17 @@ export function LandlordDashboard() {
               <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button></TooltipTrigger><TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent></Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="relative">
+                          <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button>
+                          {contractsToSignCount > 0 && (
+                            <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{contractsToSignCount}</Badge>
+                          )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Revisa y gestiona todos tus contratos de arriendo.</p></TooltipContent>
+                  </Tooltip>
                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Revisar Pagos</span></Link></Button></TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/evaluations"><Wallet className="mr-2" /><span>Evaluar Arrendatario</span></Link></Button></TooltipTrigger><TooltipContent><p>Califica el comportamiento de tus arrendatarios al finalizar un contrato.</p></TooltipContent></Tooltip>
                   <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/calendar"><Calendar className="mr-2" /><span>Calendario</span></Link></Button></TooltipTrigger><TooltipContent><p>Visualiza fechas importantes de pagos y contratos.</p></TooltipContent></Tooltip>
