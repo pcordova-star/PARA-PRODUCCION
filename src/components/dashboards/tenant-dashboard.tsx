@@ -130,7 +130,7 @@ export function TenantDashboard() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">Panel de Arrendatario</CardTitle>
+          <CardTitle className="text-3xl font-headline text-cyan-800">Panel de Arrendatario</CardTitle>
           <CardDescription>Bienvenido a tu espacio en S.A.R.A.</CardDescription>
         </CardHeader>
         {hasPendingActions && (
