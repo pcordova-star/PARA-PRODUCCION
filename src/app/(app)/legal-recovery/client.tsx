@@ -19,6 +19,23 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import html2pdf from 'html2pdf.js';
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+function PriorNoticeSummary({ contract }: { contract: Contract }) {
+    return (
+        <div className="p-8 border rounded-md bg-white font-serif text-gray-800 text-sm/relaxed">
+            <h2 className="text-xl font-bold text-center mb-4">RESUMEN DE NOTIFICACIÓN PREVIA</h2>
+            <p className="mb-4">
+                <strong>Fecha de Generación del Borrador:</strong> {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}
+            </p>
+            <p>
+                Este documento es un extracto que confirma la generación de un borrador de notificación previa por incumplimiento de contrato para el arrendatario <strong>{contract.tenantName}</strong>, en relación con la propiedad ubicada en <strong>{contract.propertyAddress}</strong>. El contenido completo de la notificación se encuentra disponible en la plataforma.
+            </p>
+        </div>
+    );
+}
+
 
 export default function LegalRecoveryClient() {
   const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
@@ -110,9 +127,10 @@ export default function LegalRecoveryClient() {
       margin:       [0.5, 0.5, 0.5, 0.5],
       filename:     `documentacion_legal_${selectedContract.id}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
+      html2canvas:  { scale: 2, useCORS: true, logging: true },
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
+    
     html2pdf().from(element).set(opt).save();
   };
 
@@ -195,13 +213,15 @@ export default function LegalRecoveryClient() {
           </Tabs>
 
           {/* Invisible container for PDF generation */}
-          <div id="printable-area" className="absolute -left-[9999px] top-auto h-auto overflow-hidden">
-              <h1 className="text-3xl font-bold text-center my-4">Documentación Legal del Contrato</h1>
-              <PriorNotice contract={selectedContract} />
-              <div className="break-after-page"></div>
-              <LegalDossier contract={selectedContract} />
-              <div className="break-after-page"></div>
-              <ContractDisplay contract={selectedContract} property={selectedProperty} />
+          <div className="invisible h-0 overflow-hidden">
+            <div id="printable-area">
+                <h1 className="text-3xl font-bold text-center my-4">Documentación Legal del Contrato</h1>
+                <PriorNoticeSummary contract={selectedContract} />
+                <div className="break-after-page"></div>
+                <LegalDossier contract={selectedContract} />
+                <div className="break-after-page"></div>
+                <ContractDisplay contract={selectedContract} property={selectedProperty} />
+            </div>
           </div>
 
           <style jsx global>{`

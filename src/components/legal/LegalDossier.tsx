@@ -27,12 +27,13 @@ export function LegalDossier({ contract }: LegalDossierProps) {
   const { toast } = useToast();
 
   const fetchDossierData = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser || !contract) return;
     setIsLoading(true);
     try {
-      const paymentsQuery = query(collection(db, 'payments'), where('contractId', '==', contract.id), orderBy('paymentDate', 'desc'));
-      const incidentsQuery = query(collection(db, 'incidents'), where('contractId', '==', contract.id), orderBy('createdAt', 'desc'));
-      const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', '==', contract.id), orderBy('evaluationDate', 'desc'));
+      const contractId = contract.id;
+      const paymentsQuery = query(collection(db, 'payments'), where('contractId', '==', contractId), orderBy('paymentDate', 'desc'));
+      const incidentsQuery = query(collection(db, 'incidents'), where('contractId', '==', contractId), orderBy('createdAt', 'desc'));
+      const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', '==', contractId), orderBy('evaluationDate', 'desc'));
 
       const [paymentsSnapshot, incidentsSnapshot, evaluationsSnapshot] = await Promise.all([
         getDocs(paymentsQuery),
@@ -56,6 +57,7 @@ export function LegalDossier({ contract }: LegalDossierProps) {
       setIsLoading(false);
     }
   }, [contract, currentUser, toast]);
+
 
   useEffect(() => {
     fetchDossierData();
