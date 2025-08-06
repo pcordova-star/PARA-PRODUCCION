@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import html2pdf from 'html2pdf.js';
 
 export default function LegalRecoveryClient() {
   const [activeContracts, setActiveContracts] = useState<Contract[]>([]);
@@ -92,6 +93,28 @@ export default function LegalRecoveryClient() {
     });
   };
 
+  const handleDownloadPdf = () => {
+    if (!selectedContract) return;
+    const element = document.getElementById('printable-area');
+    const opt = {
+      margin:       [0.5, 0.5, 0.5, 0.5],
+      filename:     `documentacion_legal_${selectedContract.id}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    // Temporarily show all content for PDF generation
+    const elementsToShow = element?.querySelectorAll('.print-section');
+    elementsToShow?.forEach(el => (el as HTMLElement).style.display = 'block');
+
+    html2pdf().from(element).set(opt).save().then(() => {
+       // Restore original display styles
+       elementsToShow?.forEach(el => (el as HTMLElement).style.display = '');
+    });
+  };
+
+
   if (loading) {
       return <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
@@ -137,7 +160,7 @@ export default function LegalRecoveryClient() {
               </Select>
             </div>
             <div className="flex gap-2 justify-self-end self-end">
-              <Button variant="outline" onClick={() => window.print()} disabled={!selectedContract}>
+              <Button variant="outline" onClick={handleDownloadPdf} disabled={!selectedContract}>
                 <Download className="mr-2 h-4 w-4" />
                 Descargar Documentación
               </Button>
@@ -157,18 +180,18 @@ export default function LegalRecoveryClient() {
               <TabsTrigger value="legal_dossier">Dossier Legal</TabsTrigger>
               <TabsTrigger value="contract_display">Visualizar Contrato</TabsTrigger>
             </TabsList>
-            <div className="printable-area">
+            <div id="printable-area" className="printable-area">
                 <div className="print:block hidden text-center my-4">
                   <h2 className="text-2xl font-bold">Documentación Legal - Contrato {selectedContract.id}</h2>
                   <p>Generado el {new Date().toLocaleDateString('es-CL')}</p>
                 </div>
-                <TabsContent value="prior_notice" forceMount className="print:block print-section data-[state=inactive]:hidden">
+                <TabsContent value="prior_notice" className="print-section">
                    <PriorNotice contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="legal_dossier" forceMount className="print:block print-section data-[state=inactive]:hidden">
+                <TabsContent value="legal_dossier" className="print-section data-[state=inactive]:hidden print:block">
                   <LegalDossier contract={selectedContract} />
                 </TabsContent>
-                <TabsContent value="contract_display" forceMount className="print:block print-section data-[state=inactive]:hidden">
+                <TabsContent value="contract_display" className="print-section data-[state=inactive]:hidden print:block">
                   <ContractDisplay contract={selectedContract} property={selectedProperty} />
                 </TabsContent>
             </div>
