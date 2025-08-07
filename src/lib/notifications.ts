@@ -1,7 +1,7 @@
 
 import { collection, addDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Contract } from '@/types';
+import type { Contract, UserProfile } from '@/types';
 
 interface EmailParams {
   to: string | string[];
@@ -124,6 +124,33 @@ export async function sendLegalAssistanceRequestEmail({ landlordName, landlordEm
         <p style="font-size: 0.8em; color: #aaa; text-align: center;">
           Este es un correo automático generado por la plataforma S.A.R.A.
         </p>
+      </div>
+    `,
+  });
+}
+
+
+interface UpgradeRequestParams {
+  user: UserProfile;
+}
+
+export async function sendUpgradeRequestEmail({ user }: UpgradeRequestParams) {
+  const adminEmail = "sarachilev3@gmail.com";
+  const { name, email, uid } = user;
+
+  await sendEmail({
+    to: adminEmail,
+    subject: `Solicitud de Upgrade Manual - S.A.R.A`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2>Solicitud de Upgrade Manual</h2>
+        <p>El siguiente usuario ha solicitado hacer un upgrade de su cuenta para salir del período de prueba:</p>
+        <ul>
+          <li><strong>Nombre:</strong> ${name}</li>
+          <li><strong>Email:</strong> ${email}</li>
+          <li><strong>User ID:</strong> ${uid}</li>
+        </ul>
+        <p>Por favor, contacta al usuario y procesa el upgrade manualmente en la base de datos de Firebase.</p>
       </div>
     `,
   });

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserNav } from '@/components/user-nav';
@@ -18,9 +18,12 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge, AlertTriangle, Rocket } from 'lucide-react';
+import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge, AlertTriangle, Rocket, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { differenceInDays, parseISO } from 'date-fns';
+import { sendUpgradeRequestEmail } from '@/lib/notifications';
+import { useToast } from '@/hooks/use-toast';
+import type { UserProfile } from '@/types';
 
 function Logo() {
   return (
@@ -31,17 +34,45 @@ function Logo() {
   );
 }
 
-function TrialBanner({ trialEndsAt }: { trialEndsAt: string }) {
-  const endDate = parseISO(trialEndsAt);
+function TrialBanner({ user }: { user: UserProfile }) {
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
+
+  if (!user.trialEndsAt) return null;
+
+  const endDate = parseISO(user.trialEndsAt);
   const today = new Date();
   const daysLeft = differenceInDays(endDate, today);
+
+  const handleUpgradeClick = async () => {
+    setIsSending(true);
+    try {
+      await sendUpgradeRequestEmail({ user });
+      toast({
+        title: 'Solicitud Enviada',
+        description: 'Hemos recibido tu solicitud de upgrade. Nos pondremos en contacto contigo pronto.',
+      });
+    } catch (error) {
+      console.error("Error sending upgrade email:", error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo enviar la solicitud. Por favor, inténtalo de nuevo más tarde.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   if (daysLeft < 0) {
     return (
        <div className="bg-destructive text-destructive-foreground text-center p-2 text-sm font-medium flex items-center justify-center gap-4">
         <AlertTriangle className="h-5 w-5" />
         <span>Tu período de prueba ha terminado. Para continuar, por favor actualiza tu plan.</span>
-        <Button variant="secondary" size="sm" className="h-7">Hacer Upgrade</Button>
+        <Button variant="secondary" size="sm" className="h-7" onClick={handleUpgradeClick} disabled={isSending}>
+           {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+           {isSending ? 'Enviando...' : 'Hacer Upgrade'}
+        </Button>
       </div>
     )
   }
@@ -50,8 +81,9 @@ function TrialBanner({ trialEndsAt }: { trialEndsAt: string }) {
     <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-center p-2 text-sm font-medium flex items-center justify-center gap-4">
       <AlertTriangle className="h-5 w-5" />
       <span>Te quedan {daysLeft} día(s) de prueba.</span>
-      <Button variant="default" size="sm" className="h-7 bg-primary hover:bg-primary/90">
-         <Rocket className="mr-2 h-4 w-4" /> Hacer Upgrade
+      <Button variant="default" size="sm" className="h-7 bg-primary hover:bg-primary/90" onClick={handleUpgradeClick} disabled={isSending}>
+         {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+         {isSending ? 'Enviando...' : 'Hacer Upgrade'}
       </Button>
     </div>
   )
@@ -134,8 +166,8 @@ export default function AppLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="bg-background">
-          {currentUser.subscriptionStatus === 'trialing' && currentUser.trialEndsAt && (
-              <TrialBanner trialEndsAt={currentUser.trialEndsAt} />
+          {currentUser.subscriptionStatus === 'trialing' && (
+              <TrialBanner user={currentUser} />
           )}
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:justify-end">
             <SidebarTrigger className="sm:hidden" />
