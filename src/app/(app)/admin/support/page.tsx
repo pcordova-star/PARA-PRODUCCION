@@ -32,11 +32,15 @@ function SupportTickets() {
     try {
       const q = query(collection(db, 'tickets'), orderBy('timestamp', 'desc'));
       const querySnapshot = await getDocs(q);
-      const allTickets = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: (doc.data().timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-      } as SupportTicket));
+      const allTickets = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: (data.timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+          respondedAt: (data.respondedAt as Timestamp)?.toDate().toISOString(),
+        } as SupportTicket;
+      });
       setTickets(allTickets);
     } catch (error) {
       console.error("Error fetching tickets: ", error);
@@ -112,7 +116,7 @@ function SupportTickets() {
                         <CheckCircle className="h-4 w-4" />
                         <AlertTitle>Tu Respuesta</AlertTitle>
                         <AlertDescription>
-                          <p className="font-semibold text-xs text-muted-foreground mb-1">Respondido el {ticket.respondedAt ? new Date((ticket.respondedAt as any).toDate()).toLocaleString('es-CL') : 'N/A'}</p>
+                          <p className="font-semibold text-xs text-muted-foreground mb-1">Respondido el {ticket.respondedAt ? new Date(ticket.respondedAt).toLocaleString('es-CL') : 'N/A'}</p>
                           {ticket.response}
                         </AlertDescription>
                       </Alert>

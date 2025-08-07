@@ -29,11 +29,15 @@ export default function SupportPage() {
       // Query without ordering to avoid composite index requirement
       const q = query(collection(db, 'tickets'), where('userId', '==', currentUser.uid));
       const querySnapshot = await getDocs(q);
-      const userTickets = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: (doc.data().timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-      } as SupportTicket));
+      const userTickets = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: (data.timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+          respondedAt: (data.respondedAt as Timestamp)?.toDate().toISOString(),
+        } as SupportTicket;
+      });
       
       // Sort tickets on the client-side
       userTickets.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
