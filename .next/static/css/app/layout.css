@@ -683,6 +683,9 @@ video {
 .left-6 {
   left: 1.5rem;
 }
+.left-\[-9999px\] {
+  left: -9999px;
+}
 .left-\[50\%\] {
   left: 50%;
 }
@@ -722,20 +725,11 @@ video {
 .top-6 {
   top: 1.5rem;
 }
-.top-\[50\%\] {
-  top: 50%;
-}
-.-left-\[9999px\] {
-  left: -9999px;
-}
-.top-auto {
-  top: auto;
-}
-.left-\[-9999px\] {
-  left: -9999px;
-}
 .top-\[-9999px\] {
   top: -9999px;
+}
+.top-\[50\%\] {
+  top: 50%;
 }
 .z-10 {
   z-index: 10;
@@ -748,9 +742,6 @@ video {
 }
 .z-\[100\] {
   z-index: 100;
-}
-.-z-10 {
-  z-index: -10;
 }
 .-mx-1 {
   margin-left: -0.25rem;
@@ -780,6 +771,10 @@ video {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
+.my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
 .my-6 {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -787,10 +782,6 @@ video {
 .my-8 {
   margin-top: 2rem;
   margin-bottom: 2rem;
-}
-.my-4 {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
 }
 .-ml-4 {
   margin-left: -1rem;
@@ -904,6 +895,9 @@ video {
   width: 1rem;
   height: 1rem;
 }
+.h-0 {
+  height: 0px;
+}
 .h-10 {
   height: 2.5rem;
 }
@@ -994,9 +988,6 @@ video {
 .h-svh {
   height: 100svh;
 }
-.h-0 {
-  height: 0px;
-}
 .max-h-20 {
   max-height: 5rem;
 }
@@ -1038,6 +1029,9 @@ video {
 }
 .w-1 {
   width: 0.25rem;
+}
+.w-1\/4 {
+  width: 25%;
 }
 .w-10 {
   width: 2.5rem;
@@ -1102,17 +1096,17 @@ video {
 .w-\[--sidebar-width\] {
   width: var(--sidebar-width);
 }
+.w-\[10\%\] {
+  width: 10%;
+}
+.w-\[15\%\] {
+  width: 15%;
+}
 .w-\[180px\] {
   width: 180px;
 }
 .w-\[1px\] {
   width: 1px;
-}
-.w-auto {
-  width: auto;
-}
-.w-full {
-  width: 100%;
 }
 .w-\[210mm\] {
   width: 210mm;
@@ -1120,20 +1114,14 @@ video {
 .w-\[40\%\] {
   width: 40%;
 }
+.w-auto {
+  width: auto;
+}
 .w-fit {
   width: fit-content;
 }
-.w-1\/4 {
-  width: 25%;
-}
-.w-1\/6 {
-  width: 16.666667%;
-}
-.w-\[10\%\] {
-  width: 10%;
-}
-.w-\[15\%\] {
-  width: 15%;
+.w-full {
+  width: 100%;
 }
 .min-w-0 {
   min-width: 0px;
@@ -1159,6 +1147,9 @@ video {
 .max-w-4xl {
   max-width: 56rem;
 }
+.max-w-7xl {
+  max-width: 80rem;
+}
 .max-w-\[--skeleton-width\] {
   max-width: var(--skeleton-width);
 }
@@ -1179,12 +1170,6 @@ video {
 }
 .max-w-xs {
   max-width: 20rem;
-}
-.max-w-6xl {
-  max-width: 72rem;
-}
-.max-w-7xl {
-  max-width: 80rem;
 }
 .flex-1 {
   flex: 1 1 0%;
@@ -1277,11 +1262,11 @@ video {
 .list-inside {
   list-style-position: inside;
 }
-.list-disc {
-  list-style-type: disc;
-}
 .list-decimal {
   list-style-type: decimal;
+}
+.list-disc {
+  list-style-type: disc;
 }
 .break-inside-avoid-page {
   break-inside: avoid-page;
@@ -1560,6 +1545,10 @@ video {
   --tw-border-opacity: 1;
   border-color: rgb(187 247 208 / var(--tw-border-opacity, 1));
 }
+.border-green-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));
+}
 .border-input {
   border-color: hsl(var(--input));
 }
@@ -1586,10 +1575,6 @@ video {
 .border-yellow-200 {
   --tw-border-opacity: 1;
   border-color: rgb(254 240 138 / var(--tw-border-opacity, 1));
-}
-.border-green-500 {
-  --tw-border-opacity: 1;
-  border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));
 }
 .border-l-transparent {
   border-left-color: transparent;
@@ -1675,6 +1660,9 @@ video {
 .bg-primary {
   background-color: hsl(var(--primary));
 }
+.bg-primary\/10 {
+  background-color: hsl(var(--primary) / 0.1);
+}
 .bg-red-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(254 226 226 / var(--tw-bg-opacity, 1));
@@ -1702,9 +1690,6 @@ video {
 .bg-yellow-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(254 252 232 / var(--tw-bg-opacity, 1));
-}
-.bg-primary\/10 {
-  background-color: hsl(var(--primary) / 0.1);
 }
 .fill-current {
   fill: currentColor;
@@ -1762,6 +1747,10 @@ video {
   padding-left: 1rem;
   padding-right: 1rem;
 }
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
 .px-8 {
   padding-left: 2rem;
   padding-right: 2rem;
@@ -1809,10 +1798,6 @@ video {
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
-}
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
 }
 .pb-1 {
   padding-bottom: 0.25rem;
@@ -3381,10 +3366,6 @@ body {
 
   .print\:mt-8 {
     margin-top: 2rem;
-  }
-
-  .print\:hidden {
-    display: none;
   }
 
   .print\:border {
