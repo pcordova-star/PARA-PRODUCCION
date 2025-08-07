@@ -1,7 +1,7 @@
+
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import serviceAccount from '../../sara-produccion-c10b5-firebase-adminsdk-fbsvc-b5d82a042e.json';
 
 let app: App;
 let adminDb: Firestore;
@@ -9,6 +9,13 @@ let adminAuth: Auth;
 
 try {
   if (!getApps().length) {
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountKey) {
+      throw new Error('Firebase Admin SDK service account key is not set in environment variables.');
+    }
+    
+    const serviceAccount = JSON.parse(serviceAccountKey);
+
     app = initializeApp({
       credential: cert(serviceAccount),
     });
@@ -17,10 +24,9 @@ try {
   }
   adminDb = getFirestore(app);
   adminAuth = getAuth(app);
-} catch (error) {
-  console.error('Failed to initialize Firebase Admin SDK:', error);
-  throw error;
+} catch (error: any) {
+  console.error('Failed to initialize Firebase Admin SDK:', error.message);
+  throw new Error('Failed to initialize Firebase Admin SDK. Please check your service account credentials.');
 }
-
 
 export { adminDb, adminAuth };
