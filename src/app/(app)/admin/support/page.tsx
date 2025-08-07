@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, startOfMonth, endOfMonth, differenceInCalendarDays, addMonths, startOfDay } from 'date-fns';
 
 function SupportTickets() {
   const { currentUser } = useAuth();
@@ -187,6 +187,45 @@ function UserManagement() {
     if (daysLeft <= 7) return { text: `${daysLeft} días`, variant: 'destructive' as const };
     return { text: `${daysLeft} días`, variant: 'default' as const };
   };
+  
+  const calculateServiceCost = (user: UserProfile, userProperties: Property[]) => {
+    if (user.role !== 'Arrendador' || userProperties.length === 0) {
+      return 'N/A';
+    }
+
+    const today = startOfDay(new Date());
+    const costPerProperty = 2500;
+    const baseMonthlyCost = userProperties.length * costPerProperty;
+
+    // Default to a 30-day cycle for simplicity if no specific end date is available
+    let daysInCycle = 30;
+    let daysRemaining = daysInCycle;
+
+    if (user.trialEndsAt) {
+      const trialEndDate = startOfDay(parseISO(user.trialEndsAt));
+      if (trialEndDate < today) {
+        return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(baseMonthlyCost);
+      }
+      
+      const nextMonthFromToday = addMonths(today, 1);
+      const cycleStart = startOfMonth(today);
+      const cycleEnd = endOfMonth(today);
+      
+      daysInCycle = differenceInCalendarDays(cycleEnd, cycleStart) + 1;
+      
+      if (trialEndDate <= cycleEnd) {
+        // Trial ends within the current calendar month cycle
+        const activeDays = differenceInCalendarDays(trialEndDate, today) + 1;
+        if (activeDays <= 0) return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(0);
+        const dailyRate = baseMonthlyCost / daysInCycle;
+        const proratedCost = dailyRate * activeDays;
+        return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Math.round(proratedCost));
+      }
+    }
+    
+    // Default full monthly cost if not in a special prorated case
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(baseMonthlyCost);
+  };
 
   return (
     <Card>
@@ -203,6 +242,7 @@ function UserManagement() {
               const userProperties = user.role === 'Arrendador' ? properties.filter(p => p.ownerUid === user.uid) : [];
               const userContracts = contracts.filter(c => c.landlordId === user.uid || c.tenantId === user.uid);
               const trialInfo = getTrialDaysLeft(user.trialEndsAt);
+              const serviceCost = calculateServiceCost(user, userProperties);
 
               return (
                 <AccordionItem key={user.uid} value={user.uid} className="border rounded-lg">
@@ -211,9 +251,10 @@ function UserManagement() {
                         <TableRow className="border-none hover:bg-transparent">
                           <TableCell className="p-0 font-semibold w-1/4">{user.name}</TableCell>
                           <TableCell className="p-0 text-muted-foreground w-1/4">{user.email}</TableCell>
-                          <TableCell className="p-0 w-1/6"><Badge variant={user.role === 'Arrendador' ? 'outline' : 'secondary'}>{user.role}</Badge></TableCell>
-                          <TableCell className="p-0 w-1/6 capitalize">{user.subscriptionStatus || 'N/A'}</TableCell>
-                          <TableCell className="p-0 w-1/6 text-right"><Badge variant={trialInfo.variant}>{trialInfo.text}</Badge></TableCell>
+                          <TableCell className="p-0 w-[10%] text-center"><Badge variant={user.role === 'Arrendador' ? 'outline' : 'secondary'}>{user.role}</Badge></TableCell>
+                          <TableCell className="p-0 w-[10%] text-center">{userProperties.length}</TableCell>
+                           <TableCell className="p-0 w-[15%] text-center font-medium">{serviceCost}</TableCell>
+                          <TableCell className="p-0 w-[15%] text-right"><Badge variant={trialInfo.variant}>{trialInfo.text}</Badge></TableCell>
                         </TableRow>
                      </Table>
                   </AccordionTrigger>
@@ -267,16 +308,16 @@ export default function AdminSupportPage() {
     <div className="container mx-auto max-w-7xl space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Panel de Administración</h1>
       
-      <Tabs defaultValue="tickets">
+      <Tabs defaultValue="users">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="tickets">Tickets de Soporte</TabsTrigger>
           <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
+          <TabsTrigger value="tickets">Tickets de Soporte</TabsTrigger>
         </TabsList>
-        <TabsContent value="tickets" className="mt-4">
-          <SupportTickets />
-        </TabsContent>
         <TabsContent value="users" className="mt-4">
           <UserManagement />
+        </TabsContent>
+        <TabsContent value="tickets" className="mt-4">
+          <SupportTickets />
         </TabsContent>
       </Tabs>
     </div>
