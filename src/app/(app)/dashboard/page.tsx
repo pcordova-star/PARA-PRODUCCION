@@ -1,17 +1,26 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LandlordDashboard } from '@/components/dashboards/landlord-dashboard';
 import { TenantDashboard } from '@/components/dashboards/tenant-dashboard';
 import type { UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
   const { currentUser, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading || !currentUser) {
+  useEffect(() => {
+    if (!loading && currentUser?.role === 'Administrador') {
+      router.push('/admin/support');
+    }
+  }, [currentUser, loading, router]);
+
+  if (loading || !currentUser || currentUser.role === 'Administrador') {
     return (
         <div className="space-y-6">
             <Skeleton className="h-24 w-full" />
