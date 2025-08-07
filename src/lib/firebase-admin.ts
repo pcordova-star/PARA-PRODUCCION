@@ -9,9 +9,10 @@ let adminAuth: Auth;
 
 try {
   if (!getApps().length) {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    // Read from the new, non-reserved environment variable name
+    const serviceAccountKey = process.env.SARA_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountKey) {
-      throw new Error('Firebase Admin SDK service account key is not set in environment variables.');
+      throw new Error('Firebase Admin SDK service account key is not set in environment variables (SARA_SERVICE_ACCOUNT_KEY).');
     }
     
     const serviceAccount = JSON.parse(serviceAccountKey);
