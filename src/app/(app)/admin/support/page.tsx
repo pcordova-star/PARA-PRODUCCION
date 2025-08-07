@@ -9,7 +9,7 @@ import type { SupportTicket } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Send, AlertCircle } from 'lucide-react';
+import { Loader2, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -122,7 +122,7 @@ export default function AdminSupportPage() {
                               <CheckCircle className="h-4 w-4" />
                               <AlertTitle>Tu Respuesta</AlertTitle>
                               <AlertDescription>
-                                <p className="font-semibold text-xs text-muted-foreground mb-1">Respondido el {ticket.respondedAt ? new Date(ticket.respondedAt).toLocaleString('es-CL') : 'N/A'}</p>
+                                <p className="font-semibold text-xs text-muted-foreground mb-1">Respondido el {ticket.respondedAt ? new Date((ticket.respondedAt as any).toDate()).toLocaleString('es-CL') : 'N/A'}</p>
                                 {ticket.response}
                               </AlertDescription>
                             </Alert>
