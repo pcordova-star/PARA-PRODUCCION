@@ -2,6 +2,7 @@
 
 
 
+
 export interface Property {
   id: string;
   code: string;
@@ -61,7 +62,7 @@ export interface Contract {
   landlordSignedAt?: string;
 }
 
-export type UserRole = "Arrendador" | "Arrendatario";
+export type UserRole = "Arrendador" | "Arrendatario" | "Administrador";
 
 export interface PendingContract {
   contractId: string;
@@ -234,4 +235,17 @@ export interface TenantCertificateData {
   globalScore: number | null;
   generationDate: string;
   certificateId: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  message: string;
+  timestamp: string; // ISO Date String
+  status: 'abierto' | 'respondido' | 'cerrado';
+  response?: string;
+  respondedAt?: string; // ISO Date String
+  respondedBy?: string; // Admin User Name
 }

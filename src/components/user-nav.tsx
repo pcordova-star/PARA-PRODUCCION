@@ -12,12 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings, User, LifeBuoy, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { deleteSessionCookie } from '@/app/actions';
+import Link from 'next/link';
 
 export function UserNav() {
   const { currentUser } = useAuth();
@@ -62,6 +63,20 @@ export function UserNav() {
             <User className="mr-2 h-4 w-4" />
             <span>Perfil</span>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/support">
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                <span>Soporte</span>
+            </Link>
+          </DropdownMenuItem>
+           {currentUser.role === 'Administrador' && (
+             <DropdownMenuItem asChild>
+                <Link href="/admin/support">
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    <span>Admin Soporte</span>
+                </Link>
+            </DropdownMenuItem>
+           )}
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
             <span>Configuración</span>
