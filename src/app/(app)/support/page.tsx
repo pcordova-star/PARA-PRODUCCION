@@ -26,13 +26,18 @@ export default function SupportPage() {
     if (!currentUser) return;
     setIsLoading(true);
     try {
-      const q = query(collection(db, 'tickets'), where('userId', '==', currentUser.uid), orderBy('timestamp', 'desc'));
+      // Query without ordering to avoid composite index requirement
+      const q = query(collection(db, 'tickets'), where('userId', '==', currentUser.uid));
       const querySnapshot = await getDocs(q);
       const userTickets = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         timestamp: (doc.data().timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
       } as SupportTicket));
+      
+      // Sort tickets on the client-side
+      userTickets.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
       setTickets(userTickets);
     } catch (error) {
       console.error("Error fetching tickets: ", error);
