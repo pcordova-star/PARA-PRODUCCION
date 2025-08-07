@@ -9,15 +9,15 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertCircle, Shield } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { createSessionCookie } from '@/app/actions';
-import { Separator } from '@/components/ui/separator';
+import { doc, getDoc } from 'firebase/firestore';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { currentUser, loading } = useAuth();
@@ -27,7 +27,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && currentUser) {
+    if (!loading && currentUser?.role === 'Administrador') {
       router.push('/dashboard');
     }
   }, [currentUser, loading, router]);
@@ -39,29 +39,43 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
+      const user = userCredential.user;
+
+      // Verify user role
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists() || userDocSnap.data().role !== 'Administrador') {
+        setError('Acceso denegado. Esta cuenta no tiene privilegios de administrador.');
+        await auth.signOut(); // Sign out the non-admin user
+        setIsLoading(false);
+        return;
+      }
+      
+      const idToken = await user.getIdToken();
       await createSessionCookie(idToken);
       
-      toast({ title: 'Inicio de sesión exitoso', description: 'Bienvenido de nuevo.' });
-      // The useEffect hook will handle the redirect
+      toast({ title: 'Inicio de sesión exitoso', description: 'Bienvenido, Administrador.' });
+      router.push('/dashboard'); 
+
     } catch (error: any) {
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError('El correo electrónico o la contraseña son incorrectos. Por favor, inténtalo de nuevo.');
+        setError('El correo electrónico o la contraseña son incorrectos.');
       } else {
         setError('Ocurrió un error inesperado al intentar iniciar sesión.');
       }
-      console.error("Login error:", error);
+      console.error("Admin login error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (loading || (!loading && currentUser)) {
+  if (loading || (!loading && currentUser?.role === 'Administrador')) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-2">
            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-           <p className="text-muted-foreground">Verificando sesión...</p>
+           <p className="text-muted-foreground">Verificando sesión de administrador...</p>
         </div>
       </div>
     );
@@ -71,14 +85,17 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
        <div className="absolute top-6 left-6">
         <Link href="/" className="flex items-center gap-2 text-primary" prefetch={false}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
             <span className="text-xl font-bold">S.A.R.A</span>
         </Link>
       </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
-          <CardDescription>Ingrese a su cuenta para administrar sus arriendos.</CardDescription>
+            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
+                <Shield className="h-8 w-8 text-primary"/>
+            </div>
+          <CardTitle className="text-2xl mt-2">Portal de Administración</CardTitle>
+          <CardDescription>Inicia sesión con tu cuenta de administrador.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -93,7 +110,7 @@ export default function LoginPage() {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="usuario@ejemplo.com" 
+                placeholder="admin@sara-app.com" 
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -101,12 +118,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Contraseña</Label>
-                    <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                        ¿Olvidaste tu contraseña?
-                    </Link>
-                </div>
+              <Label htmlFor="password">Contraseña</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -120,25 +132,21 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Ingresar
+              Ingresar como Administrador
             </Button>
             <p className="text-sm text-muted-foreground">
-              ¿No tiene una cuenta?{' '}
-              <Link href="/signup" className="font-medium text-primary hover:underline">
-                Registrarse
+              ¿No eres administrador?{' '}
+              <Link href="/login" className="font-medium text-primary hover:underline">
+                Volver al inicio de sesión
+              </Link>
+            </p>
+             <p className="text-xs text-muted-foreground">
+              <Link href="/admin/signup" className="font-medium text-primary hover:underline">
+                Crear cuenta de administrador
               </Link>
             </p>
           </CardFooter>
         </form>
-         <Separator className="my-4" />
-          <div className="px-6 pb-4 text-center">
-             <Button variant="outline" className="w-full" asChild>
-                <Link href="/admin/login">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Acceso Administradores
-                </Link>
-             </Button>
-          </div>
       </Card>
     </div>
   );
