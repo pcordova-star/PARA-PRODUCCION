@@ -1,6 +1,7 @@
 
 
 
+
 export interface Property {
   id: string;
   code: string;
@@ -78,6 +79,8 @@ export interface UserProfile {
   createdAt?: string;
   mobilePhone?: string;
   pendingContracts?: PendingContract[];
+  subscriptionStatus?: 'trialing' | 'active' | 'expired' | 'canceled';
+  trialEndsAt?: string; // ISO Date String
 }
 
 export type PaymentType = "arriendo" | "gastos comunes" | "servicios" | "multas" | "garantía" | "otro";

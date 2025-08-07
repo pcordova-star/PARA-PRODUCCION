@@ -18,17 +18,46 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge } from 'lucide-react';
-
+import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge, AlertTriangle, Rocket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { differenceInDays, parseISO } from 'date-fns';
 
 function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2" prefetch={false}>
-       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
        <h1 className="text-xl font-bold text-foreground">S.A.R.A</h1>
     </Link>
   );
 }
+
+function TrialBanner({ trialEndsAt }: { trialEndsAt: string }) {
+  const endDate = parseISO(trialEndsAt);
+  const today = new Date();
+  const daysLeft = differenceInDays(endDate, today);
+
+  if (daysLeft < 0) {
+    return (
+       <div className="bg-destructive text-destructive-foreground text-center p-2 text-sm font-medium flex items-center justify-center gap-4">
+        <AlertTriangle className="h-5 w-5" />
+        <span>Tu período de prueba ha terminado. Para continuar, por favor actualiza tu plan.</span>
+        <Button variant="secondary" size="sm" className="h-7">Hacer Upgrade</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-yellow-100 border-b border-yellow-200 text-yellow-800 text-center p-2 text-sm font-medium flex items-center justify-center gap-4">
+      <AlertTriangle className="h-5 w-5" />
+      <span>Te quedan {daysLeft} día(s) de prueba.</span>
+      <Button variant="default" size="sm" className="h-7 bg-primary hover:bg-primary/90">
+         <Rocket className="mr-2 h-4 w-4" /> Hacer Upgrade
+      </Button>
+    </div>
+  )
+
+}
+
 
 export default function AppLayout({
   children,
@@ -105,6 +134,9 @@ export default function AppLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="bg-background">
+          {currentUser.subscriptionStatus === 'trialing' && currentUser.trialEndsAt && (
+              <TrialBanner trialEndsAt={currentUser.trialEndsAt} />
+          )}
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:justify-end">
             <SidebarTrigger className="sm:hidden" />
             <UserNav />

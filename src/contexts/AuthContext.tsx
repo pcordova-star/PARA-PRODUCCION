@@ -1,9 +1,10 @@
+
 // src/contexts/AuthContext.tsx
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile, UserRole } from '@/types';
 
@@ -28,16 +29,40 @@ interface AuthProviderProps {
 
 const updateUserProfileInFirestore = async (uid: string, email: string, role: UserRole, name: string, mobilePhone?: string) => {
     const userDocRef = doc(db, 'users', uid);
-    const userData: Omit<UserProfile, 'uid'> = {
-      name,
-      email,
-      role,
-      createdAt: new Date().toISOString(),
-    };
-    if (mobilePhone) {
-      userData.mobilePhone = mobilePhone;
+    
+    // Check if the document already exists to avoid overwriting trial data
+    const docSnap = await getDoc(userDocRef);
+
+    if (!docSnap.exists()) {
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 30);
+
+        const userData: Omit<UserProfile, 'uid'> = {
+          name,
+          email,
+          role,
+          createdAt: new Date().toISOString(),
+          subscriptionStatus: 'trialing',
+          trialEndsAt: trialEndDate.toISOString(),
+        };
+        if (mobilePhone) {
+          userData.mobilePhone = mobilePhone;
+        }
+        await setDoc(userDocRef, userData);
+    } else {
+        // If user exists, only update specified fields, don't touch subscription data
+        const existingData = docSnap.data();
+        const userData: Partial<UserProfile> = {
+          ...existingData, // carry over existing data
+          name,
+          email,
+          role,
+        };
+         if (mobilePhone) {
+          userData.mobilePhone = mobilePhone;
+        }
+        await setDoc(userDocRef, userData, { merge: true });
     }
-    await setDoc(userDocRef, userData);
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
