@@ -18,7 +18,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge, AlertTriangle, Rocket, Loader2 } from 'lucide-react';
+import { Home, FileText, CreditCard, ShieldAlert, Scale, LayoutDashboard, LogOut, ClipboardCheck, Calendar, FileBadge, AlertTriangle, Rocket, Loader2, LifeBuoy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { differenceInDays, parseISO } from 'date-fns';
 import { sendUpgradeRequestEmail } from '@/lib/notifications';
@@ -112,6 +112,7 @@ export default function AppLayout({
     { href: "/incidents", label: "Incidentes", icon: <ShieldAlert /> },
     { href: "/evaluations", label: "Evaluaciones", icon: <ClipboardCheck /> },
     { href: "/calendar", label: "Calendario", icon: <Calendar /> },
+    { href: "/support", label: "Soporte", icon: <LifeBuoy /> },
   ];
 
   const landlordItems = [
