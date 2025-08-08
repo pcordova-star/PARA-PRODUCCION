@@ -14,7 +14,7 @@ import {
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <Image src="/images/logo.png" alt="S.A.R.A Logo" width={32} height={32} />
+      <Image src="/images/logo2.png" alt="S.A.R.A Logo" width={32} height={32} />
       <span className="text-2xl font-bold">S.A.R.A</span>
     </div>
   );
@@ -42,32 +42,32 @@ const fadeIn = (direction = 'up', delay = 0) => ({
 const HomePage = () => {
   const features = [
     {
-      icon: "/images/icon-contratos.svg",
+      icon: "/images/icon-contratos.png",
       title: 'Contratos Digitales Seguros',
       description: 'Crea, envía y firma contratos de arriendo con validez legal de forma 100% digital y segura.',
     },
     {
-      icon: "/images/icon-notificaciones.svg",
+      icon: "/images/icon-notificaciones.png",
       title: 'Notificaciones Inteligentes',
       description: 'Recordatorios automáticos de fechas de pago, reajustes de IPC y vencimiento de contratos.',
     },
     {
-      icon: "/images/icon-incidentes.svg",
+      icon: "/images/icon-incidentes.png",
       title: 'Gestión de Incidentes',
       description: 'Canaliza y documenta todas las solicitudes e incidentes, desde reparaciones hasta problemas de convivencia.',
     },
     {
-      icon: "/images/icon-certificado.svg",
+      icon: "/images/icon.informe.png",
       title: 'Certificado de Arrendatario',
       description: 'Genera un historial de comportamiento y pagos para facilitar futuras postulaciones a arriendos.',
     },
     {
-      icon: "/images/icon-onboarding.svg",
+      icon: "/images/icon-onboarding.png",
       title: 'Onboarding Asistido',
       description: 'Carga masiva de propiedades y contratos existentes para una transición sin complicaciones a S.A.R.A.',
     },
     {
-      icon: "/images/icon-dossier.svg",
+      icon: "/images/icon-dossier.png",
       title: 'Dossier Legal Automatizado',
       description: 'Con un solo clic, compila todo el historial (pagos, incidentes, etc.) en un documento listo para procesos legales.',
     },
@@ -243,7 +243,7 @@ const HomePage = () => {
                     variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
                     className="relative h-96"
                 >
-                     <Image src="/images/legal-docs.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" />
+                     <Image src="/images/ley-devuelveme-mi-casa.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" />
                 </motion.div>
             </div>
         </section>
