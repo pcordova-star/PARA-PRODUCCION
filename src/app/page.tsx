@@ -15,8 +15,8 @@ import { Progress } from '@/components/ui/progress';
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
-      <span className="text-xl font-bold">S.A.R.A</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+      <span className="text-lg font-bold">S.A.R.A</span>
     </div>
   );
 }
@@ -254,11 +254,12 @@ const HomePage = () => {
               variants={fadeIn('up', 0.4)}
               initial="initial"
               animate="animate"
-              className="mt-8 flex justify-center md:justify-start gap-4"
+              className="mt-8 flex flex-col items-center justify-center gap-2 md:items-start md:justify-start"
             >
               <Button size="lg" asChild>
                 <Link href="/signup">Empezar Ahora</Link>
               </Button>
+              <p className="text-xs text-muted-foreground">No se requiere tarjeta de crédito.</p>
             </motion.div>
           </div>
           <motion.div 
@@ -448,27 +449,14 @@ const HomePage = () => {
 
         <section id="ley" className="py-20 md:py-32 bg-card">
             <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-                <motion.div
+                 <motion.div 
                     variants={fadeIn('right')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                >
-                    <h2 className="font-headline text-3xl font-bold md:text-4xl">Prepárate para la Ley <span className="text-primary">"Devuélveme mi casa"</span></h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        La ley exige un registro formal y evidencia clara de los incumplimientos. S.A.R.A genera automáticamente un dossier legal con todo el historial del arriendo: pagos, comunicaciones, multas e incidentes. 
-                    </p>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Con nuestra plataforma, tendrás la documentación que necesitas para iniciar un proceso de restitución de forma rápida y efectiva, ahorrándote tiempo y dinero.
-                    </p>
-                     <Button size="lg" asChild className="mt-8">
-                        <Link href="/signup">Protégete Ahora</Link>
-                    </Button>
-                </motion.div>
-                <motion.div 
-                    variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                    className="order-2 md:order-1"
                 >
                    <Card className="p-6 shadow-2xl w-full max-w-md mx-auto">
                         <CardHeader className="text-center">
                             <FileBadge className="mx-auto h-12 w-12 text-primary" />
-                            <CardTitle className="text-2xl mt-4">Compilación de Dossier Legal</CardTitle>
+                            <CardTitle className="text-2xl mt-4">Dossier Legal Automatizado</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 text-left">
                             <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.2}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Contrato de Arriendo.</motion.div>
@@ -485,6 +473,21 @@ const HomePage = () => {
                              </motion.div>
                         </div>
                    </Card>
+                </motion.div>
+                 <motion.div
+                    variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                    className="order-1 md:order-2"
+                >
+                    <h2 className="font-headline text-3xl font-bold md:text-4xl">Prepárate para la Ley <span className="text-primary">"Devuélveme mi casa"</span></h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        La ley exige un registro formal y evidencia clara de los incumplimientos. S.A.R.A genera automáticamente un dossier legal con todo el historial del arriendo: pagos, comunicaciones, multas e incidentes. 
+                    </p>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Con nuestra plataforma, tendrás la documentación que necesitas para iniciar un proceso de restitución de forma rápida y efectiva, ahorrándote tiempo y dinero.
+                    </p>
+                     <Button size="lg" asChild className="mt-8">
+                        <Link href="/signup">Protégete Ahora</Link>
+                    </Button>
                 </motion.div>
             </div>
         </section>
