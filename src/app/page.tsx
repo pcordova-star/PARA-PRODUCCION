@@ -135,7 +135,7 @@ const HomePage = () => {
             animate="animate"
             className="relative h-64 md:h-96 w-full"
           >
-            <Image src="/images/hero-image.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" />
+            <Image src="/images/logo2.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" />
           </motion.div>
         </section>
         
