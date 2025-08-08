@@ -1233,6 +1233,19 @@ video {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+@keyframes mockupAnimation {
+
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-mockupAnimation {
+  animation: mockupAnimation 3s ease-in-out infinite;
+}
 .cursor-default {
   cursor: default;
 }

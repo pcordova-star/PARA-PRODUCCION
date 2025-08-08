@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail 
+    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail, FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket
 } from 'lucide-react';
 
 function Logo() {
@@ -42,32 +42,32 @@ const fadeIn = (direction = 'up', delay = 0) => ({
 const HomePage = () => {
   const features = [
     {
-      icon: "/images/ico-contratos.png",
+      icon: <FileText className="h-10 w-10 text-primary" />,
       title: 'Contratos Digitales Seguros',
       description: 'Crea y firma contratos de arriendo con validez legal de forma 100% digital, ahorrando tiempo y papel.',
     },
     {
-      isImageOnly: true,
-      imageSrc: "/images/icorecordatorios.png",
+      icon: <Bell className="h-10 w-10 text-primary" />,
       title: 'Notificaciones Inteligentes',
+      description: 'Recordatorios automáticos de fechas de pago y vencimientos para mantener todo al día sin esfuerzo.',
     },
     {
-      icon: "/images/ico.incidentes.png",
+      icon: <ShieldAlert className="h-10 w-10 text-primary" />,
       title: 'Gestión de Incidentes',
       description: 'Canaliza y documenta todas las solicitudes e incidentes, desde reparaciones hasta problemas de convivencia.',
     },
     {
-      icon: "/images/icon.informe.png",
+      icon: <FileBadge className="h-10 w-10 text-primary" />,
       title: 'Certificado de Arrendatario',
       description: 'Genera un historial de comportamiento y pagos para facilitar futuras postulaciones a arriendos.',
     },
     {
-      icon: "/images/icon-onboarding.png",
+      icon: <UploadCloud className="h-10 w-10 text-primary" />,
       title: 'Onboarding Asistido',
       description: 'Carga masiva de propiedades y contratos existentes para una transición sin complicaciones a S.A.R.A.',
     },
     {
-      icon: "/images/icon-dossier.png",
+      icon: <Scale className="h-10 w-10 text-primary" />,
       title: 'Dossier Legal Automatizado',
       description: 'Con un solo clic, compila todo el historial (pagos, incidentes, etc.) en un documento listo para procesos legales.',
     },
@@ -135,7 +135,7 @@ const HomePage = () => {
             animate="animate"
             className="relative h-64 md:h-96 w-full"
           >
-            <Image src="/images/logo2.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" />
+            <Image src="/images/logo2.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg animate-mockupAnimation" />
           </motion.div>
         </section>
         
@@ -177,21 +177,13 @@ const HomePage = () => {
                   viewport={{ once: true, amount: 0.3 }}
                 >
                   <Card className="flex flex-col h-full items-center p-6 text-center shadow-lg hover:shadow-primary/20 transition-shadow">
-                    {(feature as any).isImageOnly ? (
-                        <div className="relative w-full h-48">
-                            <Image src={(feature as any).imageSrc} alt={feature.title} layout="fill" objectFit="contain" />
-                        </div>
-                    ) : (
-                        <>
                         <CardHeader>
-                            <Image src={(feature as any).icon!} alt={feature.title} width={40} height={40} className="h-10 w-10" />
+                            {feature.icon}
                             <CardTitle className="mt-4">{feature.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                            <p className="text-muted-foreground">{(feature as any).description}</p>
+                            <p className="text-muted-foreground">{feature.description}</p>
                         </CardContent>
-                        </>
-                    )}
                   </Card>
                 </motion.div>
               ))}
