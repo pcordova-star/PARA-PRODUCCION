@@ -1,5 +1,8 @@
 
 import { Logo } from '@/components/logo';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LegalLayout({
   children,
@@ -17,6 +20,14 @@ export default function LegalLayout({
         <div className="container mx-auto max-w-4xl">
           <div className="bg-card p-8 md:p-12 rounded-lg shadow-md">
             {children}
+            <div className="mt-12 text-center">
+              <Button asChild variant="outline">
+                <Link href="/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Volver al Inicio
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </main>
