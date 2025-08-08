@@ -1,14 +1,14 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail, FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket
+    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail, FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft
 } from 'lucide-react';
 
 function Logo() {
@@ -39,7 +39,122 @@ const fadeIn = (direction = 'up', delay = 0) => ({
   },
 });
 
+const howItWorksSteps = [
+    { 
+      icon: <User className="h-8 w-8" />, 
+      title: '1. Regístrate', 
+      description: 'Crea tu perfil como arrendador o arrendatario en segundos.',
+      simulation: (
+        <div className="space-y-3 p-4">
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Nombre</label>
+                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse"></div>
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Email</label>
+                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Rol</label>
+                <div className="w-2/3 bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+        </div>
+      )
+    },
+    { 
+      icon: <PlusCircle className="h-8 w-8" />, 
+      title: '2. Crea y Envía', 
+      description: 'El arrendador crea el contrato y lo envía para la firma digital.',
+      simulation: (
+         <div className="space-y-3 p-4">
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Propiedad</label>
+                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse"></div>
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Monto Arriendo</label>
+                <div className="w-1/2 bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-500">Email Arrendatario</label>
+                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+        </div>
+      )
+    },
+    { 
+      icon: <CheckCircle className="h-8 w-8" />, 
+      title: '3. Firma Digitalmente', 
+      description: 'El arrendatario revisa y firma el contrato desde cualquier dispositivo.',
+      simulation: (
+        <div className="flex flex-col items-center justify-center p-4 h-full">
+            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 10 }}>
+                <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white shadow-lg">
+                    <CheckCircle className="mr-2 h-5 w-5"/>
+                    Firmar Contrato Digitalmente
+                </Button>
+            </motion.div>
+            <p className="text-xs text-gray-500 mt-3">Firma con validez legal</p>
+        </div>
+      )
+    },
+    { 
+      icon: <Mail className="h-8 w-8" />, 
+      title: '4. Gestiona', 
+      description: 'Administra pagos, incidentes y comunicaciones en un solo lugar.',
+      simulation: (
+         <div className="p-4">
+            <p className="text-sm font-semibold mb-2">Panel de Control</p>
+            <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                    <span className="text-xs text-green-800">Pago Arriendo - Aceptado</span>
+                    <div className="w-1/4 bg-green-200 h-3 rounded-full"></div>
+                </div>
+                 <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-md">
+                    <span className="text-xs text-yellow-800">Incidente: Goter - Pendiente</span>
+                    <div className="w-1/3 bg-yellow-200 h-3 rounded-full"></div>
+                </div>
+                 <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
+                    <span className="text-xs text-blue-800">Evaluación Recibida</span>
+                    <div className="w-1/2 bg-blue-200 h-3 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+      )
+    },
+  ];
+
+
 const HomePage = () => {
+  const [activeStep, setActiveStep] = useState(0);
+  const direction = useState(0);
+
+  const handleNext = () => {
+    direction[0] = 1;
+    setActiveStep((prev) => (prev + 1) % howItWorksSteps.length);
+  };
+  const handlePrev = () => {
+    direction[0] = -1;
+    setActiveStep((prev) => (prev - 1 + howItWorksSteps.length) % howItWorksSteps.length);
+  };
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 100 : -100,
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 100 : -100,
+      opacity: 0,
+    }),
+  };
+
   const features = [
     {
       icon: <FileText className="h-10 w-10 text-primary" />,
@@ -71,13 +186,6 @@ const HomePage = () => {
       title: 'Dossier Legal Automatizado',
       description: 'Con un solo clic, compila todo el historial (pagos, incidentes, etc.) en un documento listo para procesos legales.',
     },
-  ];
-
-  const howItWorksSteps = [
-    { icon: <User className="h-8 w-8" />, title: 'Regístrate', description: 'Crea tu perfil como arrendador o arrendatario en segundos.' },
-    { icon: <PlusCircle className="h-8 w-8" />, title: 'Crea y Envía', description: 'El arrendador crea el contrato y lo envía para la firma digital.' },
-    { icon: <CheckCircle className="h-8 w-8" />, title: 'Firma Digitalmente', description: 'El arrendatario revisa y firma el contrato desde cualquier dispositivo.' },
-    { icon: <Mail className="h-8 w-8" />, title: 'Gestiona', description: 'Administra pagos, incidentes y comunicaciones en un solo lugar.' },
   ];
 
   return (
@@ -196,29 +304,71 @@ const HomePage = () => {
                  <div className="text-center">
                     <motion.h2 
                         variants={fadeIn('up')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                        className="font-headline text-3xl font-bold md:text-4xl">¿Cómo funciona?</motion.h2>
+                        className="font-headline text-3xl font-bold md:text-4xl">Fácil, Rápido e Intuitivo</motion.h2>
                     <motion.p 
                         variants={fadeIn('up', 0.2)} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                        className="mt-4 text-lg text-muted-foreground">Empezar es más fácil de lo que crees.</motion.p>
+                        className="mt-4 text-lg text-muted-foreground">Mira lo simple que es gestionar tus arriendos con S.A.R.A.</motion.p>
                 </div>
-                <div className="relative mt-16 grid gap-16 md:grid-cols-4">
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-4/5 bg-border hidden md:block"></div>
-                    {howItWorksSteps.map((step, index) => (
-                        <motion.div 
-                            key={index}
-                            variants={fadeIn('up', index * 0.1)}
-                            whileInView="animate"
-                            initial="initial"
-                            viewport={{ once: true, amount: 0.5 }}
-                            className="relative flex flex-col items-center text-center"
-                        >
-                            <div className="h-16 w-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary z-10 bg-background">
-                                {step.icon}
+                <div className="mt-16 grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-4">
+                        {howItWorksSteps.map((step, index) => (
+                           <motion.div
+                             key={index}
+                             onClick={() => setActiveStep(index)}
+                             className={`p-4 rounded-lg cursor-pointer border-2 transition-all ${activeStep === index ? 'border-primary shadow-lg bg-primary/5' : 'border-transparent hover:bg-muted/50'}`}
+                             variants={fadeIn('up', index * 0.1)}
+                             whileInView="animate"
+                             initial="initial"
+                             viewport={{ once: true, amount: 0.8 }}
+                           >
+                                <div className="flex items-center gap-4">
+                                    <div className={`h-12 w-12 rounded-full flex items-center justify-center transition-colors ${activeStep === index ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                        {step.icon}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold">{step.title}</h3>
+                                        <p className="text-muted-foreground">{step.description}</p>
+                                    </div>
+                                </div>
+                           </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="relative h-96 bg-background rounded-xl shadow-2xl p-4 border flex flex-col justify-between">
+                         <div className="flex items-center gap-1.5 mb-2">
+                            <span className="h-3 w-3 rounded-full bg-red-500"></span>
+                            <span className="h-3 w-3 rounded-full bg-yellow-400"></span>
+                            <span className="h-3 w-3 rounded-full bg-green-500"></span>
+                        </div>
+                        <div className="flex-grow relative overflow-hidden">
+                           <AnimatePresence initial={false} custom={direction[0]}>
+                                <motion.div
+                                    key={activeStep}
+                                    custom={direction[0]}
+                                    variants={variants}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
+                                    transition={{
+                                        x: { type: "spring", stiffness: 300, damping: 30 },
+                                        opacity: { duration: 0.2 }
+                                    }}
+                                    className="absolute w-full h-full"
+                                >
+                                    {howItWorksSteps[activeStep].simulation}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                         <div className="flex justify-between items-center pt-2">
+                            <Button variant="outline" size="sm" onClick={handlePrev}><ArrowLeft className="mr-2 h-4 w-4"/> Anterior</Button>
+                            <div className="flex gap-2">
+                                {howItWorksSteps.map((_, index) => (
+                                    <button key={index} onClick={() => setActiveStep(index)} className={`h-2 w-2 rounded-full transition-all ${activeStep === index ? 'w-6 bg-primary' : 'bg-muted'}`}></button>
+                                ))}
                             </div>
-                            <h3 className="mt-4 text-xl font-semibold">{step.title}</h3>
-                            <p className="mt-2 text-muted-foreground">{step.description}</p>
-                        </motion.div>
-                    ))}
+                            <Button variant="outline" size="sm" onClick={handleNext}>Siguiente <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
