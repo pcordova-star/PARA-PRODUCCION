@@ -15,7 +15,7 @@ import {
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
       <span className="text-2xl font-bold">S.A.R.A</span>
     </div>
   );
@@ -101,32 +101,42 @@ const HomePage = () => {
       </motion.header>
 
       <main className="flex-1">
-        <section className="container mx-auto px-4 text-center py-20 md:py-32">
-          <motion.h1 
-            variants={fadeIn('up')}
-            initial="initial"
-            animate="animate"
-            className="font-headline text-4xl font-extrabold tracking-tight text-foreground md:text-6xl"
-          >
-            La Gestión de Arriendos, <span className="text-primary">Simplificada y Segura.</span>
-          </motion.h1>
-          <motion.p 
-            variants={fadeIn('up', 0.2)}
-            initial="initial"
-            animate="animate"
-            className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground"
-          >
-            S.A.R.A es la plataforma todo-en-uno que automatiza y transparenta la administración de tus arriendos, protegiendo tanto a arrendadores como a arrendatarios.
-          </motion.p>
+        <section className="container mx-auto grid md:grid-cols-2 gap-12 items-center px-4 text-center md:text-left py-20 md:py-32">
+          <div>
+            <motion.h1 
+              variants={fadeIn('up')}
+              initial="initial"
+              animate="animate"
+              className="font-headline text-4xl font-extrabold tracking-tight text-foreground md:text-6xl"
+            >
+              La Gestión de Arriendos, <span className="text-primary">Simplificada y Segura.</span>
+            </motion.h1>
+            <motion.p 
+              variants={fadeIn('up', 0.2)}
+              initial="initial"
+              animate="animate"
+              className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:mx-0"
+            >
+              S.A.R.A es la plataforma todo-en-uno que automatiza y transparenta la administración de tus arriendos, protegiendo tanto a arrendadores como a arrendatarios.
+            </motion.p>
+            <motion.div 
+              variants={fadeIn('up', 0.4)}
+              initial="initial"
+              animate="animate"
+              className="mt-8 flex justify-center md:justify-start gap-4"
+            >
+              <Button size="lg" asChild>
+                <Link href="/signup">Empezar Ahora</Link>
+              </Button>
+            </motion.div>
+          </div>
           <motion.div 
-            variants={fadeIn('up', 0.4)}
+            variants={fadeIn('left', 0.2)}
             initial="initial"
             animate="animate"
-            className="mt-8 flex justify-center gap-4"
+            className="relative h-64 md:h-96 w-full"
           >
-            <Button size="lg" asChild>
-              <Link href="/signup">Empezar Ahora</Link>
-            </Button>
+            <Image src="https://placehold.co/600x400.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" data-ai-hint="digital platform screen" />
           </motion.div>
         </section>
         

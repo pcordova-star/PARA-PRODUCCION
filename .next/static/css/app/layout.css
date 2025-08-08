@@ -3235,12 +3235,21 @@ body {
     grid-column: span 2 / span 2;
   }
 
+  .md\:mx-0 {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+
   .md\:block {
     display: block;
   }
 
   .md\:flex {
     display: flex;
+  }
+
+  .md\:h-96 {
+    height: 24rem;
   }
 
   .md\:max-w-\[420px\] {
@@ -3261,6 +3270,10 @@ body {
 
   .md\:flex-row {
     flex-direction: row;
+  }
+
+  .md\:justify-start {
+    justify-content: flex-start;
   }
 
   .md\:gap-4 {
@@ -3299,6 +3312,10 @@ body {
   .md\:py-32 {
     padding-top: 8rem;
     padding-bottom: 8rem;
+  }
+
+  .md\:text-left {
+    text-align: left;
   }
 
   .md\:text-3xl {
