@@ -1,20 +1,21 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail, FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft
+    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <Image src="/images/logo2.png" alt="S.A.R.A Logo" width={32} height={32} />
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
       <span className="text-2xl font-bold">S.A.R.A</span>
     </div>
   );
@@ -48,15 +49,15 @@ const howItWorksSteps = [
         <div className="space-y-3 p-4">
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Nombre</label>
-                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse"></div>
+                <motion.div initial={{width: 0}} animate={{width: '100%'}} transition={{duration: 0.5}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Email</label>
-                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                <motion.div initial={{width: 0}} animate={{width: '100%'}} transition={{duration: 0.5, delay: 0.2}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Rol</label>
-                <div className="w-2/3 bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <motion.div initial={{width: 0}} animate={{width: '66%'}} transition={{duration: 0.5, delay: 0.4}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
         </div>
       )
@@ -69,15 +70,15 @@ const howItWorksSteps = [
          <div className="space-y-3 p-4">
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Propiedad</label>
-                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse"></div>
+                <motion.div initial={{width: 0}} animate={{width: '100%'}} transition={{duration: 0.5}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Monto Arriendo</label>
-                <div className="w-1/2 bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                 <motion.div initial={{width: 0}} animate={{width: '50%'}} transition={{duration: 0.5, delay: 0.2}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500">Email Arrendatario</label>
-                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <motion.div initial={{width: 0}} animate={{width: '100%'}} transition={{duration: 0.5, delay: 0.4}} className="bg-gray-200 rounded-full h-4"></motion.div>
             </div>
         </div>
       )
@@ -91,7 +92,7 @@ const howItWorksSteps = [
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 10 }}>
                 <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white shadow-lg">
                     <CheckCircle className="mr-2 h-5 w-5"/>
-                    Aceptar Contrato Digitalmente
+                    Aceptar Contrato
                 </Button>
             </motion.div>
             <p className="text-xs text-gray-500 mt-3">Aceptación con validez legal</p>
@@ -106,23 +107,53 @@ const howItWorksSteps = [
          <div className="p-4">
             <p className="text-sm font-semibold mb-2">Panel de Control</p>
             <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                <motion.div initial={{opacity: 0, x: -20}} animate={{opacity: 1, x: 0}} transition={{delay: 0.2}} className="flex items-center justify-between p-2 bg-green-50 rounded-md">
                     <span className="text-xs text-green-800">Pago Arriendo - Aceptado</span>
                     <div className="w-1/4 bg-green-200 h-3 rounded-full"></div>
-                </div>
-                 <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-md">
+                </motion.div>
+                 <motion.div initial={{opacity: 0, x: -20}} animate={{opacity: 1, x: 0}} transition={{delay: 0.4}} className="flex items-center justify-between p-2 bg-yellow-50 rounded-md">
                     <span className="text-xs text-yellow-800">Incidente: Gotera - Pendiente</span>
                     <div className="w-1/3 bg-yellow-200 h-3 rounded-full"></div>
-                </div>
-                 <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
+                </motion.div>
+                 <motion.div initial={{opacity: 0, x: -20}} animate={{opacity: 1, x: 0}} transition={{delay: 0.6}} className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
                     <span className="text-xs text-blue-800">Evaluación Recibida</span>
                     <div className="w-1/2 bg-blue-200 h-3 rounded-full"></div>
-                </div>
+                </motion.div>
             </div>
         </div>
       )
     },
   ];
+
+// Animated Counter for the Report Score
+const AnimatedCounter = ({ to }: { to: number }) => {
+    const [count, setCount] = useState(0);
+    const ref = React.useRef(null);
+    const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+    useEffect(() => {
+        if (isInView) {
+            const controls = motion.div({
+                value: 0,
+            });
+            const unsubscribe = controls.value.onChange(v => {
+                setCount(parseFloat(v.toFixed(1)));
+            });
+            
+            motion.animate(0, to, {
+                duration: 2,
+                ease: "easeOut",
+                onUpdate: latest => {
+                    controls.value.set(latest);
+                }
+            });
+            
+            return () => unsubscribe();
+        }
+    }, [isInView, to]);
+
+    return <span ref={ref}>{count.toFixed(1)}</span>;
+};
 
 
 const HomePage = () => {
@@ -373,7 +404,56 @@ const HomePage = () => {
             </div>
         </section>
 
-        <section id="ley" className="py-20 md:py-32">
+        <section id="reporte" className="py-20 md:py-32">
+            <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+                <motion.div
+                    variants={fadeIn('right')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                >
+                    <h2 className="font-headline text-3xl font-bold md:text-4xl">Tu Carta de Presentación como <span className="text-primary">Arrendatario Ejemplar</span></h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Con S.A.R.A, cada pago puntual y cada interacción positiva construye tu reputación. Nuestro "Informe de Comportamiento" es un certificado digital que valida tu excelente historial.
+                    </p>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                       Úsalo para destacar en futuras postulaciones y acceder a las mejores propiedades, demostrando con datos que eres el arrendatario que todos desean.
+                    </p>
+                     <Button size="lg" asChild className="mt-8">
+                        <Link href="/signup">Construye tu Historial</Link>
+                    </Button>
+                </motion.div>
+                <motion.div 
+                    variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                >
+                    <Card className="p-6 shadow-2xl relative overflow-hidden">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl">Informe de Comportamiento</CardTitle>
+                            <p className="text-muted-foreground">Juanito Pérez</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="text-center">
+                                <p className="text-lg font-semibold">Puntaje Global</p>
+                                <p className="text-5xl font-bold text-primary">
+                                    <AnimatedCounter to={4.8} />
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm"><span>Puntualidad de Pagos</span><span className="font-medium">Excelente</span></div>
+                                <motion.div initial={{ width: 0 }} whileInView={{ width: '95%' }} viewport={{ once: true }} transition={{ duration: 1.5, ease: "easeOut" }}><Progress value={95} className="h-2" /></motion.div>
+                            </div>
+                             <div className="space-y-2">
+                                <div className="flex justify-between text-sm"><span>Cuidado de Propiedad</span><span className="font-medium">Muy Bueno</span></div>
+                                <motion.div initial={{ width: 0 }} whileInView={{ width: '85%' }} viewport={{ once: true }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}><Progress value={85} className="h-2" /></motion.div>
+                            </div>
+                             <div className="space-y-2">
+                                <div className="flex justify-between text-sm"><span>Comunicación</span><span className="font-medium">Excelente</span></div>
+                                <motion.div initial={{ width: 0 }} whileInView={{ width: '98%' }} viewport={{ once: true }} transition={{ duration: 1.5, ease: "easeOut", delay: 0.4 }}><Progress value={98} className="h-2" /></motion.div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+        </section>
+
+        <section id="ley" className="py-20 md:py-32 bg-card">
             <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
                 <motion.div
                     variants={fadeIn('right')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
@@ -429,9 +509,7 @@ const HomePage = () => {
                  <div>
                     <h3 className="font-semibold">Síguenos</h3>
                     <div className="flex gap-4 mt-2">
-                        <Link href="#"><Facebook className="h-5 w-5 text-muted-foreground hover:text-primary"/></Link>
-                        <Link href="#"><Twitter className="h-5 w-5 text-muted-foreground hover:text-primary"/></Link>
-                        <Link href="#"><Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary"/></Link>
+                        {/* Add social media links here if available */}
                     </div>
                 </div>
             </div>
