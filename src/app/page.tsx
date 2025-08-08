@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -52,7 +51,7 @@ const HomePage = () => {
       description: 'Recordatorios automáticos de fechas de pago, reajustes de IPC y vencimiento de contratos.',
     },
     {
-      icon: "/images/icon-incidentes.png",
+      icon: "/images/ico.incidentes.png",
       title: 'Gestión de Incidentes',
       description: 'Canaliza y documenta todas las solicitudes e incidentes, desde reparaciones hasta problemas de convivencia.',
     },
