@@ -7,9 +7,8 @@ let app: App;
 let adminDb: Firestore;
 let adminAuth: Auth;
 
-try {
-  if (!getApps().length) {
-    // Read from the new, non-reserved environment variable name
+if (!getApps().length) {
+  try {
     const serviceAccountKey = process.env.SARA_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountKey) {
       throw new Error('Firebase Admin SDK service account key is not set in environment variables (SARA_SERVICE_ACCOUNT_KEY).');
@@ -20,14 +19,17 @@ try {
     app = initializeApp({
       credential: cert(serviceAccount),
     });
-  } else {
-    app = getApps()[0];
+  } catch (error: any) {
+    console.error('Failed to initialize Firebase Admin SDK:', error.message);
+    // We are throwing a more specific error here, but the app might catch it and throw a generic one.
+    // This console.error is crucial for debugging.
+    throw new Error('Failed to initialize Firebase Admin SDK. Please check your service account credentials.');
   }
-  adminDb = getFirestore(app);
-  adminAuth = getAuth(app);
-} catch (error: any) {
-  console.error('Failed to initialize Firebase Admin SDK:', error.message);
-  throw new Error('Failed to initialize Firebase Admin SDK. Please check your service account credentials.');
+} else {
+  app = getApps()[0];
 }
+
+adminDb = getFirestore(app);
+adminAuth = getAuth(app);
 
 export { adminDb, adminAuth };
