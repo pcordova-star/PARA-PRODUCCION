@@ -127,7 +127,6 @@ const howItWorksSteps = [
 
 // Animated Counter for the Report Score
 const AnimatedCounter = ({ to }: { to: number }) => {
-    const [count, setCount] = useState(0);
     const ref = React.useRef<HTMLSpanElement>(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -137,9 +136,8 @@ const AnimatedCounter = ({ to }: { to: number }) => {
                 duration: 2,
                 ease: "easeOut",
                 onUpdate(value) {
-                    // This check is important to avoid updating state on an unmounted component
                     if (ref.current) {
-                        setCount(parseFloat(value.toFixed(1)));
+                        ref.current.textContent = value.toFixed(1);
                     }
                 },
             });
@@ -147,7 +145,7 @@ const AnimatedCounter = ({ to }: { to: number }) => {
         }
     }, [isInView, to]);
 
-    return <span ref={ref}>{count.toFixed(1)}</span>;
+    return <span ref={ref}>0.0</span>;
 };
 
 
@@ -536,8 +534,8 @@ const HomePage = () => {
                 <div>
                     <h3 className="font-semibold">Legal</h3>
                     <ul className="space-y-2 mt-2 text-sm text-muted-foreground">
-                        <li><Link href="#" className="hover:text-primary">Términos y Condiciones</Link></li>
-                        <li><Link href="#" className="hover:text-primary">Política de Privacidad</Link></li>
+                        <li><Link href="/terms" className="hover:text-primary">Términos y Condiciones</Link></li>
+                        <li><Link href="/privacy" className="hover:text-primary">Política de Privacidad</Link></li>
                     </ul>
                 </div>
                  <div>
