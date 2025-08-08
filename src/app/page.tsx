@@ -8,7 +8,7 @@ import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin, Gavel, Send, Download
+    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin, Gavel, Send, Download, Instagram
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -520,7 +520,14 @@ const HomePage = () => {
                  <div>
                     <h3 className="font-semibold">Síguenos</h3>
                     <div className="flex gap-4 mt-2">
-                        {/* Add social media links here if available */}
+                        <Link href="https://www.instagram.com/sarachile2025" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                            <Instagram className="h-6 w-6" />
+                            <span className="sr-only">Instagram</span>
+                        </Link>
+                        <Link href="https://www.facebook.com/Sarachile" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                            <Facebook className="h-6 w-6" />
+                            <span className="sr-only">Facebook</span>
+                        </Link>
                     </div>
                 </div>
             </div>
