@@ -232,7 +232,7 @@ function RegisterForm() {
             </FormControl>
             <div className="space-y-1 leading-none">
               <FormLabel>
-                Acepto los <Link href="/terminos-y-condiciones" className="text-primary hover:underline" target="_blank">términos y condiciones</Link>.
+                Acepto los <Link href="/terms" className="text-primary hover:underline" target="_blank">términos y condiciones</Link>.
               </FormLabel>
             </div>
           </FormItem>
