@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard, FileText, Home, Scale, ShieldAlert } from 'lucide-react';
+import { CreditCard, FileText, Home, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 function Logo() {
@@ -17,33 +17,23 @@ export default function HomePage() {
     {
       icon: <Home className="h-8 w-8 text-primary" />,
       title: 'Gestión de Propiedades',
-      description: 'Registre y administre sus propiedades de forma sencilla y centralizada.',
-    },
-    {
-      icon: <FileText className="h-8 w-8 text-primary" />,
-      title: 'Generación de Contratos',
-      description: 'Cree contratos digitales válidos entre arrendadores y arrendatarios.',
+      description: 'Administra todas tus propiedades en un solo lugar. Sube documentos, asigna inquilinos y lleva un registro completo.',
     },
     {
       icon: <CreditCard className="h-8 w-8 text-primary" />,
-      title: 'Gestión de Pagos',
-      description: 'Declare y apruebe pagos de arriendo de manera transparente.',
+      title: 'Control de Pagos',
+      description: 'Registra y monitorea los pagos de arriendo de forma sencilla, con notificaciones y recordatorios automáticos.',
     },
     {
-      icon: <ShieldAlert className="h-8 w-8 text-primary" />,
-      title: 'Reporte de Incidentes',
-      description: 'Registre y notifique cualquier incidente relacionado con la propiedad.',
-    },
-    {
-      icon: <Scale className="h-8 w-8 text-primary" />,
-      title: 'Cumplimiento Legal IA',
-      description: 'Evalúe las condiciones de su propiedad con IA para asegurar el cumplimiento legal.',
+      icon: <MessageSquare className="h-8 w-8 text-primary" />,
+      title: 'Comunicación Directa',
+      description: 'Un canal de comunicación directo y documentado entre arrendadores e inquilinos para gestionar incidentes y solicitudes.',
     },
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <header className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 bg-gray-50">
         <Logo />
         <nav className="flex items-center gap-4">
           <Button variant="ghost" asChild>
@@ -56,41 +46,29 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        <section className="bg-card py-20 md:py-32">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-              Sistema de Administración Responsable de Arriendos
+        <section className="flex-grow flex flex-col items-center justify-center text-center px-4 py-20 md:py-28">
+            <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-4">
+            Bienvenido a S.A.R.A
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
-              Una plataforma integral para la gestión de propiedades y arriendos, diseñada para fomentar la transparencia y la confianza entre arrendadores y arrendatarios.
+            <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl">
+            Tu Asistente de Arriendo y Recuperación Automatizada. Simplificamos la gestión de propiedades para arrendadores y la vida de los inquilinos.
             </p>
-            <div className="mt-8 flex justify-center gap-4">
-              <Button size="lg" asChild>
-                <Link href="/signup">Empezar Ahora</Link>
-              </Button>
-            </div>
-          </div>
         </section>
 
-        <section id="features" className="py-20 md:py-32">
-          <div className="container mx-auto px-4">
-            <div className="text-center">
-              <h2 className="font-headline text-3xl font-bold md:text-4xl">
-                Funcionalidades Principales
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Todo lo que necesita para una gestión de arriendos eficiente y segura.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <section id="features" className="w-full py-16 bg-white">
+          <div className="container mx-auto px-6">
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
+              Funcionalidades Principales
+            </h2>
+            <div className="grid gap-8 md:grid-cols-3">
               {features.map((feature, index) => (
-                <Card key={index} className="flex flex-col items-center p-6 text-center">
+                <Card key={index} className="flex flex-col items-center p-6 text-center shadow-lg border-t-4 border-primary">
                   <CardHeader>
                     {feature.icon}
-                    <CardTitle className="mt-4">{feature.title}</CardTitle>
+                    <CardTitle className="mt-4 text-xl">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <p className="text-gray-600">{feature.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -99,7 +77,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="bg-card border-t">
+      <footer className="bg-white border-t">
         <div className="container mx-auto flex items-center justify-between px-4 py-6 md:px-6">
           <Logo />
           <p className="text-sm text-muted-foreground">
