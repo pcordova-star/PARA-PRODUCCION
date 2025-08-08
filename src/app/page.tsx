@@ -42,14 +42,14 @@ const fadeIn = (direction = 'up', delay = 0) => ({
 const HomePage = () => {
   const features = [
     {
-      isImageOnly: true,
-      imageSrc: "/images/icorecordatorios.png",
+      icon: "/images/ico-contratos.png",
       title: 'Contratos Digitales Seguros',
+      description: 'Crea y firma contratos de arriendo con validez legal de forma 100% digital, ahorrando tiempo y papel.',
     },
     {
-      icon: "/images/icon-notificaciones.png",
+      isImageOnly: true,
+      imageSrc: "/images/icorecordatorios.png",
       title: 'Notificaciones Inteligentes',
-      description: 'Recordatorios automáticos de fechas de pago, reajustes de IPC y vencimiento de contratos.',
     },
     {
       icon: "/images/ico.incidentes.png",
@@ -177,18 +177,18 @@ const HomePage = () => {
                   viewport={{ once: true, amount: 0.3 }}
                 >
                   <Card className="flex flex-col h-full items-center p-6 text-center shadow-lg hover:shadow-primary/20 transition-shadow">
-                    {feature.isImageOnly ? (
+                    {(feature as any).isImageOnly ? (
                         <div className="relative w-full h-48">
-                            <Image src={feature.imageSrc} alt={feature.title} layout="fill" objectFit="contain" />
+                            <Image src={(feature as any).imageSrc} alt={feature.title} layout="fill" objectFit="contain" />
                         </div>
                     ) : (
                         <>
                         <CardHeader>
-                            <Image src={feature.icon!} alt={feature.title} width={40} height={40} className="h-10 w-10" />
+                            <Image src={(feature as any).icon!} alt={feature.title} width={40} height={40} className="h-10 w-10" />
                             <CardTitle className="mt-4">{feature.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                            <p className="text-muted-foreground">{feature.description}</p>
+                            <p className="text-muted-foreground">{(feature as any).description}</p>
                         </CardContent>
                         </>
                     )}
