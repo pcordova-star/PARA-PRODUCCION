@@ -488,45 +488,6 @@ const HomePage = () => {
                 </motion.div>
             </div>
         </section>
-
-        <section id="legal-assistance" className="py-20 md:py-32">
-            <div className="container mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-                 <motion.div 
-                    variants={fadeIn('right')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                    className="flex justify-center"
-                >
-                   <Card className="p-6 shadow-2xl w-full max-w-md">
-                        <CardHeader className="text-center">
-                            <Gavel className="mx-auto h-12 w-12 text-primary" />
-                            <CardTitle className="text-2xl mt-4">Dossier Legal Automatizado</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-left">
-                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.2}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Contrato de Arriendo.</motion.div>
-                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.4}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Historial de Pagos completo.</motion.div>
-                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.6}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Registro de Incidentes y Comentarios.</motion.div>
-                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.8}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Evaluaciones de Comportamiento.</motion.div>
-                        </CardContent>
-                        <div className="p-6 pt-0">
-                             <Button size="lg" className="w-full bg-primary/90 hover:bg-primary">
-                                <Send className="mr-2 h-4 w-4"/>
-                                Enviar a Abogado
-                            </Button>
-                        </div>
-                   </Card>
-                </motion.div>
-                <motion.div
-                    variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                >
-                    <h2 className="font-headline text-3xl font-bold md:text-4xl">Respaldo Legal de Élite, <span className="text-primary">a un Clic de Distancia</span></h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        En S.A.R.A, no solo te damos herramientas. Forjamos una alianza estratégica con un prestigioso estudio de abogados para ofrecerte asistencia real cuando más la necesitas.
-                    </p>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                       Cuando un problema escala, tu Dossier Legal completo y ordenado está listo. Con un solo clic, puedes enviarlo directamente a nuestros abogados asociados para una evaluación prioritaria y experta. Olvídate de buscar papeles y correos; tu defensa empieza aquí.
-                    </p>
-                </motion.div>
-            </div>
-        </section>
       </main>
 
       <motion.footer 
