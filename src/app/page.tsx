@@ -8,14 +8,14 @@ import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin
+    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin, Gavel, Send
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
       <span className="text-2xl font-bold">S.A.R.A</span>
     </div>
   );
@@ -132,12 +132,15 @@ const AnimatedCounter = ({ to }: { to: number }) => {
     const isInView = useInView(ref, { once: true, margin: "-100px" });
 
     useEffect(() => {
-        if (isInView) {
+        if (isInView && ref.current) {
             const controls = animate(0, to, {
                 duration: 2,
                 ease: "easeOut",
                 onUpdate(value) {
-                    setCount(parseFloat(value.toFixed(1)));
+                    // This check is important to avoid updating state on an unmounted component
+                    if (ref.current) {
+                        setCount(parseFloat(value.toFixed(1)));
+                    }
                 },
             });
             return () => controls.stop();
@@ -466,6 +469,45 @@ const HomePage = () => {
                     className="relative h-96"
                 >
                      <Image src="/images/ley-devuelveme-mi-casa.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" />
+                </motion.div>
+            </div>
+        </section>
+
+        <section id="legal-assistance" className="py-20 md:py-32">
+            <div className="container mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+                 <motion.div 
+                    variants={fadeIn('right')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                    className="flex justify-center"
+                >
+                   <Card className="p-6 shadow-2xl w-full max-w-md">
+                        <CardHeader className="text-center">
+                            <Gavel className="mx-auto h-12 w-12 text-primary" />
+                            <CardTitle className="text-2xl mt-4">Dossier Legal Automatizado</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-left">
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.2}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Contrato de Arriendo Digital.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.4}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Historial de Pagos completo.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.6}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Registro de Incidentes y Comentarios.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.8}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Evaluaciones de Comportamiento.</motion.div>
+                        </CardContent>
+                        <div className="p-6 pt-0">
+                             <Button size="lg" className="w-full bg-primary/90 hover:bg-primary">
+                                <Send className="mr-2 h-4 w-4"/>
+                                Enviar a Abogado
+                            </Button>
+                        </div>
+                   </Card>
+                </motion.div>
+                <motion.div
+                    variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
+                >
+                    <h2 className="font-headline text-3xl font-bold md:text-4xl">Respaldo Legal de Élite, <span className="text-primary">a un Clic de Distancia</span></h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        En S.A.R.A, no solo te damos herramientas. Forjamos una alianza estratégica con un prestigioso estudio de abogados para ofrecerte asistencia real cuando más la necesitas.
+                    </p>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                       Cuando un problema escala, tu Dossier Legal completo y ordenado está listo. Con un solo clic, puedes enviarlo directamente a nuestros abogados asociados para una evaluación prioritaria y experta. Olvídate de buscar papeles y correos; tu defensa empieza aquí.
+                    </p>
                 </motion.div>
             </div>
         </section>
