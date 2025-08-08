@@ -84,17 +84,17 @@ const howItWorksSteps = [
     },
     { 
       icon: <CheckCircle className="h-8 w-8" />, 
-      title: '3. Firma Digitalmente', 
-      description: 'El arrendatario revisa y firma el contrato desde cualquier dispositivo.',
+      title: '3. Acepta Digitalmente', 
+      description: 'El arrendatario revisa y acepta el contrato desde cualquier dispositivo.',
       simulation: (
         <div className="flex flex-col items-center justify-center p-4 h-full">
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 10 }}>
                 <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white shadow-lg">
                     <CheckCircle className="mr-2 h-5 w-5"/>
-                    Firmar Contrato Digitalmente
+                    Aceptar Contrato Digitalmente
                 </Button>
             </motion.div>
-            <p className="text-xs text-gray-500 mt-3">Firma con validez legal</p>
+            <p className="text-xs text-gray-500 mt-3">Aceptación con validez legal</p>
         </div>
       )
     },
@@ -111,7 +111,7 @@ const howItWorksSteps = [
                     <div className="w-1/4 bg-green-200 h-3 rounded-full"></div>
                 </div>
                  <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-md">
-                    <span className="text-xs text-yellow-800">Incidente: Goter - Pendiente</span>
+                    <span className="text-xs text-yellow-800">Incidente: Gotera - Pendiente</span>
                     <div className="w-1/3 bg-yellow-200 h-3 rounded-full"></div>
                 </div>
                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
