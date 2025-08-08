@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -128,27 +128,19 @@ const howItWorksSteps = [
 // Animated Counter for the Report Score
 const AnimatedCounter = ({ to }: { to: number }) => {
     const [count, setCount] = useState(0);
-    const ref = React.useRef(null);
+    const ref = React.useRef<HTMLSpanElement>(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
 
     useEffect(() => {
         if (isInView) {
-            const controls = motion.div({
-                value: 0,
-            });
-            const unsubscribe = controls.value.onChange(v => {
-                setCount(parseFloat(v.toFixed(1)));
-            });
-            
-            motion.animate(0, to, {
+            const controls = animate(0, to, {
                 duration: 2,
                 ease: "easeOut",
-                onUpdate: latest => {
-                    controls.value.set(latest);
-                }
+                onUpdate(value) {
+                    setCount(parseFloat(value.toFixed(1)));
+                },
             });
-            
-            return () => unsubscribe();
+            return () => controls.stop();
         }
     }, [isInView, to]);
 
