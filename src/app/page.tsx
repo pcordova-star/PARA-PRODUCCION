@@ -8,7 +8,7 @@ import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin, Gavel, Send
+    FileText, Bell, ShieldAlert, FileBadge, UploadCloud, Scale, Rocket, ArrowRight, ArrowLeft, Star, TrendingUp, User, PlusCircle, CheckCircle, Mail, Facebook, Twitter, Linkedin, Gavel, Send, Download
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -464,9 +464,27 @@ const HomePage = () => {
                 </motion.div>
                 <motion.div 
                     variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
-                    className="relative h-96"
                 >
-                     <Image src="/images/ley-devuelveme-mi-casa.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" />
+                   <Card className="p-6 shadow-2xl w-full max-w-md mx-auto">
+                        <CardHeader className="text-center">
+                            <FileBadge className="mx-auto h-12 w-12 text-primary" />
+                            <CardTitle className="text-2xl mt-4">Compilación de Dossier Legal</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-left">
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.2}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Contrato de Arriendo.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.4}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Historial de Pagos completo.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.6}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Registro de Incidentes y Comentarios.</motion.div>
+                            <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 0.8}} className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-5 w-5 text-green-500" /> Evaluaciones de Comportamiento.</motion.div>
+                        </CardContent>
+                        <div className="p-6 pt-2">
+                             <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} transition={{delay: 1}}>
+                                <Button size="lg" className="w-full bg-primary/90 hover:bg-primary">
+                                    <Download className="mr-2 h-4 w-4"/>
+                                    Generar Dossier
+                                </Button>
+                             </motion.div>
+                        </div>
+                   </Card>
                 </motion.div>
             </div>
         </section>
