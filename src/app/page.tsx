@@ -8,14 +8,13 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-    Save, Bell, CheckCircle, Mail, Lock, User, PlusCircle, 
-    Facebook, Twitter, Linkedin, ShieldCheck, AlertTriangle, Rocket 
+    Facebook, Twitter, Linkedin, User, PlusCircle, CheckCircle, Mail 
 } from 'lucide-react';
 
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+      <Image src="/images/logo.png" alt="S.A.R.A Logo" width={32} height={32} />
       <span className="text-2xl font-bold">S.A.R.A</span>
     </div>
   );
@@ -43,32 +42,32 @@ const fadeIn = (direction = 'up', delay = 0) => ({
 const HomePage = () => {
   const features = [
     {
-      icon: <ShieldCheck className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-contratos.svg",
       title: 'Contratos Digitales Seguros',
       description: 'Crea, envía y firma contratos de arriendo con validez legal de forma 100% digital y segura.',
     },
     {
-      icon: <Bell className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-notificaciones.svg",
       title: 'Notificaciones Inteligentes',
       description: 'Recordatorios automáticos de fechas de pago, reajustes de IPC y vencimiento de contratos.',
     },
     {
-      icon: <AlertTriangle className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-incidentes.svg",
       title: 'Gestión de Incidentes',
       description: 'Canaliza y documenta todas las solicitudes e incidentes, desde reparaciones hasta problemas de convivencia.',
     },
     {
-      icon: <CheckCircle className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-certificado.svg",
       title: 'Certificado de Arrendatario',
       description: 'Genera un historial de comportamiento y pagos para facilitar futuras postulaciones a arriendos.',
     },
     {
-      icon: <Rocket className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-onboarding.svg",
       title: 'Onboarding Asistido',
       description: 'Carga masiva de propiedades y contratos existentes para una transición sin complicaciones a S.A.R.A.',
     },
     {
-      icon: <Save className="h-8 w-8 text-primary" />,
+      icon: "/images/icon-dossier.svg",
       title: 'Dossier Legal Automatizado',
       description: 'Con un solo clic, compila todo el historial (pagos, incidentes, etc.) en un documento listo para procesos legales.',
     },
@@ -136,7 +135,7 @@ const HomePage = () => {
             animate="animate"
             className="relative h-64 md:h-96 w-full"
           >
-            <Image src="https://placehold.co/600x400.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" data-ai-hint="digital platform screen" />
+            <Image src="/images/hero-image.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg" />
           </motion.div>
         </section>
         
@@ -179,7 +178,7 @@ const HomePage = () => {
                 >
                   <Card className="flex flex-col h-full items-center p-6 text-center shadow-lg hover:shadow-primary/20 transition-shadow">
                     <CardHeader>
-                      {feature.icon}
+                      <Image src={feature.icon} alt={feature.title} width={40} height={40} className="h-10 w-10" />
                       <CardTitle className="mt-4">{feature.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow">
@@ -244,7 +243,7 @@ const HomePage = () => {
                     variants={fadeIn('left')} whileInView="animate" initial="initial" viewport={{ once: true, amount: 0.5 }}
                     className="relative h-96"
                 >
-                     <Image src="https://placehold.co/600x400.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" data-ai-hint="legal documents" />
+                     <Image src="/images/legal-docs.png" alt="Documentación Legal" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" />
                 </motion.div>
             </div>
         </section>
