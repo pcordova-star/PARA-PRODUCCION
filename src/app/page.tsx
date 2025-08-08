@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -41,9 +42,9 @@ const fadeIn = (direction = 'up', delay = 0) => ({
 const HomePage = () => {
   const features = [
     {
-      icon: "/images/icon-contratos.png",
+      isImageOnly: true,
+      imageSrc: "/images/icorecordatorios.png",
       title: 'Contratos Digitales Seguros',
-      description: 'Crea, envía y firma contratos de arriendo con validez legal de forma 100% digital y segura.',
     },
     {
       icon: "/images/icon-notificaciones.png",
@@ -176,13 +177,21 @@ const HomePage = () => {
                   viewport={{ once: true, amount: 0.3 }}
                 >
                   <Card className="flex flex-col h-full items-center p-6 text-center shadow-lg hover:shadow-primary/20 transition-shadow">
-                    <CardHeader>
-                      <Image src={feature.icon} alt={feature.title} width={40} height={40} className="h-10 w-10" />
-                      <CardTitle className="mt-4">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <p className="text-muted-foreground">{feature.description}</p>
-                    </CardContent>
+                    {feature.isImageOnly ? (
+                        <div className="relative w-full h-48">
+                            <Image src={feature.imageSrc} alt={feature.title} layout="fill" objectFit="contain" />
+                        </div>
+                    ) : (
+                        <>
+                        <CardHeader>
+                            <Image src={feature.icon!} alt={feature.title} width={40} height={40} className="h-10 w-10" />
+                            <CardTitle className="mt-4">{feature.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <p className="text-muted-foreground">{feature.description}</p>
+                        </CardContent>
+                        </>
+                    )}
                   </Card>
                 </motion.div>
               ))}
