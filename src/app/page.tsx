@@ -64,7 +64,7 @@ const howItWorksSteps = [
     { 
       icon: <PlusCircle className="h-8 w-8" />, 
       title: '2. Crea y Envía', 
-      description: 'El arrendador crea el contrato y lo envía para la firma digital.',
+      description: 'El arrendador crea el contrato y lo envía para aceptación digital.',
       simulation: (
          <div className="space-y-3 p-4">
             <div className="space-y-1">
