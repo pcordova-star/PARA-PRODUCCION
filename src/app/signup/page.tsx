@@ -298,10 +298,8 @@ function SignupPageContent() {
 
 export default function SignupPage() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Cargando...</div>}>
             <SignupPageContent />
         </Suspense>
     );
 }
-
-    

@@ -105,6 +105,29 @@ async function fetchTenantCertificateData(tenantUid: string): Promise<TenantCert
   }
 }
 
+function CertificatePDFGenerator({ certificateData }: { certificateData: TenantCertificateData | null }) {
+  const handleDownloadPdf = async () => {
+    if (typeof window === 'undefined') return;
+    const html2pdf = (await import('html2pdf.js')).default;
+    const element = document.getElementById('printable-area');
+    const opt = {
+      margin:       [0.5, 0.5, 0.5, 0.5],
+      filename:     `certificado_sara_${certificateData?.tenantProfile.rut || 'usuario'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().from(element).set(opt).save();
+  };
+
+  return (
+    <div className="mt-8 text-center">
+      <Button onClick={handleDownloadPdf} size="lg"><Download className="mr-2 h-5 w-5" /> Descargar Certificado en PDF</Button>
+    </div>
+  );
+}
+
+
 export default function TenantCertificateClient() {
   const [certificateData, setCertificateData] = useState<TenantCertificateData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,19 +157,6 @@ export default function TenantCertificateClient() {
         setIsLoading(false);
     }
   }, [currentUser]);
-  
-  const handleDownloadPdf = async () => {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = document.getElementById('printable-area');
-    const opt = {
-      margin:       [0.5, 0.5, 0.5, 0.5],
-      filename:     `certificado_sara_${certificateData?.tenantProfile.rut || 'usuario'}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    html2pdf().from(element).set(opt).save();
-  };
 
   if (isLoading) {
     return <div className="flex flex-col items-center justify-center py-10"><Loader2 className="h-12 w-12 animate-spin text-primary mb-4" /><p className="text-lg text-muted-foreground">Generando tu informe...</p></div>;
@@ -297,22 +307,15 @@ export default function TenantCertificateClient() {
         </footer>
       </div>
       
-      <div className="mt-8 text-center">
-        <Button onClick={handleDownloadPdf} size="lg"><Download className="mr-2 h-5 w-5" /> Descargar Certificado en PDF</Button>
-      </div>
+      <CertificatePDFGenerator certificateData={certificateData} />
 
       <style jsx global>{`
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .printable-certificate { margin: 0; padding: 20px; border: none; box-shadow: none; }
-          .print\\:hidden { display: none !important; }
           .break-inside-avoid-page { page-break-inside: avoid; }
         }
       `}</style>
     </>
   );
 }
-
-    
-
-    

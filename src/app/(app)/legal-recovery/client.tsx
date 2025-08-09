@@ -18,7 +18,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import type html2pdf from 'html2pdf.js';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { sendLegalAssistanceRequestEmail } from '@/lib/notifications';
@@ -121,6 +120,7 @@ export default function LegalRecoveryClient() {
 
   const handleDownloadPdf = async () => {
     if (!selectedContract) return;
+    if (typeof window === 'undefined') return;
 
     const html2pdf = (await import('html2pdf.js')).default;
     const element = document.getElementById('printable-area');
@@ -267,5 +267,3 @@ export default function LegalRecoveryClient() {
     </div>
   );
 }
-
-    

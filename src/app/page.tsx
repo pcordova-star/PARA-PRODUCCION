@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
+// Force static export for this page
+export const dynamic = 'force-static';
+
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 text-primary">
