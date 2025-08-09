@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 // Force static export for this page
 export const dynamic = 'force-static';
 
-function Logo() {
+function Logo({ animateText = false }: { animateText?: boolean }) {
   const name = "S.A.R.A";
   const fullName = "Sistema de Administración Responsable de Arriendos";
   
@@ -49,18 +49,22 @@ function Logo() {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
             <span className="text-lg font-bold">{name}</span>
         </div>
-        <motion.p 
-            variants={textVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-xs text-muted-foreground -mt-1"
-        >
-            {fullName.split("").map((char, index) => (
-                <motion.span key={index} variants={letterVariants}>
-                    {char}
-                </motion.span>
-            ))}
-        </motion.p>
+        {animateText ? (
+            <motion.p 
+                variants={textVariants}
+                initial="hidden"
+                animate="visible"
+                className="text-xs text-muted-foreground -mt-1"
+            >
+                {fullName.split("").map((char, index) => (
+                    <motion.span key={index} variants={letterVariants}>
+                        {char}
+                    </motion.span>
+                ))}
+            </motion.p>
+        ) : (
+            <p className="text-xs text-muted-foreground -mt-1">{fullName}</p>
+        )}
     </div>
   );
 }
@@ -264,7 +268,7 @@ const HomePage = () => {
         animate="animate"
         className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6 sticky top-0 z-50 bg-background/80 backdrop-blur-sm"
       >
-        <Logo />
+        <Logo animateText={true} />
         <nav className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" asChild>
             <Link href="/login">Iniciar Sesión</Link>
