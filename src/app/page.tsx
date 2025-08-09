@@ -16,10 +16,51 @@ import { Progress } from '@/components/ui/progress';
 export const dynamic = 'force-static';
 
 function Logo() {
+  const name = "S.A.R.A";
+  const fullName = "Sistema de Administración Responsable de Arriendos";
+  
+  const textVariants = {
+    hidden: { opacity: 0 },
+    visible: (i = 1) => ({
+      opacity: 1,
+      transition: { staggerChildren: 0.03, delayChildren: 0.5 * i },
+    }),
+  };
+
+  const letterVariants = {
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+    hidden: {
+      opacity: 0,
+      y: 20,
+    },
+  };
+
   return (
-    <div className="flex items-center justify-center gap-2 text-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
-      <span className="text-lg font-bold">S.A.R.A</span>
+    <div className="flex flex-col">
+        <div className="flex items-center gap-2 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="m2 10.45 10-9 10 9"/></svg>
+            <span className="text-lg font-bold">{name}</span>
+        </div>
+        <motion.p 
+            variants={textVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-xs text-muted-foreground -mt-1"
+        >
+            {fullName.split("").map((char, index) => (
+                <motion.span key={index} variants={letterVariants}>
+                    {char}
+                </motion.span>
+            ))}
+        </motion.p>
     </div>
   );
 }
