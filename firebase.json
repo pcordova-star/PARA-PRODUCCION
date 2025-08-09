@@ -19,7 +19,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "apphosting": "sara-produccion-"
       }
     ]
   }
