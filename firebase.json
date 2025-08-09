@@ -10,7 +10,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "public": "public",
+    "public": ".next",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -19,7 +19,7 @@
     "rewrites": [
       {
         "source": "**",
-        "apphosting": "sara-produccion-"
+        "destination": "/index.html"
       }
     ]
   }

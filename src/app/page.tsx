@@ -277,18 +277,6 @@ const HomePage = () => {
             <Image src="/images/logo2.png" alt="Plataforma S.A.R.A en un dispositivo" layout="fill" objectFit="contain" className="rounded-lg animate-mockupAnimation" />
           </motion.div>
         </section>
-        
-        <section className="bg-card py-16">
-            <motion.div 
-              variants={fadeIn('up')}
-              whileInView="animate"
-              initial="initial"
-              viewport={{ once: true, amount: 0.5 }}
-              className="container mx-auto px-4 text-center"
-            >
-                <h2 className="text-2xl md:text-3xl font-semibold italic text-foreground">"La tranquilidad de tener todo el historial de tu arriendo en un solo lugar, no tiene precio."</h2>
-            </motion.div>
-        </section>
 
         <section id="features" className="py-20 md:py-32">
           <div className="container mx-auto px-4">
