@@ -530,6 +530,45 @@ const HomePage = () => {
                 </motion.div>
             </div>
         </section>
+
+        <section className="py-20 md:py-32">
+            <div className="container mx-auto px-4">
+                <motion.div 
+                    variants={fadeIn('up')}
+                    whileInView="animate"
+                    initial="initial"
+                    viewport={{ once: true, amount: 0.5 }}
+                    className="relative text-center bg-card border border-primary/20 rounded-xl shadow-2xl p-8 md:p-16 overflow-hidden"
+                >
+                    <div className="absolute -top-1/2 -left-1/2 -z-10 w-[200%] h-[200%] bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.1),_transparent_40%)] animate-pulse"></div>
+                    <h2 className="font-headline text-3xl font-bold md:text-4xl">¿Listo para transformar tu gestión de arriendos?</h2>
+                    <motion.p 
+                        variants={fadeIn('up', 0.2)}
+                        whileInView="animate"
+                        initial="initial"
+                        viewport={{ once: true, amount: 0.5 }}
+                        className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto"
+                    >
+                        Regístrate gratis y accede a todas las herramientas que necesitas para una administración de arriendos sin complicaciones, transparente y segura.
+                    </motion.p>
+                    <motion.div
+                        variants={fadeIn('up', 0.4)}
+                        whileInView="animate"
+                        initial="initial"
+                        viewport={{ once: true, amount: 0.5 }}
+                        className="mt-8 flex flex-col items-center gap-2"
+                    >
+                        <Button size="lg" asChild className="shadow-lg shadow-primary/30">
+                            <Link href="/signup">
+                                Empezar Gratis
+                                <Rocket className="ml-2 h-5 w-5"/>
+                            </Link>
+                        </Button>
+                        <p className="text-xs text-muted-foreground">No se requiere tarjeta de crédito.</p>
+                    </motion.div>
+                </motion.div>
+            </div>
+        </section>
       </main>
 
       <motion.footer 
