@@ -32,7 +32,7 @@ import {
 import type { UserRole } from "@/types";
 import { auth, db } from "@/lib/firebase";
 import { sendWelcomeEmail } from "@/lib/notifications";
-import { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 
 
@@ -246,8 +246,7 @@ function RegisterForm() {
   );
 }
 
-
-export default function SignupPage() {
+function SignupPageContent() {
     const router = useRouter();
     const { currentUser, loading } = useAuth();
     const searchParams = useSearchParams();
@@ -294,5 +293,15 @@ export default function SignupPage() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <SignupPageContent />
+        </Suspense>
+    );
+}
+
+    

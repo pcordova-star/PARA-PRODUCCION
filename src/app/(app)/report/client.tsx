@@ -11,7 +11,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import { parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import html2pdf from 'html2pdf.js';
+import type html2pdf from 'html2pdf.js';
 
 // Helper to safely format dates, defaulting to 'N/A'
 const formatDateSafe = (dateInput: string | Date | undefined, options?: Intl.DateTimeFormatOptions): string => {
@@ -135,7 +135,8 @@ export default function TenantReportClient() {
     }
   }, [currentUser]);
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = document.getElementById('printable-area');
     const opt = {
       margin:       [0.5, 0.5, 0.5, 0.5],
@@ -310,5 +311,7 @@ export default function TenantReportClient() {
     </>
   );
 }
+
+    
 
     
