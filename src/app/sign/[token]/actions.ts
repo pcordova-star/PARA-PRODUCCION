@@ -43,7 +43,6 @@ export async function signContractAction({ contractId, signerId }: SignContractP
                 if (contract.signedByTenant) throw new Error('Ya has firmado este contrato.');
                 updatedData.signedByTenant = true;
                 updatedData.tenantSignedAt = new Date().toISOString();
-                // If the tenant didn't exist before, assign their ID now
                 if (!contract.tenantId) {
                     updatedData.tenantId = signerId;
                 }
@@ -73,7 +72,9 @@ export async function signContractAction({ contractId, signerId }: SignContractP
         });
 
         revalidatePath(`/contracts`);
-        revalidatePath(`/sign/${result.signatureToken}`);
+        if (result.signatureToken) {
+            revalidatePath(`/sign/${result.signatureToken}`);
+        }
 
         return { success: true, contract: result };
 
@@ -82,3 +83,4 @@ export async function signContractAction({ contractId, signerId }: SignContractP
         return { success: false, error: error.message || 'Ocurrió un error al intentar firmar el contrato.' };
     }
 }
+
