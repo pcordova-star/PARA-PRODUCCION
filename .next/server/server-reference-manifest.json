@@ -1,22 +1,5 @@
 {
-  "node": {
-    "1ef74bafa23ff69d7f110b95228bdcb2f46be272": {
-      "workers": {
-        "app/login/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Fuser%2Fstudio%2Fsrc%2Fapp%2Factions.ts%22%2C%5B%22createSessionCookie%22%2C%22deleteSessionCookie%22%5D%5D%5D&__client_imported__=true!"
-      },
-      "layer": {
-        "app/login/page": "action-browser"
-      }
-    },
-    "d6016c6b111b0f59293732f9a96f9ec2e2b77e0a": {
-      "workers": {
-        "app/login/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Fuser%2Fstudio%2Fsrc%2Fapp%2Factions.ts%22%2C%5B%22createSessionCookie%22%2C%22deleteSessionCookie%22%5D%5D%5D&__client_imported__=true!"
-      },
-      "layer": {
-        "app/login/page": "action-browser"
-      }
-    }
-  },
+  "node": {},
   "edge": {},
-  "encryptionKey": "7QVQwwjHY150qXveZrl2SH5SWX7UyJWIW4haA+vXimM="
+  "encryptionKey": "YfxWmErg9fW/d4QlVsfz6pgX/sgxpCAJF8/uU0BO0SM="
 }
