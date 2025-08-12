@@ -131,8 +131,17 @@ export default function AppLayout({
   const getMenuItems = () => {
     if (!currentUser) return [];
     switch (currentUser.role) {
-      case 'Arrendador':
-        return [...commonItems, ...landlordItems];
+      case 'Arrendador': {
+        const newCommonItems = [...commonItems];
+        const propertiesItem = landlordItems.find(item => item.label === 'Propiedades');
+        if (propertiesItem) {
+          newCommonItems.splice(1, 0, propertiesItem);
+        }
+        return [
+          ...newCommonItems,
+          ...landlordItems.filter(item => item.label !== 'Propiedades')
+        ];
+      }
       case 'Arrendatario':
         return [...commonItems, ...tenantItems];
       case 'Administrador':

@@ -142,7 +142,7 @@ function RegisterForm() {
       });
       
       const redirectUrl = searchParams.get('redirect');
-      router.push(redirectUrl || '/contracts');
+      router.push(redirectUrl || '/dashboard');
 
     } catch (error: any) {
       console.error("Error during registration:", error);
