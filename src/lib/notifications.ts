@@ -135,22 +135,46 @@ interface UpgradeRequestParams {
 }
 
 export async function sendUpgradeRequestEmail({ user }: UpgradeRequestParams) {
-  const adminEmail = "sarachilev3@gmail.com";
-  const { name, email, uid } = user;
+  const adminEmail = "pcordova@woken.cl";
+  const { name, email, uid, rut, mobilePhone, role } = user;
 
   await sendEmail({
     to: adminEmail,
-    subject: `Solicitud de Upgrade Manual - S.A.R.A`,
+    subject: `Solicitud de Upgrade de Cuenta - ${name}`,
     html: `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <h2>Solicitud de Upgrade Manual</h2>
-        <p>El siguiente usuario ha solicitado hacer un upgrade de su cuenta para salir del período de prueba:</p>
-        <ul>
-          <li><strong>Nombre:</strong> ${name}</li>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>User ID:</strong> ${uid}</li>
-        </ul>
-        <p>Por favor, contacta al usuario y procesa el upgrade manualmente en la base de datos de Firebase.</p>
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px;">Solicitud de Upgrade</h2>
+        <p>Un usuario ha finalizado su período de prueba y solicita hacer un upgrade a una cuenta de pago.</p>
+        
+        <h3 style="color: #333;">Información del Usuario:</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background-color: #f2f2f2;">
+            <td style="padding: 8px; border: 1px solid #ddd; width: 150px;"><strong>Nombre:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><a href="mailto:${email}">${email}</a></td>
+          </tr>
+          <tr style="background-color: #f2f2f2;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>RUT:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${rut || 'No disponible'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Teléfono:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${mobilePhone || 'No disponible'}</td>
+          </tr>
+          <tr style="background-color: #f2f2f2;">
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Rol:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${role}</td>
+          </tr>
+           <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>User ID:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${uid}</td>
+          </tr>
+        </table>
+
+        <p style="margin-top: 20px;"><strong>Acción requerida:</strong> Por favor, contacta al usuario para coordinar el pago y realiza el upgrade de su cuenta en la base de datos de Firebase.</p>
       </div>
     `,
   });

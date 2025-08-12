@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { AnnouncementsSection } from "./announcements-section";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
@@ -54,6 +55,7 @@ export function TenantDashboard() {
   const [pendingEvaluationsCount, setPendingEvaluationsCount] = useState(0);
   const [openIncidentsCount, setOpenIncidentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [runTour, setRunTour] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!currentUser) return;
@@ -102,6 +104,10 @@ export function TenantDashboard() {
          setOpenIncidentsCount(0);
       }
 
+      if (contractsList.length === 0) {
+        setRunTour(true);
+      }
+
     } catch (error) {
       console.error("Error fetching tenant dashboard data:", error);
     } finally {
@@ -127,6 +133,11 @@ export function TenantDashboard() {
 
   return (
     <TooltipProvider>
+      <OnboardingTour
+        userType="tenant"
+        run={runTour}
+        onComplete={() => setRunTour(false)}
+      />
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
@@ -154,12 +165,12 @@ export function TenantDashboard() {
         <Card>
           <CardHeader><CardTitle>Acciones Rápidas</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
-            <Tooltip><TooltipTrigger asChild><div className="relative">
+            <Tooltip><TooltipTrigger asChild><div className="relative tour-step-1-tenant">
               <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/contracts"><FileText className="mr-2" /><span>Mis Contratos</span></Link></Button>
               {pendingContract && <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">1</Badge>}
             </div></TooltipTrigger><TooltipContent><p>Revisa tus contratos de arriendo, actuales e históricos.</p></TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Declarar Pago</span></Link></Button></TooltipTrigger><TooltipContent><p>Declara tus pagos de arriendo y otros gastos.</p></TooltipContent></Tooltip>
-            <Tooltip><TooltipTrigger asChild><div className="relative">
+            <Tooltip><TooltipTrigger asChild><div className="tour-step-2-tenant"><Button asChild size="lg" className="h-auto py-3"><Link href="/payments"><Wallet className="mr-2" /><span>Declarar Pago</span></Link></Button></div></TooltipTrigger><TooltipContent><p>Declara tus pagos de arriendo y otros gastos.</p></TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><div className="relative tour-step-3-tenant">
               <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/incidents"><AlertTriangle className="mr-2" /><span>Reportar Incidente</span></Link></Button>
               {openIncidentsCount > 0 && <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{openIncidentsCount}</Badge>}
             </div></TooltipTrigger><TooltipContent><p>Comunica cualquier problema o incidente en tu propiedad.</p></TooltipContent></Tooltip>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Building2, FileText, PlusCircle, Upload, Calendar, Wallet, AlertTriangle,
   BarChart, PieChart as PieChartIcon, ArrowRight, ShieldAlert
+
 } from "lucide-react";
 import type { Property, Contract, Payment, Incident, Evaluation, UserProfile } from "@/types";
 import { AnnouncementsSection } from "./announcements-section";
@@ -20,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Badge } from "@/components/ui/badge";
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 
 const formatDate = (dateString: string) => {
     try {
@@ -40,6 +42,7 @@ export function LandlordDashboard() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   
+  const [runTour, setRunTour] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -74,6 +77,10 @@ export function LandlordDashboard() {
         const evaluationsQuery = query(collection(db, 'evaluations'), where('contractId', 'in', contractIds));
         const evaluationsSnapshot = await getDocs(evaluationsQuery);
         setEvaluations(evaluationsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Evaluation)));
+      }
+
+      if (propertiesList.length === 0 && contractsList.length === 0) {
+        setRunTour(true);
       }
 
     } catch (error) {
@@ -160,6 +167,11 @@ export function LandlordDashboard() {
 
   return (
     <TooltipProvider>
+      <OnboardingTour 
+        userType="landlord" 
+        run={runTour} 
+        onComplete={() => setRunTour(false)} 
+      />
       <div className="space-y-6">
         <Card className="shadow-lg border-l-4 border-primary">
           <CardHeader>
@@ -188,10 +200,10 @@ export function LandlordDashboard() {
             <Card className="shadow-md">
               <CardHeader><CardTitle className="flex items-center"><PlusCircle className="mr-2"/>Acciones Rápidas</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
-                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button asChild size="lg" className="h-auto py-3 tour-step-1-landlord"><Link href="/properties"><Building2 className="mr-2" /><span>Gestionar Propiedades</span></Link></Button></TooltipTrigger><TooltipContent><p>Crea, edita y administra tus propiedades.</p></TooltipContent></Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="relative">
+                      <div className="relative tour-step-2-landlord">
                           <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/contracts"><FileText className="mr-2" /><span>Ver Contratos</span></Link></Button>
                           {contractsToSignCount > 0 && (
                             <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{contractsToSignCount}</Badge>
@@ -209,7 +221,7 @@ export function LandlordDashboard() {
                     </div>
                   </TooltipTrigger><TooltipContent><p>Aprueba los pagos declarados por tus arrendatarios.</p></TooltipContent></Tooltip>
                   <Tooltip><TooltipTrigger asChild>
-                     <div className="relative">
+                     <div className="relative tour-step-3-landlord">
                         <Button asChild size="lg" className="h-auto py-3 w-full"><Link href="/incidents"><ShieldAlert className="mr-2" /><span>Gestionar Incidentes</span></Link></Button>
                         {openIncidentsCount > 0 && (
                             <Badge variant="destructive" className="absolute -top-2 -right-2 rounded-full h-6 w-6 flex items-center justify-center p-0">{openIncidentsCount}</Badge>
